@@ -1,0 +1,739 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:33:03 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\inputs.c          #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \inputs.c                                               #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\inputs.lst #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\inputs.r90  #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\inputs.c
+      1          /* UserLoop = Application, excluding State Machine */
+      2          
+      3          #include "iom16.h"		 	// Atmel up definitions
+      4          #include "inavr.h"			// AVR intrinsic functions
+      5          #include "VSMain.h"			// VisualState definitions (further includes)
+      6          
+      7          #include "defs.h"			// Application (GENERAL) defs
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",122  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",131  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",137  Warning[Pe375]: 
+          declaration requires a typedef name
+      8          #include "globals.h"		        // Application global data/variables
+      9          
+     10          void vss_seq_error( void);
+     11          void wal_dbnc_inputs( void);
+     12          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+     13          
+     14          unsigned char wal_tacho_change( void);
+     15          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     16          unsigned char wal_tacho_change( void)
+   \                     wal_tacho_change:
+     17          {
+     18          // return 1 (true) if tacho polarity changes
+     19          // use WAL_IN_ENC as macro form of input pin
+     20          
+     21            if( WAL_IN_ENC == 1)
+   \   00000000   9BB1                       SBIS    0x16,0x01
+   \   00000002   C01E                       RJMP    ??wal_tacho_change_0
+     22            {
+     23              if( dblead_ip_enc != 0)
+   \   00000004   9100....                   LDS     R16,dblead_ip_enc
+   \   00000008   2300                       TST     R16
+   \   0000000A   F089                       BREQ    ??wal_tacho_change_1
+     24              {
+     25                dblead_ip_enc--;
+   \   0000000C   ....                       LDI     R30,LOW(dblead_ip_enc)
+   \   0000000E   ....                       LDI     R31,(dblead_ip_enc) >> 8
+   \   00000010   8100                       LD      R16,Z
+   \   00000012   950A                       DEC     R16
+   \   00000014   8300                       ST      Z,R16
+     26                if( dblead_ip_enc == 0)
+   \   00000016   9100....                   LDS     R16,dblead_ip_enc
+   \   0000001A   2300                       TST     R16
+   \   0000001C   F441                       BRNE    ??wal_tacho_change_1
+     27                {
+     28                  val_ip_enc = 1;
+   \   0000001E   E001                       LDI     R16,1
+   \   00000020   9300....                   STS     val_ip_enc,R16
+     29                  dbtail_ip_enc = WAL_DBNC_IN_ENC;		// re-load trailing edge dbnc
+   \   00000024   E002                       LDI     R16,2
+   \   00000026   9300....                   STS     dbtail_ip_enc,R16
+     30                  return 1;
+   \   0000002A   E001                       LDI     R16,1
+   \   0000002C   9508                       RET
+     31                }
+     32              }
+     33              if( dblead_ip_enc == 0)
+   \                     ??wal_tacho_change_1:
+   \   0000002E   9100....                   LDS     R16,dblead_ip_enc
+   \   00000032   2300                       TST     R16
+   \   00000034   F419                       BRNE    ??wal_tacho_change_2
+     34              {
+     35                dbtail_ip_enc = WAL_DBNC_IN_ENC;		// re-load trailing edge dbnc
+   \   00000036   E002                       LDI     R16,2
+   \   00000038   9300....                   STS     dbtail_ip_enc,R16
+     36              }
+     37              return 0;
+   \                     ??wal_tacho_change_2:
+   \   0000003C   E000                       LDI     R16,0
+   \   0000003E   9508                       RET
+     38            }
+     39          
+     40            // else WAL_IN_ENC == 0 
+     41          
+     42            if( dbtail_ip_enc != 0)
+   \                     ??wal_tacho_change_0:
+   \   00000040   9100....                   LDS     R16,dbtail_ip_enc
+   \   00000044   2300                       TST     R16
+   \   00000046   F089                       BREQ    ??wal_tacho_change_3
+     43            {
+     44              dbtail_ip_enc--;
+   \   00000048   ....                       LDI     R30,LOW(dbtail_ip_enc)
+   \   0000004A   ....                       LDI     R31,(dbtail_ip_enc) >> 8
+   \   0000004C   8100                       LD      R16,Z
+   \   0000004E   950A                       DEC     R16
+   \   00000050   8300                       ST      Z,R16
+     45              if( !dbtail_ip_enc)
+   \   00000052   9100....                   LDS     R16,dbtail_ip_enc
+   \   00000056   2300                       TST     R16
+   \   00000058   F441                       BRNE    ??wal_tacho_change_3
+     46              {
+     47                // IN_ENC has gone low (trailing edge)
+     48                val_ip_enc = 0;
+   \   0000005A   E000                       LDI     R16,0
+   \   0000005C   9300....                   STS     val_ip_enc,R16
+     49                dblead_ip_enc = WAL_DBNC_IN_ENC;		// re-load leading edge dbnc
+   \   00000060   E002                       LDI     R16,2
+   \   00000062   9300....                   STS     dblead_ip_enc,R16
+     50                return 1;
+   \   00000066   E001                       LDI     R16,1
+   \   00000068   9508                       RET
+     51              }
+     52            }
+     53            
+     54            if( dbtail_ip_enc == 0)
+   \                     ??wal_tacho_change_3:
+   \   0000006A   9100....                   LDS     R16,dbtail_ip_enc
+   \   0000006E   2300                       TST     R16
+   \   00000070   F419                       BRNE    ??wal_tacho_change_4
+     55            {
+     56              dblead_ip_enc = WAL_DBNC_IN_ENC;		// re-load leading edge dbnc
+   \   00000072   E002                       LDI     R16,2
+   \   00000074   9300....                   STS     dblead_ip_enc,R16
+     57            }
+     58            return 0;
+   \                     ??wal_tacho_change_4:
+   \   00000078   E000                       LDI     R16,0
+   \   0000007A   9508                       RET
+     59                
+     60          }
+     61          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     62          void wal_dbnc_inputs( void)
+   \                     wal_dbnc_inputs:
+     63          {
+     64          // Debounce all inputs and set event and/or static condition accordingly:
+     65          // This routine is called ea. "0.5" milliseconds.
+     66          // A debounce value 2-255 = 1-127 milliseconds.
+     67          // Each input requires Leading (L) and Trailing (T) debounce value.
+     68          
+     69          // Handle Following Inputs:
+     70          // IN_ENC	Tacho (motor) input PB.1 (T1)
+     71          // IN_TRG	Trigger input PB.2 (INT2)
+     72          // IN_HOM	Home switch PD.2 (INT0)
+     73          // IN_LIM	Limit switch PD.3 (INT1)
+     74          // IN_SW1	Button PD.6 (ICP)
+     75          
+     76          // IN_ENC	Tacho (motor) input PB.1 (T1)
+     77          // NB. Max RPM 3600 = 60 RPS 4 ppr = 8 edges = 480 transitions/sec = 2msec (max dbnc = 3)
+     78          
+     79          uc_read_portb = PINB;
+   \   00000000   B306                       IN      R16,0x16
+   \   00000002   9300....                   STS     uc_read_portb,R16
+     80          uc_read_portd = PIND;
+   \   00000006   B300                       IN      R16,0x10
+   \   00000008   9300....                   STS     uc_read_portd,R16
+     81          
+     82          // WAL_IN_ENC
+     83          // if( (uc_read_portb & (1<<PINB1)) == ( 1<<PINB1) )
+     84          // approximately 4msec per tacho pulse
+     85          
+     86            if( wal_tacho_change() )
+   \   0000000C   ....                       RCALL   wal_tacho_change
+   \   0000000E   2300                       TST     R16
+   \   00000010   F151                       BREQ    ??wal_dbnc_inputs_0
+     87            {
+     88              uc_stall_tacin++;
+   \   00000012   ....                       LDI     R30,LOW(uc_stall_tacin)
+   \   00000014   ....                       LDI     R31,(uc_stall_tacin) >> 8
+   \   00000016   8100                       LD      R16,Z
+   \   00000018   9503                       INC     R16
+   \   0000001A   8300                       ST      Z,R16
+     89              
+     90              // V1.7 16JAN06: Ignore whilst 'power-up'
+     91              if( uc_settlepower == 0)
+   \   0000001C   9100....                   LDS     R16,uc_settlepower
+   \   00000020   2300                       TST     R16
+   \   00000022   F509                       BRNE    ??wal_dbnc_inputs_0
+     92              {
+     93                if( WAL_READ_DIR == 0)
+   \   00000024   9984                       SBIC    0x10,0x04
+   \   00000026   C00E                       RJMP    ??wal_dbnc_inputs_1
+     94                {
+     95                  if( ui_axis_pos > 0)
+   \   00000028   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   0000002A   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   0000002C   8100                       LD      R16,Z
+   \   0000002E   8111                       LDD     R17,Z+1
+   \   00000030   2B01                       OR      R16,R17
+   \   00000032   F041                       BREQ    ??wal_dbnc_inputs_1
+     96                  {
+     97                    ui_axis_pos--;
+   \   00000034   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000036   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000038   8100                       LD      R16,Z
+   \   0000003A   8111                       LDD     R17,Z+1
+   \   0000003C   5001                       SUBI    R16,1
+   \   0000003E   4010                       SBCI    R17,0
+   \   00000040   8300                       ST      Z,R16
+   \   00000042   8311                       STD     Z+1,R17
+     98                  }
+     99                }
+    100                if( WAL_READ_DIR == 1)
+   \                     ??wal_dbnc_inputs_1:
+   \   00000044   9B84                       SBIS    0x10,0x04
+   \   00000046   C008                       RJMP    ??wal_dbnc_inputs_2
+    101                {
+    102                  ui_axis_pos++;
+   \   00000048   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   0000004A   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   0000004C   8100                       LD      R16,Z
+   \   0000004E   8111                       LDD     R17,Z+1
+   \   00000050   5F0F                       SUBI    R16,255
+   \   00000052   4F1F                       SBCI    R17,255
+   \   00000054   8300                       ST      Z,R16
+   \   00000056   8311                       STD     Z+1,R17
+    103                }
+    104                if( SEQ_AddEvent( E_AxisTacho) != UCC_OK )
+   \                     ??wal_dbnc_inputs_2:
+   \   00000058   E00B                       LDI     R16,11
+   \   0000005A   ........                   CALL    SEQ_AddEvent
+   \   0000005E   2300                       TST     R16
+   \   00000060   F011                       BREQ    ??wal_dbnc_inputs_0
+    105                {
+    106                  vss_seq_error();
+   \   00000062   ........                   CALL    vss_seq_error
+    107                }
+    108              }
+    109            }
+    110                
+    111              
+    112          // IN_TRG	Trigger input PB.2 (INT2) (has no relevance except addressing)
+    113          // WAL_IN_TRG
+    114          // if( uc_read_portb & (1<<PINB2))
+    115          
+    116          if( WAL_IN_TRG == 1)
+   \                     ??wal_dbnc_inputs_0:
+   \   00000066   9BB2                       SBIS    0x16,0x02
+   \   00000068   C01A                       RJMP    ??wal_dbnc_inputs_3
+    117          {
+    118            if( dblead_ip_trg == 0)
+   \   0000006A   9100....                   LDS     R16,dblead_ip_trg
+   \   0000006E   2300                       TST     R16
+   \   00000070   F419                       BRNE    ??wal_dbnc_inputs_4
+    119              dbtail_ip_trg = WAL_DBNC_IN_TRG;		// re-load trailing edge dbnc
+   \   00000072   E00A                       LDI     R16,10
+   \   00000074   9300....                   STS     dbtail_ip_trg,R16
+    120            
+    121          	if( dblead_ip_trg)
+   \                     ??wal_dbnc_inputs_4:
+   \   00000078   9100....                   LDS     R16,dblead_ip_trg
+   \   0000007C   2300                       TST     R16
+   \   0000007E   F079                       BREQ    ??wal_dbnc_inputs_3
+    122          	{
+    123          		dblead_ip_trg--;
+   \   00000080   ....                       LDI     R30,LOW(dblead_ip_trg)
+   \   00000082   ....                       LDI     R31,(dblead_ip_trg) >> 8
+   \   00000084   8100                       LD      R16,Z
+   \   00000086   950A                       DEC     R16
+   \   00000088   8300                       ST      Z,R16
+    124          		if( !dblead_ip_trg)
+   \   0000008A   9100....                   LDS     R16,dblead_ip_trg
+   \   0000008E   2300                       TST     R16
+   \   00000090   F431                       BRNE    ??wal_dbnc_inputs_3
+    125          		{
+    126          			// IN_TRG has gone high (leading edge)
+    127          			val_ip_trg = 1;
+   \   00000092   E001                       LDI     R16,1
+   \   00000094   9300....                   STS     val_ip_trg,R16
+    128          			dbtail_ip_trg = WAL_DBNC_IN_TRG;		// re-load trailing edge dbnc
+   \   00000098   E00A                       LDI     R16,10
+   \   0000009A   9300....                   STS     dbtail_ip_trg,R16
+    129          		}
+    130          	}
+    131          }
+    132          
+    133          if( WAL_IN_TRG == 0)
+   \                     ??wal_dbnc_inputs_3:
+   \   0000009E   99B2                       SBIC    0x16,0x02
+   \   000000A0   C01A                       RJMP    ??wal_dbnc_inputs_5
+    134          {
+    135            if( dbtail_ip_trg == 0)
+   \   000000A2   9100....                   LDS     R16,dbtail_ip_trg
+   \   000000A6   2300                       TST     R16
+   \   000000A8   F419                       BRNE    ??wal_dbnc_inputs_6
+    136              dblead_ip_trg = WAL_DBNC_IN_TRG;		// re-load leading edge dbnc
+   \   000000AA   E00A                       LDI     R16,10
+   \   000000AC   9300....                   STS     dblead_ip_trg,R16
+    137              
+    138            if( dbtail_ip_trg)
+   \                     ??wal_dbnc_inputs_6:
+   \   000000B0   9100....                   LDS     R16,dbtail_ip_trg
+   \   000000B4   2300                       TST     R16
+   \   000000B6   F079                       BREQ    ??wal_dbnc_inputs_5
+    139            {
+    140              dbtail_ip_trg--;
+   \   000000B8   ....                       LDI     R30,LOW(dbtail_ip_trg)
+   \   000000BA   ....                       LDI     R31,(dbtail_ip_trg) >> 8
+   \   000000BC   8100                       LD      R16,Z
+   \   000000BE   950A                       DEC     R16
+   \   000000C0   8300                       ST      Z,R16
+    141              if( !dbtail_ip_trg)
+   \   000000C2   9100....                   LDS     R16,dbtail_ip_trg
+   \   000000C6   2300                       TST     R16
+   \   000000C8   F431                       BRNE    ??wal_dbnc_inputs_5
+    142              {
+    143                    // IN_TRG has gone low (trailing edge)
+    144                    // ACTIVE CONDITION
+    145                    val_ip_trg = 0;
+   \   000000CA   E000                       LDI     R16,0
+   \   000000CC   9300....                   STS     val_ip_trg,R16
+    146                    dblead_ip_trg = WAL_DBNC_IN_TRG;		// re-load leading edge dbnc
+   \   000000D0   E00A                       LDI     R16,10
+   \   000000D2   9300....                   STS     dblead_ip_trg,R16
+    147              }
+    148            }
+    149          }
+    150          
+    151          // IN_HOM, WAL_IN_HOM	Home switch PD.2 (INT0)
+    152          // if( uc_read_portd & (1<<PIND2))
+    153          if( WAL_IN_HOM == 1)
+   \                     ??wal_dbnc_inputs_5:
+   \   000000D6   9B82                       SBIS    0x10,0x02
+   \   000000D8   C021                       RJMP    ??wal_dbnc_inputs_7
+    154          {
+    155          	if( dblead_ip_hom == 0)
+   \   000000DA   9100....                   LDS     R16,dblead_ip_hom
+   \   000000DE   2300                       TST     R16
+   \   000000E0   F419                       BRNE    ??wal_dbnc_inputs_8
+    156          		dbtail_ip_hom = WAL_DBNC_IN_HOM;		// re-load trailing edge dbnc
+   \   000000E2   E00A                       LDI     R16,10
+   \   000000E4   9300....                   STS     dbtail_ip_hom,R16
+    157          		
+    158          	if( dblead_ip_hom)
+   \                     ??wal_dbnc_inputs_8:
+   \   000000E8   9100....                   LDS     R16,dblead_ip_hom
+   \   000000EC   2300                       TST     R16
+   \   000000EE   F0B1                       BREQ    ??wal_dbnc_inputs_7
+    159          	{
+    160          		dblead_ip_hom--;
+   \   000000F0   ....                       LDI     R30,LOW(dblead_ip_hom)
+   \   000000F2   ....                       LDI     R31,(dblead_ip_hom) >> 8
+   \   000000F4   8100                       LD      R16,Z
+   \   000000F6   950A                       DEC     R16
+   \   000000F8   8300                       ST      Z,R16
+    161          		if( !dblead_ip_hom)
+   \   000000FA   9100....                   LDS     R16,dblead_ip_hom
+   \   000000FE   2300                       TST     R16
+   \   00000100   F469                       BRNE    ??wal_dbnc_inputs_7
+    162          		{
+    163          			// IN_HOM has gone high (leading edge)
+    164          			// ACTIVE CONDITION
+    165          			val_ip_hom = 1;
+   \   00000102   E001                       LDI     R16,1
+   \   00000104   9300....                   STS     val_ip_hom,R16
+    166          			dbtail_ip_hom = WAL_DBNC_IN_HOM;		// re-load trailing edge dbnc
+   \   00000108   E00A                       LDI     R16,10
+   \   0000010A   9300....                   STS     dbtail_ip_hom,R16
+    167          			if( SEQ_AddEvent( E_AxisHome) != UCC_OK )
+   \   0000010E   E003                       LDI     R16,3
+   \   00000110   ........                   CALL    SEQ_AddEvent
+   \   00000114   2300                       TST     R16
+   \   00000116   F011                       BREQ    ??wal_dbnc_inputs_7
+    168          			{
+    169          				vss_seq_error();
+   \   00000118   ........                   CALL    vss_seq_error
+    170          			}
+    171          		}
+    172          	}
+    173          }
+    174          
+    175          if( WAL_IN_HOM == 0)
+   \                     ??wal_dbnc_inputs_7:
+   \   0000011C   9982                       SBIC    0x10,0x02
+   \   0000011E   C033                       RJMP    ??wal_dbnc_inputs_9
+    176          {
+    177          	if( dbtail_ip_hom == 0)
+   \   00000120   9100....                   LDS     R16,dbtail_ip_hom
+   \   00000124   2300                       TST     R16
+   \   00000126   F419                       BRNE    ??wal_dbnc_inputs_10
+    178          		dblead_ip_hom = WAL_DBNC_IN_HOM;		// re-load leading edge dbnc
+   \   00000128   E00A                       LDI     R16,10
+   \   0000012A   9300....                   STS     dblead_ip_hom,R16
+    179          		
+    180          	if( dbtail_ip_hom)
+   \                     ??wal_dbnc_inputs_10:
+   \   0000012E   9100....                   LDS     R16,dbtail_ip_hom
+   \   00000132   2300                       TST     R16
+   \   00000134   F141                       BREQ    ??wal_dbnc_inputs_9
+    181          	{
+    182          		dbtail_ip_hom--;
+   \   00000136   ....                       LDI     R30,LOW(dbtail_ip_hom)
+   \   00000138   ....                       LDI     R31,(dbtail_ip_hom) >> 8
+   \   0000013A   8100                       LD      R16,Z
+   \   0000013C   950A                       DEC     R16
+   \   0000013E   8300                       ST      Z,R16
+    183          		if( !dbtail_ip_hom)
+   \   00000140   9100....                   LDS     R16,dbtail_ip_hom
+   \   00000144   2300                       TST     R16
+   \   00000146   F4F9                       BRNE    ??wal_dbnc_inputs_9
+    184          		{
+    185          			// IN_HOM has gone low (trailing edge)
+    186          			val_ip_hom = 0;
+   \   00000148   E000                       LDI     R16,0
+   \   0000014A   9300....                   STS     val_ip_hom,R16
+    187          			dblead_ip_hom = WAL_DBNC_IN_HOM;		// re-load leading edge dbnc
+   \   0000014E   E00A                       LDI     R16,10
+   \   00000150   9300....                   STS     dblead_ip_hom,R16
+    188          			// When HOME SWITCH becomes inactive = End of Home Sequence
+    189          			if( SEQ_AddEvent( E_AxisZeroed) != UCC_OK )
+   \   00000154   E00C                       LDI     R16,12
+   \   00000156   ........                   CALL    SEQ_AddEvent
+   \   0000015A   2300                       TST     R16
+   \   0000015C   F011                       BREQ    ??wal_dbnc_inputs_11
+    190          			{
+    191          				vss_seq_error();
+   \   0000015E   ........                   CALL    vss_seq_error
+    192          			}
+    193          			
+    194          			// V1.6 12JAN06: only allow 'zero' if 'motor-on'
+    195          			if( uc_motoron)
+   \                     ??wal_dbnc_inputs_11:
+   \   00000162   9100....                   LDS     R16,uc_motoron
+   \   00000166   2300                       TST     R16
+   \   00000168   F071                       BREQ    ??wal_dbnc_inputs_9
+    196          			{
+    197                                    // Reset axis position value:
+    198                                    // NB. Could be done as part of reaction to E_AxisZeroed, but:
+    199                                    // i.  further tacho events will be 'lost'
+    200                                    // ii. additional 'action' function required
+    201                                    ui_axis_pos = (unsigned int) 0;
+   \   0000016A   E000                       LDI     R16,0
+   \   0000016C   E010                       LDI     R17,0
+   \   0000016E   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000170   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000172   8300                       ST      Z,R16
+   \   00000174   8311                       STD     Z+1,R17
+    202                                    // V1.3 27JUN05: reset error flag:
+    203                                    uc_axis_err = 0;
+   \   00000176   E000                       LDI     R16,0
+   \   00000178   9300....                   STS     uc_axis_err,R16
+    204                                    wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+   \   0000017C   9110....                   LDS     R17,uc_axis_err
+   \   00000180   E005                       LDI     R16,5
+   \   00000182   ........                   CALL    wal_eetbl_write
+    205                                  }
+    206          			
+    207          		}
+    208          	}
+    209          }
+    210          
+    211          // IN_LIM, WAL_IN_LIM	Limit switch PD.3 (INT1) 
+    212          // if( uc_read_portd & (1<<PIND3))
+    213          
+    214          if( WAL_IN_LIM)
+   \                     ??wal_dbnc_inputs_9:
+   \   00000186   9B83                       SBIS    0x10,0x03
+   \   00000188   C021                       RJMP    ??wal_dbnc_inputs_12
+    215          {
+    216              if( dblead_ip_lim == 0)
+   \   0000018A   9100....                   LDS     R16,dblead_ip_lim
+   \   0000018E   2300                       TST     R16
+   \   00000190   F419                       BRNE    ??wal_dbnc_inputs_13
+    217                dbtail_ip_lim = WAL_DBNC_IN_LIM;		// re-load trailing edge dbnc
+   \   00000192   E00A                       LDI     R16,10
+   \   00000194   9300....                   STS     dbtail_ip_lim,R16
+    218          	
+    219          	if( dblead_ip_lim)
+   \                     ??wal_dbnc_inputs_13:
+   \   00000198   9100....                   LDS     R16,dblead_ip_lim
+   \   0000019C   2300                       TST     R16
+   \   0000019E   F0B1                       BREQ    ??wal_dbnc_inputs_12
+    220          	{
+    221          		dblead_ip_lim--;
+   \   000001A0   ....                       LDI     R30,LOW(dblead_ip_lim)
+   \   000001A2   ....                       LDI     R31,(dblead_ip_lim) >> 8
+   \   000001A4   8100                       LD      R16,Z
+   \   000001A6   950A                       DEC     R16
+   \   000001A8   8300                       ST      Z,R16
+    222          		if( !dblead_ip_lim)
+   \   000001AA   9100....                   LDS     R16,dblead_ip_lim
+   \   000001AE   2300                       TST     R16
+   \   000001B0   F469                       BRNE    ??wal_dbnc_inputs_12
+    223          		{
+    224          			// IN_LIM has gone high (leading edge)
+    225          			// ACTIVE CONDITION
+    226          			val_ip_lim = 1;
+   \   000001B2   E001                       LDI     R16,1
+   \   000001B4   9300....                   STS     val_ip_lim,R16
+    227          			dbtail_ip_lim = WAL_DBNC_IN_LIM;		// re-load trailing edge dbnc
+   \   000001B8   E00A                       LDI     R16,10
+   \   000001BA   9300....                   STS     dbtail_ip_lim,R16
+    228          			if( SEQ_AddEvent( E_AxisLimit) != UCC_OK )
+   \   000001BE   E005                       LDI     R16,5
+   \   000001C0   ........                   CALL    SEQ_AddEvent
+   \   000001C4   2300                       TST     R16
+   \   000001C6   F011                       BREQ    ??wal_dbnc_inputs_12
+    229          			{
+    230          				vss_seq_error();
+   \   000001C8   ........                   CALL    vss_seq_error
+    231          			}
+    232          		}
+    233          	}
+    234          }
+    235          
+    236          if( WAL_IN_LIM == 0)
+   \                     ??wal_dbnc_inputs_12:
+   \   000001CC   9983                       SBIC    0x10,0x03
+   \   000001CE   C01A                       RJMP    ??wal_dbnc_inputs_14
+    237          {
+    238          	if( dbtail_ip_lim == 0)
+   \   000001D0   9100....                   LDS     R16,dbtail_ip_lim
+   \   000001D4   2300                       TST     R16
+   \   000001D6   F419                       BRNE    ??wal_dbnc_inputs_15
+    239          		dblead_ip_lim = WAL_DBNC_IN_LIM;		// re-load leading edge dbnc
+   \   000001D8   E00A                       LDI     R16,10
+   \   000001DA   9300....                   STS     dblead_ip_lim,R16
+    240          	if( dbtail_ip_lim)
+   \                     ??wal_dbnc_inputs_15:
+   \   000001DE   9100....                   LDS     R16,dbtail_ip_lim
+   \   000001E2   2300                       TST     R16
+   \   000001E4   F079                       BREQ    ??wal_dbnc_inputs_14
+    241          	{
+    242          		dbtail_ip_lim--;
+   \   000001E6   ....                       LDI     R30,LOW(dbtail_ip_lim)
+   \   000001E8   ....                       LDI     R31,(dbtail_ip_lim) >> 8
+   \   000001EA   8100                       LD      R16,Z
+   \   000001EC   950A                       DEC     R16
+   \   000001EE   8300                       ST      Z,R16
+    243          		if( !dbtail_ip_lim)
+   \   000001F0   9100....                   LDS     R16,dbtail_ip_lim
+   \   000001F4   2300                       TST     R16
+   \   000001F6   F431                       BRNE    ??wal_dbnc_inputs_14
+    244          		{
+    245          			// IN_LIM has gone low (trailing edge)
+    246          			val_ip_lim = 0;
+   \   000001F8   E000                       LDI     R16,0
+   \   000001FA   9300....                   STS     val_ip_lim,R16
+    247          			dblead_ip_lim = WAL_DBNC_IN_LIM;		// re-load leading edge dbnc
+   \   000001FE   E00A                       LDI     R16,10
+   \   00000200   9300....                   STS     dblead_ip_lim,R16
+    248          		}
+    249          	}
+    250          }
+    251          
+    252            // IN_SW1	Button PD.6 (ICP)
+    253            // pin_ip_sw1 = ( uc_read_portd & (1<<PIND6))? 1 : 0;
+    254            // switch( pin_ip_sw1)
+    255            if( WAL_IN_SW1)
+   \                     ??wal_dbnc_inputs_14:
+   \   00000204   9B86                       SBIS    0x10,0x06
+   \   00000206   C018                       RJMP    ??wal_dbnc_inputs_16
+    256            {
+    257              if( dblead_ip_sw1 == 0)
+   \   00000208   9100....                   LDS     R16,dblead_ip_sw1
+   \   0000020C   2300                       TST     R16
+   \   0000020E   F421                       BRNE    ??wal_dbnc_inputs_17
+    258                dbtail_ip_sw1 = WAL_DBNC_IN_SW1;	// re-load trailing edge dbnc
+   \   00000210   E30C                       LDI     R16,60
+   \   00000212   9300....                   STS     dbtail_ip_sw1,R16
+   \   00000216   9508                       RET
+    259              else
+    260              {
+    261          	dblead_ip_sw1--;
+   \                     ??wal_dbnc_inputs_17:
+   \   00000218   ....                       LDI     R30,LOW(dblead_ip_sw1)
+   \   0000021A   ....                       LDI     R31,(dblead_ip_sw1) >> 8
+   \   0000021C   8100                       LD      R16,Z
+   \   0000021E   950A                       DEC     R16
+   \   00000220   8300                       ST      Z,R16
+    262          	if( dblead_ip_sw1 == 0)
+   \   00000222   9100....                   LDS     R16,dblead_ip_sw1
+   \   00000226   2300                       TST     R16
+   \   00000228   F589                       BRNE    ??wal_dbnc_inputs_18
+    263          	{
+    264          		// IN_SW1 has gone high (leading edge)
+    265          		val_ip_sw1 = 0;
+   \   0000022A   E000                       LDI     R16,0
+   \   0000022C   9300....                   STS     val_ip_sw1,R16
+    266          		dbtail_ip_sw1 = WAL_DBNC_IN_SW1;// re-load trailing edge dbnc
+   \   00000230   E30C                       LDI     R16,60
+   \   00000232   9300....                   STS     dbtail_ip_sw1,R16
+   \   00000236   9508                       RET
+    267          	}
+    268              }
+    269            }
+    270            else
+    271            {
+    272              if( dbtail_ip_sw1 == 0)
+   \                     ??wal_dbnc_inputs_16:
+   \   00000238   9100....                   LDS     R16,dbtail_ip_sw1
+   \   0000023C   2300                       TST     R16
+   \   0000023E   F421                       BRNE    ??wal_dbnc_inputs_19
+    273                dblead_ip_sw1 = WAL_DBNC_IN_SW1;	// re-load leading edge dbnc
+   \   00000240   E30C                       LDI     R16,60
+   \   00000242   9300....                   STS     dblead_ip_sw1,R16
+   \   00000246   9508                       RET
+    274              else
+    275              {
+    276                dbtail_ip_sw1--;
+   \                     ??wal_dbnc_inputs_19:
+   \   00000248   ....                       LDI     R30,LOW(dbtail_ip_sw1)
+   \   0000024A   ....                       LDI     R31,(dbtail_ip_sw1) >> 8
+   \   0000024C   8100                       LD      R16,Z
+   \   0000024E   950A                       DEC     R16
+   \   00000250   8300                       ST      Z,R16
+    277                if( dbtail_ip_sw1 == 0)
+   \   00000252   9100....                   LDS     R16,dbtail_ip_sw1
+   \   00000256   2300                       TST     R16
+   \   00000258   F4C9                       BRNE    ??wal_dbnc_inputs_18
+    278                {
+    279                  // IN_SW1 has gone low (trailing edge)
+    280                  val_ip_sw1 = 1;
+   \   0000025A   E001                       LDI     R16,1
+   \   0000025C   9300....                   STS     val_ip_sw1,R16
+    281                  dblead_ip_sw1 = WAL_DBNC_IN_SW1;	// re-load leading edge dbnc
+   \   00000260   E30C                       LDI     R16,60
+   \   00000262   9300....                   STS     dblead_ip_sw1,R16
+    282                  // REVIEW: appears to be problem regarding same event
+    283                  // for both entry and exit from single state:
+    284                  // use uc_axis_vss (idle == 0)
+    285                  if( uc_axis_vss == 0)
+   \   00000266   9100....                   LDS     R16,uc_axis_vss
+   \   0000026A   2300                       TST     R16
+   \   0000026C   F441                       BRNE    ??wal_dbnc_inputs_20
+    286                  {
+    287                    if( SEQ_AddEvent( E_Button) != UCC_OK )
+   \   0000026E   E00D                       LDI     R16,13
+   \   00000270   ........                   CALL    SEQ_AddEvent
+   \   00000274   2300                       TST     R16
+   \   00000276   F051                       BREQ    ??wal_dbnc_inputs_18
+    288                    {
+    289                      vss_seq_error();
+   \   00000278   ........                   CALL    vss_seq_error
+   \   0000027C   9508                       RET
+    290                    }
+    291                  }
+    292                  else
+    293                  {
+    294                    if( SEQ_AddEvent( E_AxisStop) != UCC_OK )
+   \                     ??wal_dbnc_inputs_20:
+   \   0000027E   E00A                       LDI     R16,10
+   \   00000280   ........                   CALL    SEQ_AddEvent
+   \   00000284   2300                       TST     R16
+   \   00000286   F011                       BREQ    ??wal_dbnc_inputs_18
+    295                    {
+    296                      vss_seq_error();
+   \   00000288   ........                   CALL    vss_seq_error
+    297                    }
+    298                  }
+    299                }
+    300              }
+    301            }
+    302          
+    303          }
+   \                     ??wal_dbnc_inputs_18:
+   \   0000028C   9508                       RET
+
+   \                                 In segment ABSOLUTE, at 0x30
+   \   union <unnamed> volatile __io _A_PIND
+   \                     _A_PIND:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x36
+   \   union <unnamed> volatile __io _A_PINB
+   \                     _A_PINB:
+   \   00000000                              DS 1
+
+   Maximum stack usage in bytes:
+
+     Function              CSTACK RSTACK
+     --------              ------ ------
+     wal_dbnc_inputs           0      2
+       -> wal_tacho_change     0      2
+       -> SEQ_AddEvent         0      2
+       -> vss_seq_error        0      2
+       -> SEQ_AddEvent         0      2
+       -> vss_seq_error        0      2
+       -> SEQ_AddEvent         0      2
+       -> vss_seq_error        0      2
+       -> wal_eetbl_write      0      2
+       -> SEQ_AddEvent         0      2
+       -> vss_seq_error        0      2
+       -> SEQ_AddEvent         0      2
+       -> vss_seq_error        0      2
+       -> SEQ_AddEvent         0      2
+       -> vss_seq_error        0      2
+     wal_tacho_change          0      2
+
+
+   Segment part sizes:
+
+     Function/Label   Bytes
+     --------------   -----
+     wal_tacho_change  124
+     wal_dbnc_inputs   654
+     _A_PIND             1
+     _A_PINB             1
+
+ 
+   2 bytes in segment ABSOLUTE
+ 778 bytes in segment CODE
+ 
+ 778 bytes of CODE memory
+   0 bytes of DATA memory (+ 2 bytes shared)
+
+Errors: none
+Warnings: 3

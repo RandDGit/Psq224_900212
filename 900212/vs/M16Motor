@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NavigatorWorkspace xmlns="x-schema:visualSTATE Navigator Workspace" Explanation="" Date="2004-12-07" Time="10:50:48"><SourceControl SccProvider="" SccName="" SccPath="." SccAuxPath=""/><Project File=".\M16Motor.vsp" Active="1" ActiveSystem="System1"><Signature Version="50" CheckSum="a039 734e 8877 0a90 1652 68f1"/><Validator File=".\M16Motor.vws"/><OSEK Enabled="0" OILFile="" ConfigApp="" APIType="0"/><Report File="..\ew\vssrc\vscoder.cre" Creator="0"/><Report File="..\M16Motor.rtf" Creator="1"/></Project></NavigatorWorkspace>

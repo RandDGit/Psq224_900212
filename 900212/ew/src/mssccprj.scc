@@ -1,0 +1,5 @@
+SCC = This is a Source Code Control file
+
+[tedit.mak]
+SCC_Aux_Path = "\\Oscar\Vss_Software\"
+SCC_Project_Name = "$/VState/ProjectM16Motor/ew/src", VEHBAAAA

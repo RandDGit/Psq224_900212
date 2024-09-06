@@ -1,0 +1,546 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+// IAR Atmel AVR C Compiler V3.10C/W32                 31/Jan/2006  09:32:41 /
+// Copyright 1996-2004 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\DeviceSetup.c    /
+//    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Deb /
+//                    ug\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\Li /
+//                    st\ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\  /
+//                    -z2 --no_cse --no_inline --no_code_motion              /
+//                    --no_cross_call --no_clustering --debug                /
+//                    -DENABLE_BIT_DEFINITIONS -e -I                         /
+//                    M:\VisualState\ProjectM16Motor\ew\src\ -I              /
+//                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I            /
+//                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I            /
+//                    "C:\Program Files\IAR Systems\Embedded Workbench       /
+//                    3.2\avr\INC\" -I "C:\Program Files\IAR                 /
+//                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"          /
+//                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\sr /
+//                    c\DeviceSetup.c                                        /
+//    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\DeviceSet /
+//                    up.s90                                                 /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME DeviceSetup
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        PUBLIC ADC_interrupt
+        PUBLIC ANA_COMP_interrupt
+        PUBLIC EE_RDY_interrupt
+        PUBLIC INT0_interrupt
+        PUBLIC INT1_interrupt
+        PUBLIC INT2_interrupt
+        PUBLIC SPI_STC_interrupt
+        PUBLIC SPM_RDY_interrupt
+        PUBLIC TIMER0_COMP_interrupt
+        PUBLIC TIMER0_OVF_interrupt
+        PUBLIC TIMER1_CAPT_interrupt
+        PUBLIC TIMER1_COMPA_interrupt
+        PUBLIC TIMER1_COMPB_interrupt
+        PUBLIC TIMER1_OVF_interrupt
+        PUBLIC TIMER2_COMP_interrupt
+        PUBLIC TIMER2_OVF_interrupt
+        PUBLIC TWI_interrupt
+        PUBLIC USART_RXC_interrupt
+        PUBLIC USART_TXC_interrupt
+        PUBLIC USART_UDRE_interrupt
+        PUBWEAK _A_TCNT0
+        PUBWEAK _A_UCSRA
+        PUBWEAK _A_UCSRB
+        PUBWEAK _A_UDR
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+
+        EXTERN uc_comm_flag
+        EXTERN uc_comm_idle
+        EXTERN uc_rx_chbyte
+        EXTERN uc_rx_stata
+        EXTERN uc_rx_statb
+        EXTERN uc_rxbuff
+        EXTERN uc_rxwrptr
+        EXTERN uc_tm0preset
+        EXTERN uc_tprim
+        EXTERN uc_tx_chsent
+
+// M:\VisualState\ProjectM16Motor\ew\src\DeviceSetup.c
+//    1 /*****************************************************************************
+//    2 * IAR visualSTATE Device Setup File. Specific to Atmel ATmega16 processor
+//    3 * Provide handle for each of the processor interrupt function;
+//    4 * with corresponding event trigger as appropriate.
+//    5 *****************************************************************************/
+//    6 
+//    7 /* *** include directives *** */
+//    8 
+//    9 #include <iom16.h>
+//   10 #include <inavr.h>
+//   11 #include "VSMain.h"
+//   12 
+//   13 #include "defs.h"			// Application (GENERAL) defs
+//   14 #include "globals.h"		// Application global data/variables
+//   15 
+//   16 
+//   17 /* ATMEGA16 Interrupts */
+//   18 /*
+//   19 #define    INT0_vect            (0x04)
+//   20 #define    INT1_vect            (0x08)
+//   21 #define    TIMER2_COMP_vect     (0x0C)
+//   22 #define    TIMER2_OVF_vect      (0x10)
+//   23 #define    TIMER1_CAPT_vect     (0x14)
+//   24 #define    TIMER1_COMPA_vect    (0x18)
+//   25 #define    TIMER1_COMPB_vect    (0x1C)
+//   26 #define    TIMER1_OVF_vect      (0x20)
+//   27 #define    TIMER0_OVF_vect      (0x24)
+//   28 #define    SPI_STC_vect         (0x28)
+//   29 #define    USART_RXC_vect       (0x2C)
+//   30 #define    USART_UDRE_vect      (0x30)
+//   31 #define    USART_TXC_vect       (0x34)
+//   32 #define    ADC_vect             (0x38)
+//   33 #define    EE_RDY_vect          (0x3C)
+//   34 #define    ANA_COMP_vect        (0x40)
+//   35 #define    TWI_vect             (0x44)
+//   36 #define    INT2_vect            (0x48)
+//   37 #define    TIMER0_COMP_vect     (0x4C)
+//   38 #define    SPM_RDY_vect         (0x50)
+//   39 */
+//   40 
+//   41 #pragma vector=INT0_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   42 __interrupt void INT0_interrupt( void ) 
+INT0_interrupt:
+//   43 {
+//   44 }
+	RETI
+//   45 #pragma vector=INT1_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   46 __interrupt void INT1_interrupt( void ) 
+INT1_interrupt:
+//   47 {
+//   48 }
+	RETI
+//   49 #pragma vector=TIMER2_COMP_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   50 __interrupt void TIMER2_COMP_interrupt( void ) 
+TIMER2_COMP_interrupt:
+//   51 {
+//   52 }
+	RETI
+//   53 #pragma vector=TIMER2_OVF_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   54 __interrupt void TIMER2_OVF_interrupt( void ) 
+TIMER2_OVF_interrupt:
+//   55 {
+//   56 }
+	RETI
+//   57 #pragma vector=TIMER1_CAPT_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   58 __interrupt void TIMER1_CAPT_interrupt( void ) 
+TIMER1_CAPT_interrupt:
+//   59 {
+//   60 }
+	RETI
+//   61 #pragma vector=TIMER1_COMPA_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   62 __interrupt void TIMER1_COMPA_interrupt( void ) 
+TIMER1_COMPA_interrupt:
+//   63 {
+//   64 }
+	RETI
+//   65 #pragma vector=TIMER1_COMPB_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   66 __interrupt void TIMER1_COMPB_interrupt( void ) 
+TIMER1_COMPB_interrupt:
+//   67 {
+//   68 }
+	RETI
+//   69 #pragma vector=TIMER1_OVF_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   70 __interrupt void TIMER1_OVF_interrupt( void ) 
+TIMER1_OVF_interrupt:
+//   71 {
+//   72 }
+	RETI
+//   73 #pragma vector=TIMER0_OVF_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   74 __interrupt void TIMER0_OVF_interrupt( void ) 
+TIMER0_OVF_interrupt:
+//   75 {
+	ST	-Y,R31
+	ST	-Y,R30
+	ST	-Y,R17
+	ST	-Y,R16
+	IN	R17,0x3F
+//   76   // reload overflow preset to determine overflow period: TCNT0 = mTCNT;
+//   77   TCNT0 = uc_tm0preset;
+	LDS	R16,uc_tm0preset
+	OUT	0x32,R16
+//   78   uc_tprim++;
+	LDI	R30,LOW(uc_tprim)
+	LDI	R31,(uc_tprim) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//   79 }
+	OUT	0x3F,R17
+	LD	R16,Y+
+	LD	R17,Y+
+	LD	R30,Y+
+	LD	R31,Y+
+	RETI
+//   80 #pragma vector=SPI_STC_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   81 __interrupt void SPI_STC_interrupt( void ) 
+SPI_STC_interrupt:
+//   82 {
+//   83 }
+	RETI
+//   84 #pragma vector=USART_RXC_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//   85 __interrupt void USART_RXC_interrupt( void ) 
+USART_RXC_interrupt:
+//   86 {
+	ST	-Y,R31
+	ST	-Y,R30
+	ST	-Y,R19
+	ST	-Y,R18
+	ST	-Y,R17
+	ST	-Y,R16
+	IN	R19,0x3F
+//   87   // following status & character in sequence must be used for UART Rx operation:
+//   88   uc_rx_stata = UCSRA;
+	IN	R16,0x0B
+	STS	uc_rx_stata,R16
+//   89   uc_rx_statb = UCSRB;
+	IN	R16,0x0A
+	STS	uc_rx_statb,R16
+//   90   uc_rx_chbyte = UDR;		// Read UART data register
+	IN	R16,0x0C
+	STS	uc_rx_chbyte,R16
+//   91 
+//   92   // Clear line_idle monitor (i.e. block transmit)
+//   93   uc_comm_idle = 0;
+	LDI	R16,0
+	STS	uc_comm_idle,R16
+//   94   uc_comm_flag &= ~WAL_COMM_IDLE;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xFB
+	ST	Z,R16
+//   95   
+//   96   // ATMEL Framing error 0x10 or Overrun 0x08
+//   97   if( uc_rx_stata & 0x18)
+	LDS	R16,uc_rx_stata
+	ANDI	R16,0x18
+	TST	R16
+	BREQ	??USART_RXC_interrupt_0
+//   98   {
+//   99     // ignore character (noise)
+//  100     uc_comm_flag |= WAL_COMM_DERR;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ORI	R16,0x02
+	ST	Z,R16
+	RJMP	??USART_RXC_interrupt_1
+//  101   }
+//  102   else
+//  103   {
+//  104     uc_rxbuff[uc_rxwrptr].status = uc_rx_statb;	/* uc_comm_9set = */
+??USART_RXC_interrupt_0:
+	LDS	R18,uc_rx_statb
+	LDI	R30,LOW(uc_rxbuff)
+	LDI	R31,(uc_rxbuff) >> 8
+	LDS	R16,uc_rxwrptr
+	LDI	R17,0
+	LSL	R16
+	ROL	R17
+	ADD	R30,R16
+	ADC	R31,R17
+	STD	Z+1,R18
+//  105     uc_rxbuff[uc_rxwrptr].charin = uc_rx_chbyte;/* uc_rx_chrecv = */
+	LDS	R18,uc_rx_chbyte
+	LDS	R16,uc_rxwrptr
+	LDI	R17,0
+	LSL	R16
+	ROL	R17
+	MOVW	R31 : R30,R17 : R16
+	SUBI	R30,LOW((-(uc_rxbuff) & 0xFFFF))
+	SBCI	R31,(-(uc_rxbuff) & 0xFFFF) >> 8
+	ST	Z,R18
+//  106     uc_rxwrptr++;
+	LDI	R30,LOW(uc_rxwrptr)
+	LDI	R31,(uc_rxwrptr) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  107     uc_rxwrptr &= (WAL_MAX_RXBUFF-1);
+	LDI	R30,LOW(uc_rxwrptr)
+	LDI	R31,(uc_rxwrptr) >> 8
+	LD	R16,Z
+	ANDI	R16,0x1F
+	ST	Z,R16
+//  108   }
+//  109 }
+??USART_RXC_interrupt_1:
+	OUT	0x3F,R19
+	LD	R16,Y+
+	LD	R17,Y+
+	LD	R18,Y+
+	LD	R19,Y+
+	LD	R30,Y+
+	LD	R31,Y+
+	RETI
+//  110 #pragma vector=USART_UDRE_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  111 __interrupt void USART_UDRE_interrupt( void ) 
+USART_UDRE_interrupt:
+//  112 {
+//  113 }
+	RETI
+//  114 #pragma vector=USART_TXC_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  115 __interrupt void USART_TXC_interrupt( void ) 
+USART_TXC_interrupt:
+//  116 {
+	ST	-Y,R16
+//  117   uc_tx_chsent = 1;	// used rather than Add_Event directly to minimize overhead
+	LDI	R16,1
+	STS	uc_tx_chsent,R16
+//  118 }
+	LD	R16,Y+
+	RETI
+//  119 
+//  120 #pragma vector=ADC_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  121 __interrupt void ADC_interrupt( void ) 
+ADC_interrupt:
+//  122 {
+//  123 }
+	RETI
+//  124 #pragma vector=EE_RDY_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  125 __interrupt void EE_RDY_interrupt( void ) 
+EE_RDY_interrupt:
+//  126 {
+//  127 }
+	RETI
+//  128 #pragma vector=ANA_COMP_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  129 __interrupt void ANA_COMP_interrupt( void ) 
+ANA_COMP_interrupt:
+//  130 {
+//  131 }
+	RETI
+//  132 #pragma vector=TWI_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  133 __interrupt void TWI_interrupt( void ) 
+TWI_interrupt:
+//  134 {
+//  135 }
+	RETI
+//  136 #pragma vector=INT2_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  137 __interrupt void INT2_interrupt( void ) 
+INT2_interrupt:
+//  138 {
+//  139 }
+	RETI
+//  140 #pragma vector=TIMER0_COMP_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  141 __interrupt void TIMER0_COMP_interrupt( void ) 
+TIMER0_COMP_interrupt:
+//  142 {
+//  143 }
+	RETI
+//  144 #pragma vector=SPM_RDY_vect
+
+        RSEG CODE:CODE:NOROOT(1)
+//  145 __interrupt void SPM_RDY_interrupt( void ) 
+SPM_RDY_interrupt:
+//  146 {
+//  147 }
+	RETI
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 4
+	JMP	INT0_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 8
+	JMP	INT1_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 12
+	JMP	TIMER2_COMP_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 16
+	JMP	TIMER2_OVF_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 20
+	JMP	TIMER1_CAPT_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 24
+	JMP	TIMER1_COMPA_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 28
+	JMP	TIMER1_COMPB_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 32
+	JMP	TIMER1_OVF_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 36
+	JMP	TIMER0_OVF_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 40
+	JMP	SPI_STC_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 44
+	JMP	USART_RXC_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 48
+	JMP	USART_UDRE_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 52
+	JMP	USART_TXC_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 56
+	JMP	ADC_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 60
+	JMP	EE_RDY_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 64
+	JMP	ANA_COMP_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 68
+	JMP	TWI_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 72
+	JMP	INT2_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 76
+	JMP	TIMER0_COMP_interrupt
+
+        COMMON INTVEC:CODE:ROOT(1)
+        ORG 80
+	JMP	SPM_RDY_interrupt
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02aH
+// union <unnamed> volatile __io _A_UCSRB
+_A_UCSRB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02bH
+// union <unnamed> volatile __io _A_UCSRA
+_A_UCSRA:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02cH
+// union <unnamed> volatile __io _A_UDR
+_A_UDR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,052H
+// union <unnamed> volatile __io _A_TCNT0
+_A_TCNT0:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01cH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01dH
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01eH
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EEARH:
+
+        END
+//  148 
+//  149 
+//  150 
+//  151 #if (VS_REALLINKMODE == 1)
+//  152 /* Interrupt Service Routine (ISR) for UART Receive. */
+//  153 #pragma vector=UART_RX_vect
+//  154 __interrupt void UART_RX_interrupt(void) 
+//  155 {
+//  156   while (USR & (1 << RXC)) 
+//  157     VS_RealLinkReceive((unsigned char)UDR);
+//  158 }
+//  159 
+//  160 void RealLinkCommInit(void)
+//  161 {
+//  162   /* If using a 4MHz crystal, set UBBR to 12. */
+//  163   /* Set the baudrate to 19,200 bps using a 3.69MHz clock. */
+//  164   UBRR = 11; 	
+//  165 
+//  166   /* Enable UART receiver and transmitter, and receive interrupt */
+//  167   UCR = ((1<<RXCIE) | (1<<RXEN) | (1<<TXEN));
+//  168 }
+//  169 
+//  170 void RealLinkReset( void ) 
+//  171 {
+//  172 }
+//  173 
+//  174 void RealLinkTransmit(unsigned char data)
+//  175 {
+//  176   /* Start transmittion */
+//  177   UDR = data; 			        
+//  178   /* Wait for empty transmit buffer */
+//  179   while (!(USR & (1<<UDRE)));
+//  180 }
+//  181 #endif
+// 
+//   4 bytes in segment ABSOLUTE
+// 236 bytes in segment CODE
+//  80 bytes in segment INTVEC
+// 
+// 316 bytes of CODE memory
+//   0 bytes of DATA memory (+ 4 bytes shared)
+//
+//Errors: none
+//Warnings: 3

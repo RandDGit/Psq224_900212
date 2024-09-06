@@ -1,0 +1,210 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:33:07 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\timers.c          #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \timers.c                                               #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\timers.lst #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\timers.r90  #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\timers.c
+      1          /* Centralise all timer functions (as timer functions tend to be critical) */
+      2          
+      3          #include <iom16.h>		 	// Atmel up definitions
+      4          #include <inavr.h>			// AVR intrinsic functions
+      5          #include "VSMain.h"			// VisualState definitions (further includes)
+      6          
+      7          #include "defs.h"			// Application (GENERAL) defs
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",122  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",131  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",137  Warning[Pe375]: 
+          declaration requires a typedef name
+      8          #include "globals.h"		// Application global data/variables
+      9          
+     10          
+     11          /* Timer routines */
+     12          void wal_tc_tick( void);
+     13          void wal_tc_stall( void);
+     14          void wal_timer_counter( void);
+     15          
+     16          /* use structure wdef_ctimer to provide timer-counter functions */
+     17          /* ws_ctimer[] is the available counter timer array */
+     18          /* maximum allowable functions according to WDEF_MAX_TIMERS */
+     19          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     20          void wal_tc_tick( void)
+   \                     wal_tc_tick:
+     21          {
+     22          // generate VSS SEQ tick function (periodic function)
+     23          }
+   \   00000000   9508                       RET
+     24          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     25          void wal_tc_stall( void)
+   \                     wal_tc_stall:
+     26          {
+     27          // generate VSS SEQ stall function
+     28          }
+   \   00000000   9508                       RET
+     29          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     30          void wal_timer_counter( void)
+   \                     wal_timer_counter:
+     31          {
+   \   00000000   93BA                       ST      -Y,R27
+   \   00000002   93AA                       ST      -Y,R26
+     32          // basic application counter timer using struct wdef_ctimer
+     33          // unsigned char used;
+     34          // unsigned int count;
+     35          // void (*exp_routine)();
+     36          
+     37          	wsp_tc = ws_ctimer;		// &ws_ctimer[0];
+   \   00000004   ....                       LDI     R16,LOW(ws_ctimer)
+   \   00000006   ....                       LDI     R17,(ws_ctimer) >> 8
+   \   00000008   ....                       LDI     R30,LOW(wsp_tc)
+   \   0000000A   ....                       LDI     R31,(wsp_tc) >> 8
+   \   0000000C   8300                       ST      Z,R16
+   \   0000000E   8311                       STD     Z+1,R17
+     38          
+     39          	if( wsp_tc->exp_routine != NULL)
+   \   00000010   ....                       LDI     R26,LOW(wsp_tc)
+   \   00000012   ....                       LDI     R27,(wsp_tc) >> 8
+   \   00000014   91ED                       LD      R30,X+
+   \   00000016   91FC                       LD      R31,X
+   \   00000018   8123                       LDD     R18,Z+3
+   \   0000001A   8134                       LDD     R19,Z+4
+   \   0000001C   E000                       LDI     R16,0
+   \   0000001E   E010                       LDI     R17,0
+   \   00000020   1720                       CP      R18,R16
+   \   00000022   0731                       CPC     R19,R17
+   \   00000024   F189                       BREQ    ??wal_timer_counter_0
+     40          	{
+     41          		if( wsp_tc->used == 1)
+   \   00000026   ....                       LDI     R26,LOW(wsp_tc)
+   \   00000028   ....                       LDI     R27,(wsp_tc) >> 8
+   \   0000002A   91ED                       LD      R30,X+
+   \   0000002C   91FC                       LD      R31,X
+   \   0000002E   8100                       LD      R16,Z
+   \   00000030   3001                       CPI     R16,1
+   \   00000032   F511                       BRNE    ??wal_timer_counter_1
+     42          		{
+     43          			// tc active
+     44          			if( wsp_tc->count != 0)
+   \   00000034   ....                       LDI     R26,LOW(wsp_tc)
+   \   00000036   ....                       LDI     R27,(wsp_tc) >> 8
+   \   00000038   91ED                       LD      R30,X+
+   \   0000003A   91FC                       LD      R31,X
+   \   0000003C   8101                       LDD     R16,Z+1
+   \   0000003E   8112                       LDD     R17,Z+2
+   \   00000040   2B01                       OR      R16,R17
+   \   00000042   F0D1                       BREQ    ??wal_timer_counter_1
+     45          			{
+     46          				wsp_tc->count--;
+   \   00000044   ....                       LDI     R26,LOW(wsp_tc)
+   \   00000046   ....                       LDI     R27,(wsp_tc) >> 8
+   \   00000048   91ED                       LD      R30,X+
+   \   0000004A   91FC                       LD      R31,X
+   \   0000004C   8101                       LDD     R16,Z+1
+   \   0000004E   8112                       LDD     R17,Z+2
+   \   00000050   5001                       SUBI    R16,1
+   \   00000052   4010                       SBCI    R17,0
+   \   00000054   8301                       STD     Z+1,R16
+   \   00000056   8312                       STD     Z+2,R17
+     47          				if( wsp_tc->count == 0)
+   \   00000058   ....                       LDI     R26,LOW(wsp_tc)
+   \   0000005A   ....                       LDI     R27,(wsp_tc) >> 8
+   \   0000005C   91ED                       LD      R30,X+
+   \   0000005E   91FC                       LD      R31,X
+   \   00000060   8101                       LDD     R16,Z+1
+   \   00000062   8112                       LDD     R17,Z+2
+   \   00000064   2B01                       OR      R16,R17
+   \   00000066   F441                       BRNE    ??wal_timer_counter_1
+     48          				{
+     49          					// call expiry routine
+     50          					(*wsp_tc->exp_routine)();
+   \   00000068   ....                       LDI     R26,LOW(wsp_tc)
+   \   0000006A   ....                       LDI     R27,(wsp_tc) >> 8
+   \   0000006C   91ED                       LD      R30,X+
+   \   0000006E   91FC                       LD      R31,X
+   \   00000070   8103                       LDD     R16,Z+3
+   \   00000072   8114                       LDD     R17,Z+4
+   \   00000074   01F8                       MOVW    R31 : R30,R17 : R16
+   \   00000076   9509                       ICALL
+     51          				}
+     52          			}
+     53          		}
+     54          		wsp_tc++;
+   \                     ??wal_timer_counter_1:
+   \   00000078   ....                       LDI     R30,LOW(wsp_tc)
+   \   0000007A   ....                       LDI     R31,(wsp_tc) >> 8
+   \   0000007C   8100                       LD      R16,Z
+   \   0000007E   8111                       LDD     R17,Z+1
+   \   00000080   5F0B                       SUBI    R16,251
+   \   00000082   4F1F                       SBCI    R17,255
+   \   00000084   8300                       ST      Z,R16
+   \   00000086   8311                       STD     Z+1,R17
+     55          	}
+     56          }
+   \                     ??wal_timer_counter_0:
+   \   00000088   91A9                       LD      R26,Y+
+   \   0000008A   91B9                       LD      R27,Y+
+   \   0000008C   9508                       RET
+     57          
+     58          
+
+   Maximum stack usage in bytes:
+
+     Function             CSTACK RSTACK
+     --------             ------ ------
+     wal_tc_stall             0      2
+     wal_tc_tick              0      2
+     wal_timer_counter        2      2
+       ->   Indirect call     2      2
+
+
+   Segment part sizes:
+
+     Function/Label    Bytes
+     --------------    -----
+     wal_tc_tick          2
+     wal_tc_stall         2
+     wal_timer_counter  142
+
+ 
+ 146 bytes in segment CODE
+ 
+ 146 bytes of CODE memory
+
+Errors: none
+Warnings: 3

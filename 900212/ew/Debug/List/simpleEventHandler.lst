@@ -1,0 +1,298 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:33:05 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\simpleEventHandle #
+#                    r.c                                                     #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \simpleEventHandler.c                                   #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\simpleEven #
+#                    tHandler.lst                                            #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\simpleEvent #
+#                    Handler.r90                                             #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\simpleEventHandler.c
+      1          /*****************************************************************************
+      2          * IAR visualSTATE Static Event Handler Source File (sample code)
+      3          *
+      4          * The file implements an event queue with a static size, specified by the
+      5          * value of the macro EVENT_QUEUE_SIZE.
+      6          *
+      7          * Whenever the queue runs full (by a call to SEQ_AddEvent), the event is ig-
+      8          * nored and an error is returned.
+      9          *
+     10          * A function is provided for initializing the queue, as well as functions for
+     11          * adding and retrieving events from the queue. See the associated header file
+     12          * for descriptions and use of those functions.
+     13          *
+     14          * The queue is a static variable in this file. If multiple queues are to be
+     15          * used, the static variable must be removed and the queue handling functions
+     16          * must be modified to take a parameter identifying a particular queue, for
+     17          * example a pointer to a queue.
+     18          *****************************************************************************/
+     19          
+     20          
+     21          
+     22          /* *** include directives *** */
+     23          
+     24          #include "simpleEventHandler.h"
+     25          
+     26          
+     27          
+     28          /* *** macro definitions *** */
+     29          
+     30          /** Event queue size. Defines the size of the event queue. */
+     31          #ifndef EVENT_QUEUE_SIZE
+     32          #define EVENT_QUEUE_SIZE 20
+     33          #endif
+     34          
+     35          
+     36          
+     37          /* *** type definitions *** */
+     38          
+     39          /** Event queue size type. Defines the type for indexes into the event queue.
+     40              The type must be an unsigned ordinal type, capable of holding values in
+     41              the range [0;EVENT_QUEUE_SIZE[. */
+     42          #if (EVENT_QUEUE_SIZE <= 0x0100)
+     43          typedef VS_UINT8 SEQ_SIZE_TYPE;
+     44          #elif (EVENT_QUEUE_SIZE <= 0x010000)
+     45          typedef VS_UINT16 SEQ_SIZE_TYPE;
+     46          #elif (EVENT_QUEUE_SIZE <= 0x01000000)
+     47          typedef VS_UINT32 SEQ_SIZE_TYPE;
+     48          #else
+     49          #error Cannot determine type of SEQ_SIZE_TYPE
+     50          #endif
+     51          
+     52          
+     53          
+     54          /** Event queue type. Defines the internal structure of the event queue. */
+     55          struct StaticEventQueue
+     56          {
+     57            /** Event queue. The array stores events in the queue. */
+     58            SEM_EVENT_TYPE queue[EVENT_QUEUE_SIZE];
+     59          
+     60            /** Front index into the queue. The front index specifies the index into the
+     61                array, where the next event will be retrieved from. */
+     62            SEQ_SIZE_TYPE front;
+     63          
+     64            /** Back index into the queue. The back index specifies the index into the
+     65                array, where the next event will be stored. */
+     66            SEQ_SIZE_TYPE back;
+     67          };
+     68          typedef struct StaticEventQueue StaticEventQueue;
+     69          
+     70          
+     71          
+     72          /* *** variable definitions *** */
+     73          
+     74          /** The event queue. If more than one event queue is needed (for example when
+     75              a visualSTATE project contains more than one system), the event queue must
+     76              be a parameter for all event queue handling functions instead of being a
+     77              static variable. */
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     78          static StaticEventQueue eventQueue;
+   \                     eventQueue:
+   \   00000000                              DS 22
+     79          
+     80          
+     81          
+     82          /* *** function definitions *** */
+     83          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     84          void SEQ_Initialize(void)
+   \                     SEQ_Initialize:
+     85          {
+     86            SEQ_Clear();
+   \   00000000   ....                       RCALL   SEQ_Clear
+     87          }
+   \   00000002   9508                       RET
+     88          
+     89          
+     90          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     91          UCC_TYPE SEQ_AddEvent(SEM_EVENT_TYPE event)
+   \                     SEQ_AddEvent:
+     92          {
+   \   00000000   2F68                       MOV     R22,R24
+   \   00000002   2F80                       MOV     R24,R16
+     93            /* Test whether the queue is full. */
+     94            if (eventQueue.front == eventQueue.back + 1)
+   \   00000004   9120....                   LDS     R18,(eventQueue + 20)
+   \   00000008   E030                       LDI     R19,0
+   \   0000000A   9100....                   LDS     R16,(eventQueue + 21)
+   \   0000000E   E010                       LDI     R17,0
+   \   00000010   5F0F                       SUBI    R16,255
+   \   00000012   4F1F                       SBCI    R17,255
+   \   00000014   1720                       CP      R18,R16
+   \   00000016   0731                       CPC     R19,R17
+   \   00000018   F411                       BRNE    ??SEQ_AddEvent_0
+     95              return UCC_QUEUE_FULL;
+   \   0000001A   EF0D                       LDI     R16,253
+   \   0000001C   C013                       RJMP    ??SEQ_AddEvent_1
+     96          
+     97            /* Store the event in the queue. */
+     98            eventQueue.queue[eventQueue.back] = event;
+   \                     ??SEQ_AddEvent_0:
+   \   0000001E   9100....                   LDS     R16,(eventQueue + 21)
+   \   00000022   E010                       LDI     R17,0
+   \   00000024   01F8                       MOVW    R31 : R30,R17 : R16
+   \   00000026   ....                       SUBI    R30,LOW((-(eventQueue) & 0xFFFF))
+   \   00000028   ....                       SBCI    R31,(-(eventQueue) & 0xFFFF) >> 8
+   \   0000002A   8380                       ST      Z,R24
+     99          
+    100            /* Increment the back queue index. */
+    101            eventQueue.back = (SEQ_SIZE_TYPE) ((eventQueue.back + 1) % EVENT_QUEUE_SIZE);
+   \   0000002C   9100....                   LDS     R16,(eventQueue + 21)
+   \   00000030   E010                       LDI     R17,0
+   \   00000032   5F0F                       SUBI    R16,255
+   \   00000034   4F1F                       SBCI    R17,255
+   \   00000036   E144                       LDI     R20,20
+   \   00000038   E050                       LDI     R21,0
+   \   0000003A   ........                   CALL    ?SS_DIVMOD_L02
+   \   0000003E   9340....                   STS     (eventQueue + 21),R20
+    102          
+    103            return UCC_OK;
+   \   00000042   E000                       LDI     R16,0
+   \                     ??SEQ_AddEvent_1:
+   \   00000044   2F86                       MOV     R24,R22
+   \   00000046   9508                       RET
+    104          }
+    105          
+    106          
+    107          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    108          UCC_TYPE SEQ_RetrieveEvent(SEM_EVENT_TYPE* pEvent)
+   \                     SEQ_RetrieveEvent:
+    109          {
+   \   00000000   2F39                       MOV     R19,R25
+   \   00000002   2F28                       MOV     R18,R24
+   \   00000004   01C8                       MOVW    R25 : R24,R17 : R16
+    110            /* Test whether the queue is empty. */
+    111            if (eventQueue.front == eventQueue.back)
+   \   00000006   9100....                   LDS     R16,(eventQueue + 20)
+   \   0000000A   9110....                   LDS     R17,(eventQueue + 21)
+   \   0000000E   1701                       CP      R16,R17
+   \   00000010   F411                       BRNE    ??SEQ_RetrieveEvent_0
+    112              return UCC_QUEUE_EMPTY;
+   \   00000012   EF0E                       LDI     R16,254
+   \   00000014   C015                       RJMP    ??SEQ_RetrieveEvent_1
+    113          
+    114            /* Retrieve event from queue. */
+    115            *pEvent = eventQueue.queue[eventQueue.front];
+   \                     ??SEQ_RetrieveEvent_0:
+   \   00000016   9100....                   LDS     R16,(eventQueue + 20)
+   \   0000001A   E010                       LDI     R17,0
+   \   0000001C   01F8                       MOVW    R31 : R30,R17 : R16
+   \   0000001E   ....                       SUBI    R30,LOW((-(eventQueue) & 0xFFFF))
+   \   00000020   ....                       SBCI    R31,(-(eventQueue) & 0xFFFF) >> 8
+   \   00000022   8100                       LD      R16,Z
+   \   00000024   01FC                       MOVW    R31 : R30,R25 : R24
+   \   00000026   8300                       ST      Z,R16
+    116           
+    117            /* Increment the front queue index. */
+    118            eventQueue.front = (SEQ_SIZE_TYPE) ((eventQueue.front + 1) % EVENT_QUEUE_SIZE);
+   \   00000028   9100....                   LDS     R16,(eventQueue + 20)
+   \   0000002C   E010                       LDI     R17,0
+   \   0000002E   5F0F                       SUBI    R16,255
+   \   00000030   4F1F                       SBCI    R17,255
+   \   00000032   E144                       LDI     R20,20
+   \   00000034   E050                       LDI     R21,0
+   \   00000036   ........                   CALL    ?SS_DIVMOD_L02
+   \   0000003A   9340....                   STS     (eventQueue + 20),R20
+    119          
+    120            return UCC_OK;
+   \   0000003E   E000                       LDI     R16,0
+   \                     ??SEQ_RetrieveEvent_1:
+   \   00000040   2F82                       MOV     R24,R18
+   \   00000042   2F93                       MOV     R25,R19
+   \   00000044   9508                       RET
+    121          }
+    122          
+    123          
+    124          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    125          void SEQ_Clear(void)
+   \                     SEQ_Clear:
+    126          {
+    127            eventQueue.front = eventQueue.back = 0;
+   \   00000000   E000                       LDI     R16,0
+   \   00000002   9300....                   STS     (eventQueue + 21),R16
+   \   00000006   9300....                   STS     (eventQueue + 20),R16
+    128          }
+   \   0000000A   9508                       RET
+    129          
+    130          
+    131          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    132          VS_BOOL SEQ_EventPendingP(void)
+   \                     SEQ_EventPendingP:
+    133          {
+    134            return (VS_BOOL) (eventQueue.front != eventQueue.back);
+   \   00000000   9100....                   LDS     R16,(eventQueue + 20)
+   \   00000004   9110....                   LDS     R17,(eventQueue + 21)
+   \   00000008   1701                       CP      R16,R17
+   \   0000000A   F011                       BREQ    ??SEQ_EventPendingP_0
+   \   0000000C   E001                       LDI     R16,1
+   \   0000000E   9508                       RET
+   \                     ??SEQ_EventPendingP_0:
+   \   00000010   E000                       LDI     R16,0
+   \   00000012   9508                       RET
+    135          }
+
+   Maximum stack usage in bytes:
+
+     Function          CSTACK RSTACK
+     --------          ------ ------
+     SEQ_AddEvent          1      4
+     SEQ_Clear             0      2
+     SEQ_EventPendingP     0      2
+     SEQ_Initialize        0      2
+       -> SEQ_Clear        0      2
+     SEQ_RetrieveEvent     2      4
+
+
+   Segment part sizes:
+
+     Function/Label    Bytes
+     --------------    -----
+     eventQueue          22
+     SEQ_Initialize       4
+     SEQ_AddEvent        72
+     SEQ_RetrieveEvent   70
+     SEQ_Clear           12
+     SEQ_EventPendingP   20
+      Others              6
+
+ 
+ 178 bytes in segment CODE
+   6 bytes in segment INITTAB
+  22 bytes in segment NEAR_Z
+ 
+ 178 bytes of CODE memory (+ 6 bytes shared)
+  22 bytes of DATA memory
+
+Errors: none
+Warnings: none

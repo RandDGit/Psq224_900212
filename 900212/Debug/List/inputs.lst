@@ -1,0 +1,383 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  01/Oct/2012  09:22:53 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\inputs.c                           #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\inputs.c                           #
+#    List file    =  C:\hmhome\900212\Debug\List\inputs.lst                  #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\inputs.r90                   #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\inputs.c
+      1          /* UserLoop = Application, excluding State Machine */
+      2          
+      3          #include "iom16.h"		 	// Atmel up definitions
+      4          #include "inavr.h"			// AVR intrinsic functions
+      5          #include "VSMain.h"			// VisualState definitions (further includes)
+      6          
+      7          #include "defs.h"			// Application (GENERAL) defs
+      8          #include "globals.h"		        // Application global data/variables
+      9          
+     10          void vss_seq_error( void);
+     11          void wal_dbnc_inputs( void);
+     12          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+     13          
+     14          unsigned char wal_tacho_change( void);
+     15          
+     16          unsigned char wal_tacho_change( void)
+     17          {
+     18          // return 1 (true) if tacho polarity changes
+     19          // use WAL_IN_ENC as macro form of input pin
+     20          
+     21            if( WAL_IN_ENC == 1)
+     22            {
+     23              if( dblead_ip_enc != 0)
+     24              {
+     25                dblead_ip_enc--;
+     26                if( dblead_ip_enc == 0)
+     27                {
+     28                  val_ip_enc = 1;
+     29                  dbtail_ip_enc = WAL_DBNC_IN_ENC;		// re-load trailing edge dbnc
+     30                  return 1;
+     31                }
+     32              }
+     33              if( dblead_ip_enc == 0)
+     34              {
+     35                dbtail_ip_enc = WAL_DBNC_IN_ENC;		// re-load trailing edge dbnc
+     36              }
+     37              return 0;
+     38            }
+     39          
+     40            // else WAL_IN_ENC == 0 
+     41          
+     42            if( dbtail_ip_enc != 0)
+     43            {
+     44              dbtail_ip_enc--;
+     45              if( !dbtail_ip_enc)
+     46              {
+     47                // IN_ENC has gone low (trailing edge)
+     48                val_ip_enc = 0;
+     49                dblead_ip_enc = WAL_DBNC_IN_ENC;		// re-load leading edge dbnc
+     50                return 1;
+     51              }
+     52            }
+     53            
+     54            if( dbtail_ip_enc == 0)
+     55            {
+     56              dblead_ip_enc = WAL_DBNC_IN_ENC;		// re-load leading edge dbnc
+     57            }
+     58            return 0;
+     59                
+     60          }
+     61          
+     62          void wal_dbnc_inputs( void)
+     63          {
+     64          // Debounce all inputs and set event and/or static condition accordingly:
+     65          // This routine is called ea. "0.5" milliseconds.
+     66          // A debounce value 2-255 = 1-127 milliseconds.
+     67          // Each input requires Leading (L) and Trailing (T) debounce value.
+     68          
+     69          // Handle Following Inputs:
+     70          // IN_ENC	Tacho (motor) input PB.1 (T1)
+     71          // IN_TRG	Trigger input PB.2 (INT2)
+     72          // IN_HOM	Home switch PD.2 (INT0)
+     73          // IN_LIM	Limit switch PD.3 (INT1)
+     74          // IN_SW1	Button PD.6 (ICP)
+     75          
+     76          // IN_ENC	Tacho (motor) input PB.1 (T1)
+     77          // NB. Max RPM 3600 = 60 RPS 4 ppr = 8 edges = 480 transitions/sec = 2msec (max dbnc = 3)
+     78          
+     79          uc_read_portb = PINB;
+     80          uc_read_portd = PIND;
+     81          
+     82          // WAL_IN_ENC
+     83          // if( (uc_read_portb & (1<<PINB1)) == ( 1<<PINB1) )
+     84          // approximately 4msec per tacho pulse
+     85          
+     86            if( wal_tacho_change() )
+     87            {
+     88              uc_stall_tacin++;
+     89              
+     90              // V1.7 16JAN06: Ignore whilst 'power-up'
+     91              if( uc_settlepower == 0)
+     92              {
+     93                if( WAL_READ_DIR == 0)
+     94                {
+     95                  if( ui_axis_pos > 0)
+     96                  {
+     97                    ui_axis_pos--;
+     98                  }
+     99                }
+    100                if( WAL_READ_DIR == 1)
+    101                {
+    102                  ui_axis_pos++;
+    103                }
+    104                if( SEQ_AddEvent( E_AxisTacho) != UCC_OK )
+    105                {
+    106                  vss_seq_error();
+    107                }
+    108                if( uc_joggle_tachs)
+    109                {
+    110                  uc_joggle_tachs--;
+    111                }
+    112                if( uc_joggle_on)
+    113                {
+    114                  uc_joggle_trap++;
+    115                }
+    116              }
+    117            }
+    118                
+    119              
+    120          // IN_TRG	Trigger input PB.2 (INT2) (has no relevance except addressing)
+    121          // WAL_IN_TRG
+    122          // if( uc_read_portb & (1<<PINB2))
+    123          
+    124          if( WAL_IN_TRG == 1)
+    125          {
+    126            if( dblead_ip_trg == 0)
+    127              dbtail_ip_trg = WAL_DBNC_IN_TRG;		// re-load trailing edge dbnc
+    128            
+    129          	if( dblead_ip_trg)
+    130          	{
+    131          		dblead_ip_trg--;
+    132          		if( !dblead_ip_trg)
+    133          		{
+    134          			// IN_TRG has gone high (leading edge)
+    135          			val_ip_trg = 1;
+    136          			dbtail_ip_trg = WAL_DBNC_IN_TRG;		// re-load trailing edge dbnc
+    137          		}
+    138          	}
+    139          }
+    140          
+    141          if( WAL_IN_TRG == 0)
+    142          {
+    143            if( dbtail_ip_trg == 0)
+    144              dblead_ip_trg = WAL_DBNC_IN_TRG;		// re-load leading edge dbnc
+    145              
+    146            if( dbtail_ip_trg)
+    147            {
+    148              dbtail_ip_trg--;
+    149              if( !dbtail_ip_trg)
+    150              {
+    151                    // IN_TRG has gone low (trailing edge)
+    152                    // ACTIVE CONDITION
+    153                    val_ip_trg = 0;
+    154                    dblead_ip_trg = WAL_DBNC_IN_TRG;		// re-load leading edge dbnc
+    155              }
+    156            }
+    157          }
+    158          
+    159          // IN_HOM, WAL_IN_HOM	Home switch PD.2 (INT0)
+    160          // if( uc_read_portd & (1<<PIND2))
+    161          if( WAL_IN_HOM == 1)
+    162          {
+    163          	if( dblead_ip_hom == 0)
+    164          		dbtail_ip_hom = WAL_DBNC_IN_HOM;		// re-load trailing edge dbnc
+    165          		
+    166          	if( dblead_ip_hom)
+    167          	{
+    168          		dblead_ip_hom--;
+    169          		if( !dblead_ip_hom)
+    170          		{
+    171          			// IN_HOM has gone high (leading edge)
+    172          			// ACTIVE CONDITION
+    173          			val_ip_hom = 1;
+    174          			dbtail_ip_hom = WAL_DBNC_IN_HOM;		// re-load trailing edge dbnc
+    175          			if( SEQ_AddEvent( E_AxisHome) != UCC_OK )
+    176          			{
+    177          				vss_seq_error();
+    178          			}
+    179          		}
+    180          	}
+    181          }
+    182          
+    183          if( WAL_IN_HOM == 0)
+    184          {
+    185          	if( dbtail_ip_hom == 0)
+    186          		dblead_ip_hom = WAL_DBNC_IN_HOM;		// re-load leading edge dbnc
+    187          		
+    188          	if( dbtail_ip_hom)
+    189          	{
+    190          		dbtail_ip_hom--;
+    191          		if( !dbtail_ip_hom)
+    192          		{
+    193          			// IN_HOM has gone low (trailing edge)
+    194          			val_ip_hom = 0;
+    195          			dblead_ip_hom = WAL_DBNC_IN_HOM;		// re-load leading edge dbnc
+    196          			// When HOME SWITCH becomes inactive = End of Home Sequence
+    197          			if( SEQ_AddEvent( E_AxisZeroed) != UCC_OK )
+    198          			{
+    199          				vss_seq_error();
+    200          			}
+    201          			
+    202          			// V1.6 12JAN06: only allow 'zero' if 'motor-on'
+    203          			if( uc_motoron)
+    204          			{
+    205                                    // Reset axis position value:
+    206                                    // NB. Could be done as part of reaction to E_AxisZeroed, but:
+    207                                    // i.  further tacho events will be 'lost'
+    208                                    // ii. additional 'action' function required
+    209                                    ui_axis_pos = (unsigned int) 0;
+    210                                    // V1.3 27JUN05: reset error flag:
+    211                                    uc_axis_err = 0;
+    212                                    wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+    213                                  }
+    214          			
+    215          		}
+    216          	}
+    217          }
+    218          
+    219          // IN_LIM, WAL_IN_LIM	Limit switch PD.3 (INT1) 
+    220          // if( uc_read_portd & (1<<PIND3))
+    221          
+    222          if( WAL_IN_LIM == 1)
+    223          {
+    224              if( dblead_ip_lim == 0)
+    225                dbtail_ip_lim = WAL_DBNC_IN_LIM;		// re-load trailing edge dbnc
+    226          	
+    227          	if( dblead_ip_lim)
+    228          	{
+    229          		dblead_ip_lim--;
+    230          		if( !dblead_ip_lim)
+    231          		{
+    232          			// IN_LIM has gone high (leading edge)
+    233          			// ACTIVE CONDITION
+    234          			val_ip_lim = 1;
+    235          			dbtail_ip_lim = WAL_DBNC_IN_LIM;		// re-load trailing edge dbnc
+    236          			if( SEQ_AddEvent( E_AxisLimit) != UCC_OK )
+    237          			{
+    238          				vss_seq_error();
+    239          			}
+    240          			// V2.4: record error:
+    241                      uc_axis_err = 4;
+    242                      // store in table..
+    243                      wal_record_axis_err();
+    244          		}
+    245          	}
+    246          }
+    247          
+    248          if( WAL_IN_LIM == 0)
+    249          {
+    250          	if( dbtail_ip_lim == 0)
+    251          		dblead_ip_lim = WAL_DBNC_IN_LIM;		// re-load leading edge dbnc
+    252          	if( dbtail_ip_lim)
+    253          	{
+    254          		dbtail_ip_lim--;
+    255          		if( !dbtail_ip_lim)
+    256          		{
+    257          			// IN_LIM has gone low (trailing edge)
+    258          			val_ip_lim = 0;
+    259          			dblead_ip_lim = WAL_DBNC_IN_LIM;		// re-load leading edge dbnc
+    260          		}
+    261          	}
+    262          }
+    263          
+    264            // IN_SW1	Button PD.6 (ICP)
+    265            // pin_ip_sw1 = ( uc_read_portd & (1<<PIND6))? 1 : 0;
+    266            // switch( pin_ip_sw1)
+    267            if( WAL_IN_SW1)
+    268            {
+    269              if( dblead_ip_sw1 == 0)
+    270                dbtail_ip_sw1 = WAL_DBNC_IN_SW1;	// re-load trailing edge dbnc
+    271              else
+    272              {
+    273          	dblead_ip_sw1--;
+    274          	if( dblead_ip_sw1 == 0)
+    275          	{
+    276          		// IN_SW1 has gone high (leading edge)
+    277          		val_ip_sw1 = 0;
+    278          		dbtail_ip_sw1 = WAL_DBNC_IN_SW1;// re-load trailing edge dbnc
+    279          	}
+    280              }
+    281            }
+    282            else
+    283            {
+    284              if( dbtail_ip_sw1 == 0)
+    285                dblead_ip_sw1 = WAL_DBNC_IN_SW1;	// re-load leading edge dbnc
+    286              else
+    287              {
+    288                dbtail_ip_sw1--;
+    289                if( dbtail_ip_sw1 == 0)
+    290                {
+    291                  // IN_SW1 has gone low (trailing edge)
+    292                  val_ip_sw1 = 1;
+    293                  dblead_ip_sw1 = WAL_DBNC_IN_SW1;	// re-load leading edge dbnc
+    294                  // REVIEW: appears to be problem regarding same event
+    295                  // for both entry and exit from single state:
+    296                  // use uc_axis_vss (idle == 0)
+    297                  if( uc_axis_vss == 0)
+    298                  {
+    299          					if (uc_readdr_timer == 0)
+    300          					{
+    301          						if( SEQ_AddEvent( E_Button) != UCC_OK )
+    302          						{
+    303          							vss_seq_error();
+    304          						}
+    305          					}
+    306                  }
+    307                  else
+    308                  {
+    309                    if( SEQ_AddEvent( E_AxisStop) != UCC_OK )
+    310                    {
+    311                      vss_seq_error();
+    312                    }
+    313                  }
+    314                }
+    315              }
+    316            }
+    317          
+    318          }
+
+   Maximum stack usage in bytes:
+
+     Function                 CSTACK RSTACK
+     --------                 ------ ------
+     wal_dbnc_inputs              0      2
+       -> wal_tacho_change        0      2
+       -> SEQ_AddEvent            0      2
+       -> vss_seq_error           0      2
+       -> SEQ_AddEvent            0      2
+       -> vss_seq_error           0      2
+       -> SEQ_AddEvent            0      2
+       -> vss_seq_error           0      2
+       -> wal_eetbl_write         0      2
+       -> SEQ_AddEvent            0      2
+       -> vss_seq_error           0      2
+       -> wal_record_axis_err     0      2
+       -> SEQ_AddEvent            0      2
+       -> vss_seq_error           0      2
+       -> SEQ_AddEvent            0      2
+       -> vss_seq_error           0      2
+     wal_tacho_change             0      2
+
+
+   Segment part sizes:
+
+     Function/Label   Bytes
+     --------------   -----
+     wal_tacho_change  124
+     wal_dbnc_inputs   708
+     _A_PIND             1
+     _A_PINB             1
+
+ 
+   2 bytes in segment ABSOLUTE
+ 832 bytes in segment CODE
+ 
+ 832 bytes of CODE memory
+   0 bytes of DATA memory (+ 2 bytes shared)
+
+Errors: none
+Warnings: 4

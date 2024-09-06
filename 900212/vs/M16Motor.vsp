@@ -1,0 +1,63 @@
+@visualSTATE @Project @Format2 "M16Motor"
+
+@SCCInfo
+  @Provider = "",
+  @Project = "",
+  @LocalPath = ".",
+  @AuxPath = "";
+
+@Directives
+
+  @visualSTATE 5-1-0-423;
+  @Date 2006-01-13;
+  @Time 13:08:01;
+  [[ Colors = "0X000000 0X0000FF 0X00FF00 0XFF0000 0X00FFFF 0XFF00FF 0XFFFF00 0XFFFFFF 0X000080 0X008000 0X800000 0X008080 0X800080 0X808000 0XC0C0C0 0X808080"
+     , DropSignalQueueIfFull = "0", Expl = "", Font1 = "-13 400 0 \"Arial\"", 
+     Font2 = "-13 700 0 \"Arial\"", Font3 = "-11 400 0 \"Arial\"", 
+     Font4 = "-11 700 0 \"Arial\"", Font5 = "-13 400 0 \"Times New Roman\"", 
+     Font6 = "-13 700 0 \"Times New Roman\"", 
+     Font7 = "-11 400 0 \"Times New Roman\"", 
+     Font8 = "-11 700 0 \"Times New Roman\"", 
+     FooterLayout = "12 -13 400 0 \"Times New Roman\"", FooterLeft = "&FN", 
+     FooterRight = "&PN", HeaderCenter = "&NF", 
+     HeaderLayout = "12 -13 400 0 \"Times New Roman\"", 
+     PageLayout = "9 1 210 297 6 6 7 6", 
+     PrintSpecial = "1 -13 400 0 \"Times New Roman\"", 
+     Resolution = "3.779528 3.779528", TextDisplayNote = "Preserve", 
+     TextDisplayState = "Preserve", TextDisplayTransDesc = "Preserve", 
+     View = "2 2 7" ]]
+
+
+@System
+  System1
+    [[ NOF_INSTANCES = "1", Pos440 = "55 42 569 421 1835010", 
+       SIGNAL_QUEUE_LENGTH = "0", 
+       SystemGUID = "B72FF7AA-DD11-4468-B209-D1C6CF790754", 
+       TextDisplayNote = "Preserve", TextDisplayState = "Preserve", 
+       TextDisplayTransDesc = "Preserve", View = "2 2 7" ]]
+
+    @File
+      File0 = ".\\Topstate1.vsr";
+
+    @Object
+      Object0
+        [[ Pos440 = "427 138 551 243 1073741824", 
+           Text = "Half duplex RS485 multidrop comms.0x0d0x0aMust set TX enable (RXTX_EN) to TX.0x0d0x0a"
+           , Type = "FreeText" ]],
+      Object1
+        [[ Pos440 = "222 142 391 245 1073741824", 
+           Text = "Axis positional control. (Point to Point)0x0d0x0aNB. Unidirectional feature to prevent backlash"
+           , Type = "FreeText" ]],
+      Object2
+        [[ Pos440 = "50 143 191 247 1073741824", 
+           Text = "Provide status and other periodic timed functions.", 
+           Type = "FreeText" ]];
+
+    @End;
+
+
+@Declaration
+
+
+@Definition
+

@@ -1,0 +1,1249 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  28/Sep/2012  11:33:20 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\vsapi\SEMLibB.c                        #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\vsapi\SEMLibB.c                        #
+#    List file    =  C:\hmhome\900212\Debug\List\SEMLibB.lst                 #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\SEMLibB.r90                  #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\vsapi\SEMLibB.c
+      1          /*
+      2           * Type:        Source Code File
+      3           *
+      4           * Id:          SEMLibB.c
+      5           *
+      6           * Function:    Contains the functions for the SEM Library Basic version 4,
+      7           *              which is described in SEMLibB.h.
+      8           *
+      9           * Portability: ANSI-C Compiler.
+     10           *
+     11           * Copyright (c) 1999 IAR Systems. All rights reserved.
+     12           */
+     13          
+     14          /*
+     15           * Version   ! Date   ! Status ! Changes
+     16           *----------------------------------------------------------------------------
+     17           * 4.0.0.13  ! 240299 ! Closed ! -
+     18           * 4.0.4     ! 010799 ! Closed ! Minor update, there might be no changes to this particular file.
+     19           */
+     20          
+     21          #include "SEMLibB.h"
+     22          
+     23          #if (SEM_SPEED)
+     24          #define MODE_SEM_EVENT_ONLY     0x01
+     25          #define MODE_SEM_EVENT          0x02
+     26          #define MODE_SEM_STATE          0x03
+     27          #endif
+     28          
+     29          #if (SEM_SIGNAL_DB)
+     30          extern void SEM_SignalDB (SEM_EVENT_TYPE SignalNo);
+     31          #endif
+     32          
+     33          #if (VS_REALLINKMODE == 1)
+     34          #include "RealLink.h"
+     35          VS_RLTASK VS_RL_TQ_DATA vsRLTask;
+     36          #endif
+     37          
+     38          #ifdef VS_RUNTIME_INFO
+     39          VSRunTimeInfo volatile const VS_RUNTIME_INFO_EXTKW vsRunTimeInfo = 
+     40          {
+     41            VS_SIGNATURE_VERSION,
+     42            VS_SIGNATURE_CONTENT
+     43          };
+     44          #endif
+     45          
+     46          
+     47          
+     48          #if (SEM_SIGNAL)
+     49          void SEM_InitSignalQueue (void)
+     50          {
+     51            SEM.SPut = 0;
+     52            SEM.SGet = 0;
+     53            SEM.SUsed = 0;
+     54          }
+     55          
+     56          
+     57          static unsigned char SEM_SignalQueuePut (SEM_EVENT_TYPE SignalNo)
+     58          {
+     59            if (SEM.SUsed == VS_SIGNAL_QUEUE_SIZE)
+     60              return (SES_SIGNAL_QUEUE_FULL);
+     61            SEM.SUsed++;
+     62            SEM.SQueue[SEM.SPut] = SignalNo;
+     63            if (++SEM.SPut == VS_SIGNAL_QUEUE_SIZE)
+     64              SEM.SPut = 0;
+     65            return (SES_OKAY);
+     66          }
+     67          
+     68          
+     69          static SEM_EVENT_TYPE SEM_SignalQueueGet (void)
+     70          {
+     71            SEM_EVENT_TYPE SignalNo;
+     72          
+     73            if (!SEM.SUsed)
+     74              return (EVENT_UNDEFINED);
+     75            SEM.SUsed--;
+     76            SignalNo = SEM.SQueue[SEM.SGet];
+     77            if (++SEM.SGet == VS_SIGNAL_QUEUE_SIZE)
+     78              SEM.SGet = 0;
+     79            return (SignalNo);
+     80          }
+     81          
+     82          
+     83          #if (SEM_SIGNAL_QUEUE_INFO == 1)
+     84          void SEM_SignalQueueInfo (SEM_SIGNAL_QUEUE_TYPE *NofSignals)
+     85          {
+     86            *NofSignals = SEM.SUsed;
+     87          }
+     88          #endif
+     89          #endif
+     90          
+     91          
+     92          
+     93          #if (SEM_INIT_ALL)
+     94          void SEM_InitAll (void)
+     95          {
+     96            SEM_Init();
+     97          #if (SEM_INIT_EXTERNAL_VARIABLES)
+     98            SEM_InitExternalVariables();
+     99          #endif
+    100          #if (SEM_INIT_INTERNAL_VARIABLES)
+    101            SEM_InitInternalVariables();
+    102          #endif
+    103          #if (SEM_SIGNAL)
+    104            SEM_InitSignalQueue();
+    105          #endif
+    106          #if (VS_NOF_INSTANCES > 1)
+    107            SEM_InitInstances();
+    108          #if (VS_REALLINKMODE == 1)
+    109            SEM_SetInstance(0);
+    110          #endif
+    111          #endif
+    112          }
+    113          #endif
+    114          
+    115          
+    116          
+    117          void SEM_Init (void)
+    118          {
+    119          #ifdef VS_RUNTIME_INFO
+    120            *vsRunTimeInfo.pSignatureVersion;
+    121          #endif
+    122          #if (VS_NOF_STATE_MACHINES != 0)
+    123            for (SEM.i = 0; SEM.i < VS_NOF_STATE_MACHINES; SEM.i++)
+    124            {
+    125              SEM.WSV[SEM.i] = STATE_UNDEFINED;
+    126          #if (VS_NOF_INSTANCES == 1)
+    127              SEM.CSV[SEM.i] = STATE_UNDEFINED;
+    128          #endif
+    129            }
+    130          #if (SEM_NEXT_STATE_CHG == 1)
+    131            SEM.Chg = 0;
+    132          #endif
+    133          #endif
+    134            SEM.State = STATE_SEM_INITIALIZE;
+    135          #if (SEM_INQUIRY == 1)
+    136            SEM.InqAct = VS_FALSE;
+    137          #endif
+    138          
+    139          #if (VS_REALLINKMODE == 1)
+    140            SEM.pTask = &vsRLTask;
+    141          #endif
+    142          }
+    143          
+    144          
+    145          #if (VS_NOF_INSTANCES > 1)
+    146          unsigned char SEM_InitInstances (void)
+    147          {
+    148          #if (VS_NOF_STATE_MACHINES != 0)
+    149            for (SEM.i = 0; SEM.i < (VS_NOF_STATE_MACHINES * VS_NOF_INSTANCES); SEM.i++)
+    150            {
+    151              SEM.Ins[SEM.i] = STATE_UNDEFINED;
+    152            }
+    153          #endif
+    154            SEM.CSV = SEM.Ins;
+    155            SEM.ActIns = 0;
+    156          
+    157            return(SES_OKAY);
+    158          }
+    159          
+    160          
+    161          unsigned char SEM_SetInstance (SEM_INSTANCE_TYPE Instance)
+    162          {
+    163            if (Instance >= VS_NOF_INSTANCES)
+    164              return (SES_RANGE_ERR);
+    165            if ((SEM.State != STATE_SEM_INITIALIZE)
+    166          #if (SEM_INQUIRY == 1)
+    167                 || (SEM.InqAct)
+    168          #endif
+    169               )
+    170              return (SES_ACTIVE);
+    171          #if (VS_NOF_STATE_MACHINES != 0)
+    172            SEM.CSV = (SEM.Ins + VS_NOF_STATE_MACHINES * Instance);
+    173            SEM.ActIns = Instance;
+    174          #endif
+    175          #if (VS_REALLINKMODE == 1)
+    176            VS_WAIT_ELM(VS_ENABLE_INSTANCE, Ind_INSTANCE_SET, &Instance);
+    177          #endif
+    178            return (SES_OKAY);
+    179          }
+    180          #endif
+    181          
+    182          
+    183          #if (SEM_DEDUCT_FUNC == 0)
+    184          unsigned char SEM_Deduct (SEM_EVENT_TYPE EventNo)
+    185          {
+    186            if (VS_NOF_EVENTS <= EventNo)
+    187              return (SES_RANGE_ERR);
+    188            SEM.EventNo = EventNo;
+    189            SEM.State = STATE_SEM_PREPARE;
+    190          #if (VS_NOF_EVENT_GROUPS != 0)
+    191            SEM.DIt = 2;
+    192          #endif
+    193          #if (SEM_INQUIRY == 1)
+    194            if (SEM.InqAct)
+    195              return (SES_ACTIVE);
+    196          #endif
+    197          #if (VS_REALLINKMODE == 1)
+    198            VS_WAIT_ELM(VS_ENABLE_EVENT, Ind_EVENT, &EventNo);
+    199          #endif
+    200            return (SES_OKAY);
+    201          }
+    202          #endif
+    203          
+    204          
+    205          unsigned char SEM_GetOutput (SEM_ACTION_EXPRESSION_TYPE *ActionNo)
+    206          {
+    207            for(;;)
+    208            {
+    209              switch (SEM.State)
+    210              {
+    211          #if (SEM_SIGNAL)
+    212                case STATE_SEM_SIGNAL :
+    213          Signal :
+    214                  SEM.EventNo = SEM_SignalQueueGet ();
+    215                  if (SEM.EventNo == EVENT_UNDEFINED)
+    216                  {
+    217                    SEM.State = STATE_SEM_OKAY;
+    218                    return (SES_OKAY);
+    219                  }
+    220          #if (VS_NOF_STATE_MACHINES != 0)
+    221                  for (SEM.i = 0; SEM.i < VS_NOF_STATE_MACHINES; SEM.i++)
+    222                  {
+    223                    if (SEM.WSV[SEM.i] != STATE_UNDEFINED)
+    224                    {
+    225          #if (SEM_NEXT_STATE_CHG == 1)
+    226                      if (SEM.CSV[SEM.i] != SEM.WSV[SEM.i])
+    227                        SEM.Chg = 1;
+    228          #endif
+    229                      SEM.CSV[SEM.i] = SEM.WSV[SEM.i];
+    230                      SEM.WSV[SEM.i] = STATE_UNDEFINED;
+    231                    }
+    232                  }
+    233          #endif
+    234          #if (SEM_SIGNAL_DB)
+    235                  SEM_SignalDB (SEM.EventNo);
+    236          #endif
+    237          #if (VS_REALLINKMODE == 1)
+    238                  VS_WAIT_ELM(VS_ENABLE_SIGNAL, Ind_SIGNAL, &SEM.EventNo);
+    239          #endif 
+    240                  goto FirstRule;
+    241          #endif
+    242                case STATE_SEM_PREPARE :
+    243          #if (SEM_SPEED)
+    244                  SEM.Mode = MODE_SEM_EVENT_ONLY;
+    245          #endif
+    246          #if (VS_NOF_EVENT_GROUPS != 0)
+    247          #if (SEM_EVENT_GROUP_INDEX)
+    248                  if (SEM.DIt == 1)
+    249                  {
+    250                    SEM.EventNo = VS.EGI[SEM.EventNo];
+    251                    if (SEM.EventNo == EVENT_GROUP_UNDEFINED)
+    252                    {
+    253          #if (SEM_SIGNAL)
+    254                      SEM.DIt = 0;
+    255                      goto Signal;
+    256          #else
+    257                      SEM.State = STATE_SEM_OKAY;
+    258                      return (SES_OKAY);
+    259          #endif
+    260                    }
+    261                    SEM.EventNo += VS_NOF_EVENTS;
+    262                  }
+    263                  else if (SEM.DIt == 0)
+    264                  {
+    265          #if (SEM_SIGNAL)
+    266                    goto Signal;
+    267          #else
+    268                    SEM.State = STATE_SEM_OKAY;
+    269                    return (SES_OKAY);
+    270          #endif
+    271                  }
+    272                  SEM.DIt--;
+    273          #endif
+    274          #if (SEM_EVENT_GROUP_TABLE_INDEX)
+    275                  if (SEM.DIt == 0)
+    276                  {
+    277                    if (++SEM.iFirstEgi >= SEM.iLastEgi)
+    278                    {
+    279          #if (SEM_SIGNAL)
+    280                      goto Signal;
+    281          #else
+    282                      SEM.State = STATE_SEM_OKAY;
+    283                      return (SES_OKAY);
+    284          #endif
+    285                    }
+    286                    SEM.EventNo = VS.EGT[SEM.iFirstEgi];
+    287                    SEM.EventNo += VS_NOF_EVENTS;
+    288                  }
+    289                  else if (SEM.DIt == 1)
+    290                  {
+    291                    SEM.iFirstEgi = VS.EGTI[SEM.EventNo];
+    292                    SEM.iLastEgi = VS.EGTI[SEM.EventNo + 1];
+    293                    if (SEM.iFirstEgi == SEM.iLastEgi)
+    294                    {
+    295          #if (SEM_SIGNAL)
+    296                      SEM.DIt = 0;
+    297                      goto Signal;
+    298          #else
+    299                      SEM.State = STATE_SEM_OKAY;
+    300                      return (SES_OKAY);
+    301          #endif
+    302                    }
+    303                    SEM.EventNo = VS.EGT[SEM.iFirstEgi];
+    304                    SEM.EventNo += VS_NOF_EVENTS;
+    305                    SEM.DIt--;
+    306                  }
+    307                  else if (SEM.DIt == 2)
+    308                  {
+    309                    SEM.DIt--;
+    310                  }
+    311          #endif
+    312          #endif
+    313          #if (SEM_SIGNAL)
+    314          FirstRule :
+    315          #endif
+    316                  SEM.iFirstR = VS.RTI[SEM.EventNo];
+    317                  SEM.iLastR = VS.RTI[SEM.EventNo + 1];
+    318                  SEM.State = STATE_SEM_CONSULT;
+    319                case STATE_SEM_CONSULT :
+    320                  while (SEM.iFirstR < SEM.iLastR)
+    321                  {
+    322          #if (SEM_SPEED)
+    323                    if (SEM.Mode == MODE_SEM_EVENT)
+    324                    {
+    325                      SEM.iRI = VS.RIS[SEM.iFirstR++];
+    326                    }
+    327                    else
+    328                    {
+    329                      if (SEM.Mode == MODE_SEM_EVENT_ONLY)
+    330                      {
+    331                        SEM.iRI = VS.RI[SEM.iFirstR++];
+    332          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_16_BIT)
+    333                        SEM.i = VS.RD[SEM.iRI];
+    334                        SEM.iRI += 2;
+    335                        SEM.nNxt = (unsigned char)(SEM.i & 0x0F);
+    336                        SEM.nAction = (unsigned char)(SEM.i >> 4);
+    337          #endif
+    338          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_24_BIT)
+    339                        SEM.iRI++;
+    340                        SEM.nNxt = (unsigned char)(VS.RD[SEM.iRI++] >> 4);
+    341                        SEM.i = VS.RD[SEM.iRI++];
+    342                        SEM.nAction = (unsigned char)(SEM.i & 0x0F);
+    343                        SEM.nSignal = (unsigned char)(SEM.i >> 4);
+    344          #endif
+    345          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    346                        SEM.nAction = (unsigned char)VS.RD[SEM.iRI++];
+    347                        SEM.nNxt = (unsigned char)(VS.RD[SEM.iRI++];
+    348                        SEM.iRI += 2;
+    349          #endif
+    350          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_48_BIT)
+    351                        SEM.iRI += 2;
+    352                        SEM.nNxt = (unsigned char)VS.RD[SEM.iRI];
+    353                        SEM.iRI += 2;
+    354                        SEM.nSignal = (unsigned char)VS.RD[SEM.iRI++];
+    355                        SEM.nAction = (unsigned char)VS.RD[SEM.iRI++];
+    356          #endif
+    357          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_16_BIT)
+    358                        SEM.i = VS.RD[SEM.iRI++];
+    359                        SEM.nNxt = (unsigned char)((SEM.i >> 8) & 0x0F);
+    360                        SEM.nAction = (unsigned char)(SEM.i >> 12);
+    361          #endif
+    362          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_3 && SEM_RDHW_WIDTH_32_BIT)
+    363                        SEM.nNxt = (unsigned char)(VS.RD[SEM.iRI++] >> 12);
+    364                        SEM.i = VS.RD[SEM.iRI++];
+    365                        SEM.nAction = (unsigned char)(SEM.i & 0x0F);
+    366                        SEM.nSignal = (unsigned char)((SEM.i >> 4) & 0x0F);
+    367          #endif
+    368          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    369                        SEM.i = VS.RD[SEM.iRI];
+    370                        SEM.iRI += 2;
+    371                        SEM.nNxt = (unsigned char)(SEM.i & 0x0FF);
+    372                        SEM.nAction = (unsigned char)(SEM.i >> 8);
+    373          #endif
+    374          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_48_BIT)
+    375                        SEM.iRI++;
+    376                        SEM.nNxt = (unsigned char)(VS.RD[SEM.iRI++] >> 8);
+    377                        SEM.i = VS.RD[SEM.iRI++];
+    378                        SEM.nAction = (unsigned char)(SEM.i & 0x0FF);
+    379                        SEM.nSignal = (unsigned char)(SEM.i >> 8);
+    380          #endif
+    381          #if (SEM_RD_WIDTH_32_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    382                        SEM.i = VS.RD[SEM.iRI++];
+    383                        SEM.nNxt = (unsigned char)((SEM.i >> 16) & 0X0FF);
+    384                        SEM.nAction = (unsigned char)(SEM.i >> 24);
+    385          #endif
+    386          #if (SEM_RD_WIDTH_32_BIT && SEM_RDHW_TYPE_3 && SEM_RDHW_WIDTH_64_BIT)
+    387                        SEM.nNxt = (unsigned char)(VS.RD[SEM.iRI++] >> 24);
+    388                        SEM.i = VS.RD[SEM.iRI++];
+    389                        SEM.nAction = (unsigned char)(SEM.i & 0x0FF);
+    390                        SEM.nSignal = (unsigned char)((SEM.i >> 8) & 0x0FF);
+    391          #endif
+    392                        goto ded_match_found;
+    393                      }
+    394                      else
+    395                        SEM.iRI = VS.RIS[SEM.ruleq[SEM.iFirstR++]];
+    396                    }
+    397          #else
+    398                    SEM.iRI = VS.RI[SEM.iFirstR++];
+    399          #endif
+    400          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_16_BIT)
+    401                    SEM.i = VS.RD[SEM.iRI++];
+    402                    SEM.nNxt = (unsigned char)(SEM.i & 0x0F);
+    403                    SEM.nAction = (unsigned char)(SEM.i >> 4);
+    404                    SEM.i = VS.RD[SEM.iRI++];
+    405                    SEM.nPos = (unsigned char)(SEM.i & 0x0F);
+    406          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    407                    SEM.nNeg = (unsigned char)(SEM.i >> 4);
+    408          #endif
+    409          #endif
+    410          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_24_BIT)
+    411                    SEM.i = VS.RD[SEM.iRI++];
+    412                    SEM.nPos = (unsigned char)(SEM.i & 0x0F);
+    413          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    414                    SEM.nNeg = (unsigned char)(SEM.i >> 4);
+    415          #endif
+    416                    SEM.i = VS.RD[SEM.iRI++];
+    417                    SEM.nGuard = (unsigned char)(SEM.i & 0x0F);
+    418                    SEM.nNxt = (unsigned char)(SEM.i >> 4);
+    419                    SEM.i = VS.RD[SEM.iRI++];
+    420                    SEM.nAction = (unsigned char)(SEM.i & 0x0F);
+    421                    SEM.nSignal = (unsigned char)(SEM.i >> 4);
+    422          #endif
+    423          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    424                    SEM.nAction = (unsigned char)VS.RD[SEM.iRI++];
+    425                    SEM.nNxt = (unsigned char)VS.RD[SEM.iRI++];
+    426          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    427                    SEM.nNeg = (unsigned char)VS.RD[SEM.iRI++];
+    428          #else
+    429                    SEM.iRI++;
+    430          #endif
+    431                    SEM.nPos = (unsigned char)VS.RD[SEM.iRI++];
+    432          #endif
+    433          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_48_BIT)
+    434          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    435                    SEM.nNeg = (unsigned char)VS.RD[SEM.iRI++];
+    436          #else
+    437                    SEM.iRI++;
+    438          #endif
+    439                    SEM.nPos = (unsigned char)VS.RD[SEM.iRI++];
+    440                    SEM.nNxt = (unsigned char)VS.RD[SEM.iRI++];
+    441                    SEM.nGuard = (unsigned char)VS.RD[SEM.iRI++];
+    442                    SEM.nSignal = (unsigned char)VS.RD[SEM.iRI++];
+    443                    SEM.nAction = (unsigned char)VS.RD[SEM.iRI++];
+    444          #endif
+    445          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_16_BIT)
+    446                    SEM.i = VS.RD[SEM.iRI++];
+    447                    SEM.nPos = (unsigned char)(SEM.i & 0x0F);
+    448          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    449                    SEM.nNeg = (unsigned char)((SEM.i >> 4) & 0x0F);
+    450          #endif
+    451                    SEM.nNxt = (unsigned char)((SEM.i >> 8) & 0x0F);
+    452                    SEM.nAction = (unsigned char)((SEM.i >> 12) & 0x0F);
+    453          #endif
+    454          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_3 && SEM_RDHW_WIDTH_32_BIT)
+    455                    SEM.i = VS.RD[SEM.iRI++];
+    456                    SEM.nPos = (unsigned char)(SEM.i & 0x0F);
+    457          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    458                    SEM.nNeg = (unsigned char)((SEM.i >> 4) & 0x0F);
+    459          #endif
+    460                    SEM.nGuard = (unsigned char)((SEM.i >> 8) & 0x0F);
+    461                    SEM.nNxt = (unsigned char)(SEM.i >> 12);
+    462                    SEM.i = VS.RD[SEM.iRI++];
+    463                    SEM.nAction = (unsigned char)(SEM.i & 0x0F);
+    464                    SEM.nSignal = (unsigned char)((SEM.i >> 4) & 0x0F);
+    465          #endif
+    466          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    467                    SEM.i = VS.RD[SEM.iRI++];
+    468                    SEM.nNxt = (unsigned char)(SEM.i & 0x0FF);
+    469                    SEM.nAction = (unsigned char)(SEM.i >> 8);
+    470                    SEM.i = VS.RD[SEM.iRI++];
+    471                    SEM.nPos = (unsigned char)(SEM.i & 0x0FF);
+    472          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    473                    SEM.nNeg = (unsigned char)(SEM.i >> 8);
+    474          #endif
+    475          #endif
+    476          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_48_BIT)
+    477                    SEM.i = VS.RD[SEM.iRI++];
+    478                    SEM.nPos = (unsigned char)(SEM.i & 0x0FF);
+    479          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    480                    SEM.nNeg = (unsigned char)(SEM.i >> 8);
+    481          #endif
+    482                    SEM.i = VS.RD[SEM.iRI++];
+    483                    SEM.nGuard = (unsigned char)(SEM.i & 0x0FF);
+    484                    SEM.nNxt = (unsigned char)(SEM.i >> 8);
+    485                    SEM.i = VS.RD[SEM.iRI++];
+    486                    SEM.nAction = (unsigned char)(SEM.i & 0x0FF);
+    487                    SEM.nSignal = (unsigned char)(SEM.i >> 8);
+    488          #endif
+    489          #if (SEM_RD_WIDTH_32_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    490                    SEM.i = VS.RD[SEM.iRI++];
+    491                    SEM.nPos = (unsigned char)(SEM.i & 0X0FF);
+    492          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    493                    SEM.nNeg = (unsigned char)((SEM.i >> 8) & 0X0FF);
+    494          #endif
+    495                    SEM.nNxt = (unsigned char)((SEM.i >> 16) & 0x0FF);
+    496                    SEM.nAction = (unsigned char)((SEM.i >> 24) & 0x0FF);
+    497          #endif
+    498          #if (SEM_RD_WIDTH_32_BIT && SEM_RDHW_TYPE_3 && SEM_RDHW_WIDTH_64_BIT)
+    499                    SEM.i = VS.RD[SEM.iRI++];
+    500                    SEM.nPos = (unsigned char)(SEM.i & 0x0FF);
+    501          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    502                    SEM.nNeg = (unsigned char)((SEM.i >> 8) & 0x0FF);
+    503          #endif
+    504                    SEM.nGuard = (unsigned char)((SEM.i >> 16) & 0x0FF);
+    505                    SEM.nNxt = (unsigned char)(SEM.i >> 24);
+    506                    SEM.i = VS.RD[SEM.iRI++];
+    507                    SEM.nAction = (unsigned char)(SEM.i & 0x0FF);
+    508                    SEM.nSignal = (unsigned char)((SEM.i >> 8) & 0x0FF);
+    509          #endif
+    510          #if (VS_NOF_STATE_MACHINES != 0)
+    511                    for (SEM.nNo = 0 ; SEM.nNo < SEM.nPos; SEM.nNo++)
+    512                    {
+    513                      SEM.sa = (SEM_STATE_TYPE) VS.RD[SEM.iRI++];
+    514                      if (SEM.sa != SEM.CSV[VS.SMI[SEM.sa]])
+    515                        goto NextRule;
+    516                    }
+    517          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    518                    for (SEM.nNo = 0; SEM.nNo < SEM.nNeg; SEM.nNo++)
+    519                    {
+    520                      SEM.i = VS.RD[SEM.iRI++];
+    521                      SEM.sa = SEM.CSV[VS.SMI[SEM.i]];
+    522                      if ((SEM.sa == STATE_UNDEFINED) || (SEM.sa == (SEM_STATE_TYPE) SEM.i))
+    523                        goto NextRule;
+    524                    }
+    525          #endif
+    526          #endif
+    527          #if ((SEM_RDHW_TYPE_2 || SEM_RDHW_TYPE_3) && (SEM_GUARD_EXPRESSION))
+    528                    if (SEM.nGuard)
+    529                    {
+    530                      for (SEM.nNo = 0; SEM.nNo < SEM.nGuard; SEM.nNo++)
+    531                      {
+    532          #if (SEM_FUNCEXPHANDLING == 0)
+    533                        if ((*VSGuard[VS.RD[SEM.iRI++]])() == VS_FALSE)              
+    534          #else
+    535                          if (VSGuard(VS.RD[SEM.iRI++]) == VS_FALSE)              
+    536          #endif
+    537                          goto NextRule;
+    538                      }
+    539                    }
+    540          #endif
+    541          
+    542          #if (VS_REALLINKMODE == 1)
+    543                    {
+    544                    SEM_RULE_TABLE_INDEX_TYPE ri = SEM.iFirstR - 1;
+    545                    VS_WAIT_ELM(VS_ENABLE_TRANS, Ind_TRANS, &ri);
+    546                    }
+    547          #endif
+    548          
+    549          #if (SEM_SPEED)
+    550          ded_match_found:
+    551          #endif
+    552          #if (VS_NOF_STATE_MACHINES != 0)
+    553                    for (SEM.nNo = 0; SEM.nNo < SEM.nNxt; SEM.nNo++)
+    554                    {
+    555                      SEM.sa = (SEM_STATE_TYPE) VS.RD[SEM.iRI++];
+    556                      SEM.i = VS.SMI[SEM.sa];
+    557                      if (SEM.WSV[SEM.i] == STATE_UNDEFINED)
+    558                        SEM.WSV[SEM.i] = SEM.sa;
+    559                      else if (SEM.WSV[SEM.i] != SEM.sa)
+    560                        return (SES_CONTRADICTION);
+    561                    }
+    562          #endif
+    563          #if (SEM_SIGNAL)
+    564                    if (SEM.nSignal)
+    565                    {
+    566                      for (SEM.nNo = 0; SEM.nNo < SEM.nSignal; SEM.nNo++)
+    567                      {
+    568                        SEM.i = VS.RD[SEM.iRI++];
+    569          #if (SEM_SIGNAL_QUEUE_ERROR_IF_FULL)
+    570                        if (SEM_SignalQueuePut ((SEM_EVENT_TYPE)SEM.i) == SES_SIGNAL_QUEUE_FULL)
+    571                          return (SES_SIGNAL_QUEUE_FULL);
+    572          #endif
+    573          #if (SEM_SIGNAL_QUEUE_NO_ERROR_IF_FULL)
+    574                        SEM_SignalQueuePut ((SEM_EVENT_TYPE)SEM.i);
+    575          #endif
+    576                      }
+    577                    }
+    578          #endif
+    579                    if (SEM.nAction)
+    580                    {
+    581                      *ActionNo = (SEM_ACTION_EXPRESSION_TYPE)VS.RD[SEM.iRI];
+    582                      if (SEM.nAction > 1)
+    583                      {
+    584                        SEM.iRI++;
+    585                        SEM.nAction--;
+    586                        SEM.State = STATE_SEM_OUTPUT;
+    587                      }
+    588          #if (VS_REALLINKMODE == 1)
+    589                      VS_WAIT_ELM(VS_ENABLE_ACTION, Ind_ACTION, ActionNo);
+    590          #endif
+    591                      return (SES_FOUND);
+    592                    }
+    593          NextRule :
+    594                    ;
+    595                  }
+    596          #if (SEM_SPEED)
+    597                  if (SEM.Mode == MODE_SEM_EVENT_ONLY)
+    598                  {
+    599                    SEM.iFirstR = VS.RTIS[SEM.EventNo];
+    600                    SEM.iLastR = VS.RTIS[SEM.EventNo + 1];
+    601                    if ((SEM.iLastR - SEM.iFirstR) > ((SE_MAXQUEUE + 1) / 2))
+    602                    {
+    603                      SEM.iLastR = 0;
+    604                      SEM.fm_i = VS.sti[SEM.EventNo];
+    605                      SEM.lm_i = VS.sti[SEM.EventNo + 1];
+    606                      while (SEM.fm_i < SEM.lm_i)
+    607                      {
+    608                        SEM.sa = SEM.CSV[VS.smn[SEM.fm_i]];
+    609                        SEM.fs_i = VS.sri[SEM.sa];
+    610                        SEM.ls_i = VS.sri[SEM.sa + 1];
+    611                        while (SEM.fs_i < SEM.ls_i)
+    612                        {
+    613                          if (VS.sit[SEM.fs_i] == SEM.EventNo)
+    614                          {
+    615                            SEM.qe = VS.srt[SEM.fs_i];
+    616                            if (VS.cmc[SEM.qe] > 1)
+    617                            {
+    618                              for (SEM.iFirstR = 0; SEM.iFirstR < SEM.iLastR; SEM.iFirstR++)
+    619                              {
+    620                                if (SEM.ruleq[SEM.iFirstR] == SEM.qe)
+    621                                  break;
+    622                              }
+    623                              if (SEM.iFirstR == SEM.iLastR)
+    624                                SEM.ruleq [SEM.iLastR++] = SEM.qe;
+    625                            }
+    626                            else
+    627                              SEM.ruleq [SEM.iLastR++] = SEM.qe;
+    628                          }
+    629                          SEM.fs_i++;
+    630                        }
+    631                        SEM.fm_i++;
+    632                      }
+    633                      SEM.iFirstR = 0;
+    634                      SEM.Mode = MODE_SEM_STATE;
+    635                    }
+    636                    else
+    637                      SEM.Mode = MODE_SEM_EVENT;
+    638                    break;
+    639                  }
+    640                  else
+    641          #endif
+    642          #if (VS_NOF_EVENT_GROUPS != 0)
+    643                  {
+    644                    SEM.State = STATE_SEM_PREPARE;
+    645                    break;
+    646                  }
+    647          #else
+    648                  {
+    649          #if (SEM_SIGNAL)
+    650                    goto Signal;
+    651          #else
+    652                    SEM.State = STATE_SEM_OKAY;
+    653                    return (SES_OKAY);
+    654          #endif
+    655                  }
+    656          #endif
+    657                case STATE_SEM_OUTPUT :
+    658                  if (SEM.nAction)
+    659                  {
+    660                    *ActionNo = (SEM_ACTION_EXPRESSION_TYPE) VS.RD[SEM.iRI++];
+    661                    SEM.nAction--;
+    662          #if (VS_REALLINKMODE == 1)
+    663                      VS_WAIT_ELM(VS_ENABLE_ACTION, Ind_ACTION, ActionNo);
+    664          #endif
+    665                    return (SES_FOUND);
+    666                  }
+    667                  SEM.State = STATE_SEM_CONSULT;
+    668                  break;
+    669                case STATE_SEM_OKAY :
+    670                  return (SES_OKAY);
+    671                default :
+    672                  return (SES_EMPTY);
+    673              }
+    674            }
+    675          }
+    676          
+    677          
+    678          #if (SEM_GET_OUTPUT_ALL == 1)
+    679          #if (SEM_SIGNAL)
+    680          #error SEM_GetOutputAll cannot be used when the Project contains signals.
+    681          #endif
+    682          unsigned char SEM_GetOutputAll (SEM_ACTION_EXPRESSION_TYPE *ActionVector,
+    683            SEM_ACTION_EXPRESSION_TYPE MaxSize)
+    684          {
+    685            SEM_ACTION_EXPRESSION_TYPE i;
+    686            unsigned char CC;
+    687          
+    688            for (i = 0; ((CC = SEM_GetOutput(&ActionVector[i])) == SES_FOUND) && i < MaxSize - 1; i++);
+    689          
+    690            if (CC == SES_OKAY)
+    691            {
+    692              ActionVector[i] = ACTION_EXPRESSION_TERMINATION_ID;
+    693              return (SES_OKAY);
+    694            }
+    695            if (CC == SES_FOUND)
+    696              return (SES_BUFFER_OVERFLOW);
+    697            return (CC);
+    698          }
+    699          #endif
+    700          
+    701          
+    702          #if (SEM_NEXT_STATE_CHG == 1)
+    703          unsigned char SEM_NextStateChg (void)
+    704          #else
+    705          unsigned char SEM_NextState (void)
+    706          #endif
+    707          {
+    708            unsigned char CC;
+    709            SEM_ACTION_EXPRESSION_TYPE nAction;
+    710          
+    711            if (SEM.State != STATE_SEM_OKAY)
+    712            {
+    713              while ((CC = SEM_GetOutput (&nAction)) == SES_FOUND);
+    714              if (CC != SES_OKAY)
+    715                return(CC);
+    716            }
+    717          #if (VS_NOF_STATE_MACHINES != 0)
+    718            for (SEM.i = 0; SEM.i < VS_NOF_STATE_MACHINES; SEM.i++)
+    719            {
+    720              if (SEM.WSV[SEM.i] != STATE_UNDEFINED)
+    721              {
+    722          #if (SEM_NEXT_STATE_CHG == 1)
+    723                if (SEM.CSV[SEM.i] != SEM.WSV[SEM.i])
+    724                  SEM.Chg = 1;
+    725          #endif
+    726                SEM.CSV[SEM.i] = SEM.WSV[SEM.i];
+    727                SEM.WSV[SEM.i] = STATE_UNDEFINED;
+    728              }
+    729            }
+    730          #endif
+    731            SEM.State = STATE_SEM_INITIALIZE;
+    732          
+    733          #if (SEM_NEXT_STATE_CHG == 1)
+    734            if (SEM.Chg)
+    735            {
+    736              SEM.Chg = 0;
+    737              return (SES_FOUND);
+    738            }
+    739            return (SES_OKAY);
+    740          #else
+    741            return (SES_OKAY);
+    742          #endif
+    743          }
+    744          
+    745          
+    746          #if (SEM_INQUIRY == 1)
+    747          unsigned char SEM_Inquiry(void)
+    748          {
+    749            SEM.InqAct = VS_FALSE;
+    750            if (SEM.State != STATE_SEM_INITIALIZE)
+    751              return (SES_ACTIVE);
+    752            return (SES_OKAY);
+    753          }
+    754          
+    755          
+    756          unsigned char SEM_GetInput (SEM_EVENT_TYPE *EventNo,
+    757            SEM_EVENT_TYPE *EventList)
+    758          {
+    759            if (!SEM.InqAct)
+    760              SEM.InqEventNo = 0;
+    761            for(;;)
+    762            {
+    763              SEM.InqAct = VS_FALSE;
+    764              if (SEM.InqEventNo >= VS_NOF_EVENTS)
+    765                break;
+    766              if (EventList != NULL)
+    767              {
+    768                SEM.InqFoundEventNo = EventList[SEM.InqEventNo];
+    769                if (SEM.InqFoundEventNo == EVENT_TERMINATION_ID)
+    770                  break;
+    771                if (VS_NOF_EVENTS <= SEM.InqFoundEventNo)
+    772                  return (SES_RANGE_ERR);
+    773              }
+    774              else
+    775                SEM.InqFoundEventNo = SEM.InqEventNo;
+    776              SEM.InqEventNo++;
+    777              SEM.InqCurrentEventNo = SEM.InqFoundEventNo;
+    778              for (SEM.IIt = 2; SEM.IIt; SEM.IIt--)
+    779              {
+    780          #if (VS_NOF_EVENT_GROUPS > 0)
+    781          #if (SEM_EVENT_GROUP_TABLE_INDEX)
+    782                if (SEM.IIt == 2)
+    783                {
+    784                  SEM.iInqFirstEgi = VS.EGTI[SEM.InqCurrentEventNo];
+    785                  SEM.iInqLastEgi = VS.EGTI[SEM.InqCurrentEventNo + 1];
+    786                }
+    787          #endif
+    788          #endif
+    789                if (SEM.IIt == 1)
+    790                {
+    791          #if (VS_NOF_EVENT_GROUPS > 0)
+    792          #if (SEM_EVENT_GROUP_INDEX)
+    793                  SEM.InqCurrentEventNo = VS.EGI[SEM.InqCurrentEventNo];
+    794                  if (SEM.InqCurrentEventNo == EVENT_GROUP_UNDEFINED)
+    795                    break;
+    796                  SEM.InqCurrentEventNo += VS_NOF_EVENTS;
+    797          #endif
+    798          #if (SEM_EVENT_GROUP_TABLE_INDEX)
+    799                  if (SEM.iInqFirstEgi == SEM.iInqLastEgi)
+    800                    break;
+    801                  SEM.InqCurrentEventNo = VS.EGT[SEM.iInqFirstEgi++];
+    802                  SEM.InqCurrentEventNo += VS_NOF_EVENTS;
+    803                  SEM.IIt++;
+    804          #endif
+    805          #else
+    806                  break;
+    807          #endif
+    808                }
+    809                SEM.iInqFirstR = VS.RTI[SEM.InqCurrentEventNo];
+    810                SEM.iInqLastR = VS.RTI[SEM.InqCurrentEventNo + 1];
+    811          #if (SEM_SPEED)
+    812                if (SEM.iInqFirstR >= SEM.iInqLastR)
+    813                {
+    814                  SEM.iInqFirstR = VS.RTIS[SEM.InqCurrentEventNo];
+    815                  SEM.iInqLastR = VS.RTIS[SEM.InqCurrentEventNo+1];
+    816                }
+    817                else
+    818                {
+    819                  SEM.InqAct = VS_TRUE;
+    820                  *EventNo = SEM.InqFoundEventNo;
+    821                  return (SES_FOUND);
+    822                }
+    823          #endif
+    824                while (SEM.iInqFirstR < SEM.iInqLastR)
+    825                {
+    826          #if (SEM_SPEED)
+    827                  SEM.iInqRI = VS.RIS[SEM.iInqFirstR++];
+    828          #else
+    829                  SEM.iInqRI = VS.RI[SEM.iInqFirstR++];
+    830          #endif
+    831          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_16_BIT)
+    832                 	SEM.iInqRI++;
+    833           		    SEM.j = VS.RD[SEM.iInqRI++];
+    834                  SEM.nInqPos = (unsigned char)(SEM.j & 0x0F);
+    835          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    836                  SEM.nInqNeg = (unsigned char)(SEM.j >> 4);
+    837          #endif
+    838          #endif
+    839          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_24_BIT)
+    840           		    SEM.j = VS.RD[SEM.iInqRI];
+    841                  SEM.iInqRI += 3;
+    842                  SEM.nInqPos = (unsigned char)(SEM.j & 0x0F);
+    843          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    844                  SEM.nInqNeg = (unsigned char)(SEM.j >> 4);
+    845          #endif
+    846          #endif
+    847          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    848                  SEM.iInqRI += 2;
+    849          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    850                  SEM.nInqNeg = (unsigned char)VS.RD[SEM.iInqRI++];
+    851          #else
+    852                  SEM.iInqRI++;
+    853          #endif
+    854                  SEM.nInqPos = (unsigned char)VS.RD[SEM.iInqRI++];
+    855          #endif
+    856          #if (SEM_RD_WIDTH_8_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_48_BIT)
+    857          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    858                  SEM.nInqNeg = (unsigned char)VS.RD[SEM.iInqRI++];
+    859          #else
+    860                  SEM.iInqRI++;
+    861          #endif
+    862                  SEM.nInqPos = (unsigned char)VS.RD[SEM.iInqRI];
+    863                  SEM.iInqRI += 5;
+    864          #endif
+    865          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_16_BIT)
+    866           		    SEM.j = VS.RD[SEM.iInqRI++];
+    867                  SEM.nInqPos = (unsigned char)(SEM.j & 0x0F);
+    868          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    869                  SEM.nInqNeg = (unsigned char)((SEM.j >> 4) & 0x0F);
+    870          #endif
+    871          #endif
+    872          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_3 && SEM_RDHW_WIDTH_32_BIT)
+    873                  SEM.j = VS.RD[SEM.iInqRI];
+    874                  SEM.iInqRI += 2;
+    875                  SEM.nInqPos = (unsigned char)(SEM.j & 0x0F);
+    876          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    877                  SEM.nInqNeg = (unsigned char)((SEM.j >> 4) & 0x0F);
+    878          #endif
+    879          #endif
+    880          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    881                  SEM.iInqRI++;
+    882                  SEM.j = VS.RD[SEM.iInqRI++];
+    883                  SEM.nInqPos = (unsigned char)(SEM.j & 0x0FF);
+    884          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    885                  SEM.nInqNeg = (unsigned char)(SEM.j >> 8);
+    886          #endif
+    887          #endif
+    888          #if (SEM_RD_WIDTH_16_BIT && SEM_RDHW_TYPE_2 && SEM_RDHW_WIDTH_48_BIT)
+    889           		    SEM.j = VS.RD[SEM.iInqRI];
+    890                  SEM.iInqRI += 3;
+    891                  SEM.nInqPos = (unsigned char)(SEM.j & 0x0FF);
+    892          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    893                  SEM.nInqNeg = (unsigned char)(SEM.j >> 8);
+    894          #endif
+    895          #endif
+    896          #if (SEM_RD_WIDTH_32_BIT && SEM_RDHW_TYPE_1 && SEM_RDHW_WIDTH_32_BIT)
+    897           		    SEM.j = VS.RD[SEM.iInqRI++];
+    898                  SEM.nInqPos = (unsigned char)(SEM.j & 0X0FF);
+    899          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    900                  SEM.nInqNeg = (unsigned char)((SEM.j >> 8) & 0X0FF);
+    901          #endif
+    902          #endif
+    903          #if (SEM_RD_WIDTH_32_BIT && SEM_RDHW_TYPE_3 && SEM_RDHW_WIDTH_64_BIT)
+    904                  SEM.j = VS.RD[SEM.iInqRI++];
+    905                  SEM.nInqPos = (unsigned char)(SEM.j & 0x0FF);
+    906          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    907                  SEM.nInqNeg = (unsigned char)((SEM.j >> 8) & 0x0FF);
+    908          #endif
+    909                  SEM.iInqRI++;
+    910          #endif
+    911          #if (VS_NOF_STATE_MACHINES != 0)
+    912                  for (SEM.nInqNo = 0; SEM.nInqNo < SEM.nInqPos; SEM.nInqNo++)
+    913                  {
+    914                    SEM.sb = (SEM_STATE_TYPE) VS.RD[SEM.iInqRI++];
+    915                    if (SEM.sb != SEM.CSV[VS.SMI[SEM.sb]])
+    916                      goto NextRuleInq;
+    917                  }
+    918          #if (SEM_RMN_NEGATIVE_STATE_SYNCS)
+    919                  for (SEM.nInqNo = 0; SEM.nInqNo < SEM.nInqNeg; SEM.nInqNo++)
+    920                  {
+    921                    SEM.j = VS.RD[SEM.iInqRI++];
+    922                    SEM.sb = SEM.CSV[VS.SMI[SEM.j]];
+    923                    if ((SEM.sb == STATE_UNDEFINED) || (SEM.sb == (SEM_STATE_TYPE) SEM.j))
+    924                      goto NextRuleInq;
+    925                  }
+    926          #endif
+    927          #endif
+    928                  SEM.InqAct = VS_TRUE;
+    929                  *EventNo = SEM.InqFoundEventNo;
+    930                  return (SES_FOUND);
+    931          NextRuleInq:
+    932                  ;
+    933                }
+    934              }
+    935            }
+    936            return (SES_OKAY);
+    937          }
+    938          
+    939          
+    940          #if (SEM_GET_INPUT_ALL == 1)
+    941          unsigned char SEM_GetInputAll (SEM_EVENT_TYPE *EventVector,
+    942            SEM_EVENT_TYPE *EventList, SEM_EVENT_TYPE MaxSize)
+    943          {
+    944            SEM_EVENT_TYPE  i;
+    945            unsigned char CC;
+    946          
+    947            for (i = 0; ((CC = SEM_GetInput (&EventVector[i], EventList)) == SES_FOUND)
+    948                  && i < MaxSize - 1; i++);
+    949            if (CC == SES_OKAY)
+    950            {
+    951              EventVector[i] = EVENT_TERMINATION_ID;
+    952              return (SES_OKAY);
+    953            }
+    954            if (CC == SES_FOUND)
+    955              return (SES_BUFFER_OVERFLOW);
+    956            return (CC);
+    957          }
+    958          #endif
+    959          #endif
+    960          
+    961          
+    962          #if (SEM_NAME == 1)
+    963          unsigned char SEM_Name (unsigned char IdentType, 
+    964            SEM_EXPLANATION_TYPE IdentNo, char *Text, unsigned short MaxSize)
+    965          {
+    966            char  c, *s;
+    967            unsigned short i;
+    968          
+    969            if (!MaxSize)
+    970              return (SES_TEXT_TOO_LONG);
+    971            switch (IdentType)
+    972            {
+    973          #if (VS_EVENT_NAMES != 0)
+    974              case EVENT_TYPE :
+    975                if (VS_NOF_EVENTS <= IdentNo)
+    976                  return (SES_RANGE_ERR);
+    977                s = (char *)VS.ENames + VS.ENI[IdentNo];
+    978                break;
+    979          #endif
+    980          #if ((VS_STATE_NAMES != 0) && (VS_NOF_STATES != 0))
+    981              case STATE_TYPE :
+    982                if (VS_NOF_STATES <= IdentNo)
+    983                  return (SES_RANGE_ERR);
+    984                s = (char *)VS.SNames + VS.SNI[IdentNo];
+    985                break;
+    986          #endif
+    987          #if ((VS_ACTION_FUNCTION_NAMES != 0) && (VS_NOF_ACTION_FUNCTIONS != 0))
+    988              case ACTION_TYPE :
+    989                if (VS_NOF_ACTION_FUNCTIONS <= IdentNo)
+    990                  return (SES_RANGE_ERR);
+    991                s = (char *)VS.ANames + VS.ANI[IdentNo];
+    992                break;
+    993          #endif
+    994              default :
+    995                return (SES_TYPE_ERR);
+    996            }
+    997            for (i = 0; i < MaxSize; i++)
+    998            {
+    999              c = *s++;
+   1000              *Text++ = c;
+   1001              if (c == '\0')
+   1002                return (SES_OKAY);
+   1003            }
+   1004            Text--;
+   1005            *Text = '\0';
+   1006            return (SES_TEXT_TOO_LONG);
+   1007          }
+   1008          #endif
+   1009          
+   1010          
+   1011          #if (SEM_NAME_ABS == 1)
+   1012          unsigned char SEM_NameAbs (unsigned char IdentType, 
+   1013            SEM_EXPLANATION_TYPE IdentNo, char VS_TQ_RULEBASE **Text)
+   1014          {
+   1015            switch (IdentType)
+   1016            {
+   1017          #if (VS_EVENT_NAMES != 0)
+   1018              case EVENT_TYPE :
+   1019                if (VS_NOF_EVENTS <= IdentNo)
+   1020                  return (SES_RANGE_ERR);
+   1021                *Text = (char const *)&VS.ENames + VS.ENI[IdentNo];
+   1022                break;
+   1023          #endif
+   1024          #if ((VS_STATE_NAMES != 0) && (VS_NOF_STATES != 0))
+   1025              case STATE_TYPE :
+   1026                if (VS_NOF_STATES <= IdentNo)
+   1027                  return (SES_RANGE_ERR);
+   1028                *Text = (char const *)&VS.SNames + VS.SNI[IdentNo];
+   1029                break;
+   1030          #endif
+   1031          #if ((VS_ACTION_FUNCTION_NAMES != 0) && (VS_NOF_ACTION_FUNCTIONS != 0))
+   1032              case ACTION_TYPE :
+   1033                if (VS_NOF_ACTION_FUNCTIONS <= IdentNo)
+   1034                  return (SES_RANGE_ERR);
+   1035                *Text = (char const *)&VS.ANames + VS.ANI[IdentNo];
+   1036                break;
+   1037          #endif
+   1038              default :
+   1039                return (SES_TYPE_ERR);
+   1040            }
+   1041            return (SES_OKAY);
+   1042          }
+   1043          #endif
+   1044          
+   1045          
+   1046          #if (SEM_EXPL == 1)
+   1047          unsigned char SEM_Expl (unsigned char IdentType, SEM_EXPLANATION_TYPE IdentNo,
+   1048            char *Text, unsigned short MaxSize)
+   1049          {
+   1050            char  c, *s;
+   1051            unsigned short i;
+   1052          
+   1053            if (!MaxSize)
+   1054              return (SES_TEXT_TOO_LONG);
+   1055            switch (IdentType)
+   1056            {
+   1057          #if (VS_EVENT_EXPLS != 0)
+   1058              case EVENT_TYPE :
+   1059                if (VS_NOF_EVENTS <= IdentNo)
+   1060                  return (SES_RANGE_ERR);
+   1061                s = (char *)VS.EExpls + VS.EEI[IdentNo];
+   1062                break;
+   1063          #endif
+   1064          #if ((VS_STATE_EXPLS != 0) && (VS_NOF_STATES != 0))
+   1065              case STATE_TYPE :
+   1066                if (VS_NOF_STATES <= IdentNo)
+   1067                  return (SES_RANGE_ERR);
+   1068                s = (char *)VS.SExpls + VS.SEI[IdentNo];
+   1069                break;
+   1070          #endif
+   1071          #if ((VS_ACTION_EXPLS != 0) && (VS_NOF_ACTION_FUNCTIONS != 0))
+   1072              case ACTION_TYPE :
+   1073                if (VS_NOF_ACTION_FUNCTIONS <= IdentNo)
+   1074                  return (SES_RANGE_ERR);
+   1075                s = (char *)VS.AExpls + VS.AEI[IdentNo];
+   1076                break;
+   1077          #endif
+   1078              default :
+   1079                return (SES_TYPE_ERR);
+   1080            }
+   1081          
+   1082            for (i = 0; i < MaxSize; i++)
+   1083            {
+   1084              c = *s++;
+   1085              *Text++ = c;
+   1086              if (c == '\0')
+   1087                return (SES_OKAY);
+   1088            }
+   1089            Text--;
+   1090            *Text = '\0';
+   1091            return (SES_TEXT_TOO_LONG);
+   1092          }
+   1093          #endif
+   1094          
+   1095          
+   1096          #if (SEM_EXPL_ABS == 1)
+   1097          unsigned char SEM_ExplAbs (unsigned char IdentType,
+   1098            SEM_EXPLANATION_TYPE IdentNo, char VS_TQ_RULEBASE **Text)
+   1099          {
+   1100            switch (IdentType)
+   1101            {
+   1102          #if (VS_EVENT_EXPLS != 0)
+   1103              case EVENT_TYPE :
+   1104                if (VS_NOF_EVENTS <= IdentNo)
+   1105                  return (SES_RANGE_ERR);
+   1106                *Text = (char const *)&VS.EExpls + VS.EEI[IdentNo];
+   1107                break;
+   1108          #endif
+   1109          #if ((VS_STATE_EXPLS != 0) && (VS_NOF_STATES != 0))
+   1110              case STATE_TYPE :
+   1111                if (VS_NOF_STATES <= IdentNo)
+   1112                  return (SES_RANGE_ERR);
+   1113                *Text = (char const *)&VS.SExpls + VS.SEI[IdentNo];
+   1114                break;
+   1115          #endif
+   1116          #if ((VS_ACTION_EXPLS != 0) && (VS_NOF_ACTION_FUNCTIONS != 0))
+   1117              case ACTION_TYPE :
+   1118                if (VS_NOF_ACTION_FUNCTIONS <= IdentNo)
+   1119                  return (SES_RANGE_ERR);
+   1120                *Text = (char const *)&VS.AExpls + VS.AEI[IdentNo];
+   1121                break;
+   1122          #endif
+   1123              default :
+   1124                return (SES_TYPE_ERR);
+   1125            }
+   1126            return (SES_OKAY);
+   1127          }
+   1128          #endif
+   1129          
+   1130          
+   1131          #if (SEM_STATE == 1)
+   1132          unsigned char SEM_State (SEM_STATE_MACHINE_TYPE StateMachineNo,
+   1133            SEM_STATE_TYPE *StateNo)
+   1134          {
+   1135            if (VS_NOF_STATE_MACHINES <= StateMachineNo)
+   1136              return (SES_RANGE_ERR);
+   1137          #if (VS_NOF_STATE_MACHINES != 0)
+   1138            *StateNo = SEM.CSV[StateMachineNo];
+   1139          #else
+   1140            *StateNo = 0;
+   1141          #endif
+   1142            return (SES_FOUND);
+   1143          }
+   1144          #endif
+   1145          
+   1146          
+   1147          #if (SEM_STATE_ALL == 1)
+   1148          unsigned char SEM_StateAll (SEM_STATE_TYPE *StateVector,
+   1149            SEM_STATE_MACHINE_TYPE MaxSize)
+   1150          {
+   1151            SEM_STATE_MACHINE_TYPE i;
+   1152          
+   1153            if (VS_NOF_STATE_MACHINES > MaxSize)
+   1154              return (SES_BUFFER_OVERFLOW);
+   1155          
+   1156          #if (VS_NOF_STATE_MACHINES != 0)
+   1157            for (i = 0; i < VS_NOF_STATE_MACHINES; i++)
+   1158              StateVector[i] = SEM.CSV[i];
+   1159          #else
+   1160            for (i = 0; i < VS_NOF_STATE_MACHINES; i++)
+   1161              StateVector[i] = 0;
+   1162          #endif
+   1163            return (SES_FOUND);
+   1164          }
+   1165          #endif
+   1166          
+   1167          
+   1168          #if (SEM_MACHINE == 1)
+   1169          unsigned char SEM_Machine (SEM_STATE_TYPE StateNo,
+   1170            SEM_STATE_MACHINE_TYPE *StateMachineNo)
+   1171          {
+   1172            if (VS_NOF_STATES <= StateNo)
+   1173              return (SES_RANGE_ERR);
+   1174          #if (VS_NOF_STATE_MACHINES != 0)
+   1175            *StateMachineNo = VS.SMI[StateNo];
+   1176          #else
+   1177            *StateMachineNo = 0;
+   1178          #endif
+   1179            return (SES_FOUND);
+   1180          }
+   1181          #endif
+   1182          
+   1183          
+   1184          #if (SEM_FORCE_STATE == 1)
+   1185          unsigned char SEM_ForceState (SEM_STATE_TYPE StateNo)
+   1186          {
+   1187            if (VS_NOF_STATES <= StateNo)
+   1188              return (SES_RANGE_ERR);
+   1189          #if (VS_NOF_STATE_MACHINES != 0)
+   1190            SEM.CSV[VS.SMI[StateNo]] = StateNo;
+   1191          #endif
+   1192            return (SES_OKAY);
+   1193          }
+   1194          #endif
+
+   Maximum stack usage in bytes:
+
+     Function             CSTACK RSTACK
+     --------             ------ ------
+     SEM_Deduct               0      2
+     SEM_GetOutput            2      2
+       ->   Indirect call     2      2
+     SEM_Init                 0      2
+     SEM_InitAll              0      2
+       -> SEM_Init            0      2
+     SEM_NextState            2      2
+       -> SEM_GetOutput       2      2
+
+
+   Segment part sizes:
+
+     Function/Label Bytes
+     -------------- -----
+     SEM_InitAll       4
+     SEM_Init         70
+     SEM_Deduct       24
+     SEM_GetOutput   764
+     SEM_NextState   140
+
+ 
+ 1 002 bytes in segment CODE
+ 
+ 1 002 bytes of CODE memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,613 @@
+@visualSTATE @RuleBase @Format2 "NoName"
+
+@Directives
+
+  @visualSTATE 5-1-0-423;
+  @Date 2006-01-13;
+  @Time 13:01:29;
+
+
+
+@Declaration
+
+  @ActionFunction
+    VS_VOID A_AxisCalcProfile()
+      [[ Expl = "Determine movement trapezoid.0x0d0x0aSets up ramp up and ramp down values."
+          ]],
+    VS_VOID A_AxisPosUpdate()
+      [[ Expl = "Update position due to tacho input" ]],
+    VS_VOID A_ForceStop()
+      [[ Expl = "Seed E_AxisStop" ]],
+    VS_VOID A_Initialise()
+      [[ Expl = "Initialise 'system' hardware ports0x0d0x0aInitialise internal variables"
+          ]],
+    VS_VOID A_MotorError()
+      [[ Expl = "Motor error handler" ]],
+    VS_VOID A_MotorFwd()
+      [[ Expl = "Motor Forward (Home Sequence)" ]],
+    VS_VOID A_MotorIdle()
+      [[ Expl = "Set IV Motor Idle" ]],
+    VS_VOID A_MotorMove()
+      [[ Expl = "Setup IV Move To" ]],
+    VS_VOID A_MotorOn()
+      [[ Expl = "Motor On:0x0d0x0aBrake Off0x0d0x0aDirection Set0x0d0x0aPower (PWM) Set"
+          ]],
+    VS_VOID A_MotorReRef()
+      [[ Expl = "Setup Motor Re-reference0x0d0x0aCalls MotorFwd or MotorRev dependent 0x0d0x0aon IV_IsHome0x0d0x0a"
+          ]],
+    VS_VOID A_MotorRev()
+      [[ Expl = "Reverse Motor0x0d0x0aBrake = OFF, PWM = ON, DIR = 0" ]],
+    VS_VOID A_MotorStop()
+      [[ Expl = "Stop Motor Output0x0d0x0aPWM = 00x0d0x0aBrake = ON" ]],
+    VS_VOID A_MotorTest()
+      [[ Expl = "Force Motor output (fwd or rev)0x0d0x0a" ]],
+    VS_VOID A_Periodic()
+      [[ Expl = "Periodic function (housekeeping)0x0d0x0a" ]],
+    VS_VOID A_ResetTmStall()
+      [[ Expl = "Reset Stall Timer" ]],
+    VS_VOID A_RxDoComms()
+      [[ Expl = "Valid Message to process" ]],
+    VS_VOID A_RxProcess()
+      [[ Expl = "Handle Rx Char In" ]],
+    VS_VOID A_TxChar(),
+    VS_VOID A_TxEnableOff()
+      [[ Expl = "Release RS485 bus." ]],
+    VS_VOID A_TxEnableOn()
+      [[ Expl = "Set TX enable High for TX" ]],
+    VS_VOID A_TxProcessMsg()
+      [[ Expl = "Push next msg char into 0x0d0x0aIV_Txchout and set E_TxMoreMsg or0x0d0x0aset E_SendComplete"
+          ]],
+    VS_VOID A_TxTestBusIdle()
+      [[ Expl = "Test if RS485 bus is idle; if so,0x0d0x0aset E_LineIdle" ]],
+    @Timer VS_VOID TM_Stall(VS_UINT event, VS_UINT ticks)
+      [[ Expl = "Timeout w.r.t. tacho expected (stall).0x0d0x0a" ]],
+    @Timer VS_VOID TM_Status(VS_UINT event, VS_UINT ticks)
+      [[ Expl = "Timer associated with status monitoring" ]],
+    @Timer VS_VOID TM_TimerTxWait(VS_UINT event, VS_UINT ticks)
+      [[ Expl = "Timer to (re) check status of comms bus." ]];
+
+
+@Definition
+
+  @Event
+    E_AxisError()
+      [[ Expl = "Fault condition during move." ]],
+    E_AxisFwd()
+      [[ Expl = "Motor in forward direction0x0d0x0a" ]],
+    E_AxisHome()
+      [[ Expl = "Home sequence completed" ]],
+    E_AxisInvalid()
+      [[ Expl = "Axis position indeterminate0x0d0x0a(rereference required)" ]],
+    E_AxisLimit()
+      [[ Expl = "Axis limit switch triggered" ]],
+    E_AxisMove()
+      [[ Expl = "Axis positional move required." ]],
+    E_AxisRev()
+      [[ Expl = "Motor in reverse" ]],
+    E_AxisSetPoint()
+      [[ Expl = "Set Point reached" ]],
+    E_AxisStall()
+      [[ Expl = "Stall detected" ]],
+    E_AxisStop()
+      [[ Expl = "Separate 'stop' to avoid dual use of 0x0d0x0aE_Button" ]],
+    E_AxisTacho()
+      [[ Expl = "Tacho Pulse" ]],
+    E_AxisZeroed()
+      [[ Expl = "Home Sequence Competed" ]],
+    E_Button()
+      [[ Expl = "User switch (button) pressed0x0d0x0a" ]],
+    E_Periodic()
+      [[ Expl = "Periodic 1 msec timer event" ]],
+    E_RxChar()
+      [[ Expl = "Character received.0x0d0x0aGenerated from UART interrupt." ]],
+    E_RxMsg()
+      [[ Expl = "Complete (valid) message" ]],
+    E_SendComplete()
+      [[ Expl = "Message Transmission completed" ]],
+    E_SendRequest()
+      [[ Expl = "Response (or asynchronous) message required0x0d0x0a" ]],
+    E_TimerTxWait()
+      [[ Expl = "Re-check RS485 bus ea. 1 msec" ]],
+    E_TxBusIdle()
+      [[ Expl = "Clear to TX (RS485 bus idle)" ]],
+    E_TxComplete()
+      [[ Expl = "UART TX buffer empty" ]],
+    E_TxError()
+      [[ Expl = "Comms error during message transmit." ]],
+    E_TxHiSpeed()
+      [[ Expl = "Signal TX of tx buffer0x0d0x0a" ]],
+    E_TxMoreMsg()
+      [[ Expl = "Further TX (char output) required" ]];
+
+  @ExternalVariable
+    VS_UCHAR val_ip_hom = { 0 }
+      [[ Expl = "1 if active, else 0" ]],
+    VS_UCHAR val_ip_lim = { 0 }
+      [[ Expl = "1 if limit set, else 0" ]],
+    VS_UINT vsstick_stall = { 0 }
+      [[ Expl = "external ticks for stall timer" ]],
+    VS_UINT vsstick_txwait = { 0 }
+      [[ Expl = "external ticks for tx wait timer" ]];
+
+  @InternalVariable
+    VS_UINT16 IV_AxisCurPt = { 0 }
+      [[ Expl = "Axis current position" ]],
+    VS_UCHAR IV_AxisDir = { 0 }
+      [[ Expl = "Axis Direction0x0d0x0aSets motor CW, CCW rotation0x0d0x0aand determines tacho count + or -"
+          ]],
+    VS_UCHAR IV_AxisPWMout = { 0 }
+      [[ Expl = "PWM output (Motor control)0x0d0x0a" ]],
+    VS_UINT16 IV_AxisSetPt = { 0 }
+      [[ Expl = "Axis Set Point" ]],
+    VS_INT IV_AxisStallLimit = { 0 }
+      [[ Expl = "Counter relating to max timeout 0x0d0x0auntil stall condition flagged"
+          ]],
+    VS_UCHAR IV_AxisState = { 0 }
+      [[ Expl = "Axis State for status purposes0x0d0x0a(set upon state exit/entry)0x0d0x0a"
+          ]],
+    VS_UCHAR IV_CommsState = { 0 }
+      [[ Expl = "Comms State for status purpose0x0d0x0a(Set upon entry/exit)"
+          ]],
+    VS_UCHAR IV_DbncL_Button = { 0 }
+      [[ Expl = "Debounce Leading edge button" ]],
+    VS_UCHAR IV_DbncL_Home = { 0 }
+      [[ Expl = "Debounce Leading edge Home" ]],
+    VS_UCHAR IV_DbncL_Limit = { 0 }
+      [[ Expl = "Debounce Leading edge Limit" ]],
+    VS_UCHAR IV_DbncT_Button = { 0 }
+      [[ Expl = "Debounce Trailing edge button" ]],
+    VS_UCHAR IV_DbncT_Home = { 0 }
+      [[ Expl = "Debounce Trailing edge Home" ]],
+    VS_INT IV_DbncT_Limit = { 0 }
+      [[ Expl = "Debounce Trailing edge Limit" ]],
+    VS_UCHAR IV_Inputsw = { 0 }
+      [[ Expl = "Input switch bit values" ]],
+    VS_UCHAR IV_IsButton = { 0 }
+      [[ Expl = "Button Switch active" ]],
+    VS_UCHAR IV_IsHome = { 0 }
+      [[ Expl = "Home switch active" ]],
+    VS_UCHAR IV_IsLimit = { 0 }
+      [[ Expl = "Limit switch active" ]],
+    VS_UCHAR IV_RxMsg_Aid = { 0 }
+      [[ Expl = "Address ID" ]],
+    VS_UCHAR IV_RxMsg_Com = { 0 }
+      [[ Expl = "Message Command" ]],
+    VS_UCHAR IV_RxMsg_Dhi = { 0 }
+      [[ Expl = "Data Hi" ]],
+    VS_UCHAR IV_RxMsg_Dlo = { 0 }
+      [[ Expl = "Rx Message Data Low" ]],
+    VS_UCHAR IV_Rxchin = { 0 }
+      [[ Expl = "UART Rx char" ]],
+    VS_UCHAR IV_Txchout = { 0 }
+      [[ Expl = "Tx Char" ]];
+
+
+@Implementation
+
+  @StateMachine StateMachineSpec_11 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #A_TxProcessMsg();
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule;
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_10 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #A_TxChar();
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule;
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_9 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #TM_TimerTxWait(E_TimerTxWait, vsstick_txwait) #A_TxTestBusIdle();
+
+    @Exit
+      #A_TxEnableOn();
+
+    @Do;
+
+    @InternalRule;
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_8 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #A_MotorRev() #TM_Stall(E_AxisStall, vsstick_stall);
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule
+      E_AxisHome() : #A_MotorFwd(),
+      E_AxisStall() : #A_MotorStop() #A_ForceStop(),
+      E_AxisZeroed() : #A_MotorStop() #A_ForceStop();
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_7 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #A_MotorFwd() #TM_Stall(E_AxisStall, vsstick_stall);
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule
+      E_AxisLimit() : #A_MotorStop() #A_ForceStop(),
+      E_AxisStall() : #A_MotorStop() #A_ForceStop();
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_6 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #A_AxisCalcProfile() #A_MotorMove();
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule
+      E_AxisHome() : #A_MotorStop() #A_MotorError(),
+      E_AxisTacho() : #A_AxisPosUpdate(),
+      E_AxisLimit() : #A_MotorStop() #A_MotorError(),
+      E_AxisStall() : #A_MotorStop() #A_MotorError();
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_5 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #A_MotorReRef();
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule
+      E_AxisHome() : #A_MotorFwd(),
+      E_AxisStall() : #A_MotorStop() #A_ForceStop(),
+      E_AxisZeroed() : #A_MotorStop() #A_ForceStop();
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_4 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #A_MotorStop() #A_MotorIdle();
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule;
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_3 =
+
+    @State;
+
+    @StateRegion;
+
+    @Entry
+      #TM_Status(E_Periodic, 10);
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule
+      E_Periodic() : #A_Periodic(),
+      E_Button() : #A_MotorTest();
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_2 =
+
+    @State
+      TxChar = StateMachineSpec_10
+        [[ Expl = "Send (transmit) character (byte) using UART", 
+           Pos440 = "295 391 492 449 15 1 1638401" ]],
+      TxProgress = StateMachineSpec_11
+        [[ Expl = "Increment through message. Set either0x0d0x0aE_TxMoreMsg0x0d0x0aE_SendComplete"
+           , Pos440 = "433 479 625 541 15 1 1638401" ]],
+      @Initial _InitialState2
+        [[ Pos440 = "245 371 265 391 114689" ]];
+
+    @StateRegion
+      Region1 (TxChar, TxProgress, _InitialState2)
+        [[ Pos440 = "0 0 474 242" ]];
+
+    @Entry;
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule;
+
+    @TransitionRule
+      E_TxComplete() @Src TxChar : @Dest TxProgress
+        [[ Pos440 = "531 373 640 403 1 809894017 197 21 539 419 132 0" ]],
+      E_TxMoreMsg() @Src TxProgress : @Dest TxChar
+        [[ Pos440 = "232 477 357 507 1 809894017 0 25 368 488 60 58" ]],
+      @NoEvent @Src _InitialState2 : @Dest TxChar
+        [[ Pos440 = "342 340 422 370 1 809894017 20 4 315 346 44 0" ]];
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_1 =
+
+    @State
+      WaitForBus = StateMachineSpec_9
+        [[ Expl = "Wait until RS485 bus is inactive0x0d0x0a", 
+           Pos440 = "155 59 499 133 15 1 1638401" ]],
+      Transmit = StateMachineSpec_2
+        [[ Expl = "Message Out in progress.", 
+           Pos440 = "199 259 673 570 68 1 1638401" ]],
+      @Initial _InitialState3
+        [[ Pos440 = "263 15 283 35 114689" ]],
+      HiSpeedTX
+        [[ Expl = "Transmit complete buffer without using transitional states0x0d0x0a"
+           , Pos440 = "21 173 212 234 15 1 1638401" ]];
+
+    @StateRegion
+      @OffPage Region1 (WaitForBus, Transmit, _InitialState3, HiSpeedTX)
+
+        @Object
+          Object0
+            [[ Pos440 = "12 299 148 498 1073741824", 
+               Text = "Transmit will eventually cause E_SendComplete, which exits the \"Sending\" state.0x0d0x0a"
+               , Type = "FreeText" ]];
+
+        [[ Pos440 = "0 0 292 124", TextDisplayNote = "Preserve", 
+           TextDisplayState = "Preserve", TextDisplayTransDesc = "Preserve", 
+           View = "2 2 7" ]];
+
+    @Entry;
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule;
+
+    @TransitionRule
+      E_TimerTxWait() @Src WaitForBus : @Dest WaitForBus
+        [[ Pos440 = "81 19 208 49 1 809894017 0 45 122 74 3 0" ]],
+      E_TxBusIdle() @Src WaitForBus : @Dest Transmit
+        [[ Pos440 = "542 80 651 110 1 809894017 344 21 567 128 394 0" ]],
+      E_TxHiSpeed() @Src WaitForBus : @Dest HiSpeedTX #A_TxChar()
+        [[ Pos440 = "240 184 492 214 1 809894017 135 74 256 197 191 30" ]],
+      @NoEvent @Src _InitialState3 : @Dest WaitForBus
+        [[ Pos440 = "347 9 427 39 1 809894017 20 0 326 29 125 0" ]];
+
+    @TerminationRule;
+
+  @End;
+
+  @StateMachine StateMachineSpec_0 =
+
+    @State;
+
+    @StateRegion
+      Region1
+        [[ Pos440 = "0 0 340 46" ]];
+
+    @Entry
+      #A_TxEnableOff();
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule
+      E_RxChar() : #A_RxProcess(),
+      E_RxMsg() : #A_RxDoComms();
+
+    @TransitionRule;
+
+    @TerminationRule;
+
+  @End;
+
+  @TopStateMachine M16Motor =
+
+    @State
+      Status = StateMachineSpec_3
+        [[ Expl = "Monitor Status and provide indication of status using LED 10x0d0x0aRepeats approximately every 1msec for miscellaneous 'housekeeping' tasks."
+           , Pos440 = "125 92 415 208 15 1 1638401" ]],
+      @Initial _InitialState0
+        [[ Pos440 = "354 20 369 35 114689" ]],
+      MotorIdle = StateMachineSpec_4
+        [[ Expl = "Motor axis inactive", 
+           Pos440 = "161 223 414 294 15 1 1638401" ]],
+      Rereference = StateMachineSpec_5
+        [[ Expl = "Axis re-reference0x0d0x0aMotor reverse until home switch, motor forward (slow) until home switch released."
+           , Pos440 = "16 383 324 527 15 1 1638401" ]],
+      MoveToPosition = StateMachineSpec_6
+        [[ Expl = "Point to point position control.", 
+           Pos440 = "441 407 740 633 49 1 1638401" ]],
+      @Initial _InitialState1
+        [[ Pos440 = "62 207 82 227 114689" ]],
+      MotorFwd = StateMachineSpec_7
+        [[ Expl = "Motor moving forward (towards limit switch)", 
+           Pos440 = "39 8 346 132 15 1 1638401" ]],
+      MotorRev = StateMachineSpec_8
+        [[ Expl = "Motor moving backwards (towards home switch)", 
+           Pos440 = "428 34 731 188 15 1 1638401" ]],
+      Receiving = StateMachineSpec_0
+        [[ Expl = "Comms RX always active (if not sending)", 
+           Pos440 = "201 87 541 224 91 1 1638401" ]],
+      @OffPage Sending = StateMachineSpec_1
+        [[ Expl = "Comms TX in progress (must complete output message)0x0d0x0a"
+           , Pos440 = "207 265 499 424 35 1 1638401" ]],
+      @Initial _InitialState4
+        [[ Pos440 = "106 36 126 56 114689" ]];
+
+    @StateRegion
+      @OffPage Periodic (Status, _InitialState0)
+        [[ Pos440 = "0 0 172 298", TextDisplayNote = "Preserve", 
+           TextDisplayState = "Preserve", TextDisplayTransDesc = "Preserve", 
+           View = "2 2 7" ]],
+      @OffPage MotorControl (MotorIdle, Rereference, MoveToPosition, 
+      _InitialState1, MotorFwd, MotorRev)
+        [[ Pos440 = "1 0 195 298", TextDisplayNote = "Preserve", 
+           TextDisplayState = "Preserve", TextDisplayTransDesc = "Preserve", 
+           View = "2 2 7" ]],
+      @OffPage Comms (Receiving, Sending, _InitialState4)
+
+        @Object
+          Object0
+            [[ Pos440 = "27 281 166 427 1073741824", 
+               Text = "Half duplex mode0x0d0x0aRS485 bus must either RX or TX"
+               , Type = "FreeText" ]],
+          Object1
+            [[ Pos440 = "288 12 594 73 1073741824", 
+               Text = "NB. Setup and use of \"timeout\" conditions within 0x0d0x0aRx & Tx Process routines."
+               , Type = "FreeText" ]];
+
+        [[ Pos440 = "2 0 169 298", TextDisplayNote = "Preserve", 
+           TextDisplayState = "Preserve", TextDisplayTransDesc = "Preserve", 
+           View = "2 2 7" ]];
+
+    @Entry
+      #A_Initialise();
+
+    @Exit;
+
+    @Do;
+
+    @InternalRule;
+
+    @TransitionRule
+      E_Periodic() @Src Status : @Dest Status
+        [[ Pos440 = "22 27 161 57 1 809894017 0 45 75 88 115 72 45 0" ]],
+      @NoEvent @Src _InitialState0 : @Dest Status
+        [[ Pos440 = "245 15 325 45 1 809894017 15 0 325 45 257 0" ]],
+      E_AxisInvalid() @Src MotorIdle : @Dest Rereference
+        [[ Pos440 = "3 244 140 274 1 809894017 0 41 62 283 23 0" ]],
+      E_AxisMove() @Src MotorIdle [|(val_ip_hom == 0) && (val_ip_lim == 0)|] :
+         @Dest MoveToPosition
+        [[ Expl = "Positional move required", 
+           Pos440 = "503 337 719 390 1 809894017 253 44 491 349 107 0" ]],
+      E_AxisRev() @Src MotorIdle : @Dest MotorRev
+        [[ Pos440 = "569 273 693 303 1 809894017 253 34 544 282 93 154" ]],
+      E_AxisFwd() @Src MotorIdle : @Dest MotorFwd
+        [[ Pos440 = "19 149 130 179 1 809894017 19 0 135 173 122 124" ]],
+      E_AxisStop() @Src Rereference : @Dest MotorIdle
+        [[ Expl = "Home sequence completed.", 
+           Pos440 = "93 329 199 359 1 809894017 214 0 202 357 55 71" ]],
+      E_AxisSetPoint() @Src MoveToPosition : @Dest MotorIdle
+        [[ Expl = "Set point reached", 
+           Pos440 = "263 574 403 603 1 809894017 0 124 360 544 175 71" ]],
+      E_AxisError() @Src MoveToPosition : @Dest MotorIdle
+        [[ Expl = "Fault has occurred", 
+           Pos440 = "387 373 503 403 1 809894017 0 50 372 394 221 71" ]],
+      @NoEvent @Src _InitialState1 : @Dest MotorIdle
+        [[ Pos440 = "105 194 185 225 1 809894017 20 0 108 233 0 17" ]],
+      E_AxisStop() @Src MotorFwd : @Dest MotorIdle
+        [[ Pos440 = "227 161 332 191 1 809894017 235 124 213 170 52 0" ]],
+      E_AxisStop() @Src MotorRev : @Dest MotorIdle
+        [[ Pos440 = "324 142 422 172 1 809894017 0 96 390 178 191 0" ]],
+      E_SendRequest() @Src Receiving : @Dest Sending
+        [[ Pos440 = "410 230 568 260 1 809894017 340 61 581 242 292 89" ]],
+      E_SendComplete() @Src Sending : @Dest Receiving
+        [[ Pos440 = "10 178 148 214 1 809894017 0 78 154 221 0 72" ]],
+      @NoEvent @Src _InitialState4 : @Dest Receiving
+        [[ Pos440 = "109 53 189 83 1 809894017 20 10 189 53 63 0" ]];
+
+    @TerminationRule;
+
+    [[ Pos440 = "36 37 572 426 91 1 114689" ]]
+
+  @End;
+

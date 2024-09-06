@@ -1,0 +1,2197 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+// IAR Atmel AVR C Compiler V3.10C/W32                 31/Jan/2006  09:32:51 /
+// Copyright 1996-2004 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\VSActionToOutput /
+//                    .c                                                     /
+//    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Deb /
+//                    ug\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\Li /
+//                    st\ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\  /
+//                    -z2 --no_cse --no_inline --no_code_motion              /
+//                    --no_cross_call --no_clustering --debug                /
+//                    -DENABLE_BIT_DEFINITIONS -e -I                         /
+//                    M:\VisualState\ProjectM16Motor\ew\src\ -I              /
+//                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I            /
+//                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I            /
+//                    "C:\Program Files\IAR Systems\Embedded Workbench       /
+//                    3.2\avr\INC\" -I "C:\Program Files\IAR                 /
+//                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"          /
+//                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\sr /
+//                    c\VSActionToOutput.c                                   /
+//    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\VSActionT /
+//                    oOutput.s90                                            /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME VSActionToOutput
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?need_segment_init
+
+        PUBWEAK `?<Segment init: NEAR_Z>`
+        PUBLIC A_AxisCalcProfile
+        PUBLIC A_AxisPosUpdate
+        PUBLIC A_ForceStop
+        PUBLIC A_Initialise
+        PUBLIC A_MotorError
+        PUBLIC A_MotorFwd
+        PUBLIC A_MotorIdle
+        PUBLIC A_MotorMove
+        PUBLIC A_MotorOn
+        PUBLIC A_MotorReRef
+        PUBLIC A_MotorRev
+        PUBLIC A_MotorStop
+        PUBLIC A_MotorTest
+        PUBLIC A_Periodic
+        PUBLIC A_RxDoComms
+        PUBLIC A_RxProcess
+        PUBLIC A_TxChar
+        PUBLIC A_TxEnableOff
+        PUBLIC A_TxEnableOn
+        PUBLIC A_TxProcessMsg
+        PUBLIC A_TxTestBusIdle
+        PUBLIC TM_Stall
+        PUBLIC TM_Status
+        PUBLIC TM_TimerTxWait
+        PUBWEAK _A_OCR2
+        PUBWEAK _A_PINB
+        PUBWEAK _A_PIND
+        PUBWEAK _A_PORTB
+        PUBWEAK _A_UCSRB
+        PUBWEAK _A_UDR
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC wal_setup_vss_timer
+        PUBLIC wal_vss_timer_function
+        PUBLIC wvt_period
+        PUBLIC wvt_stall
+        PUBLIC wvt_txwait
+
+        EXTERN SEQ_AddEvent
+        EXTERN vss_seq_error
+        EXTERN wal_pos_similar
+        EXTERN wal_motor_stop
+        EXTERN wal_position_store
+        EXTERN InitData
+        EXTERN LoadNVData
+        EXTERN USART_Init_High
+        EXTERN USART_Init_Low
+        EXTERN wal_motor_start
+        EXTERN wal_eetbl_write
+        EXTERN wal_do_command
+        EXTERN uc_axis_dir
+        EXTERN uc_axis_err
+        EXTERN uc_axis_pwm
+        EXTERN uc_axis_rud
+        EXTERN uc_axis_vss
+        EXTERN uc_comm_9set
+        EXTERN uc_comm_adid
+        EXTERN uc_comm_flag
+        EXTERN uc_comm_hilo
+        EXTERN uc_comm_idle
+        EXTERN uc_comm_noecho
+        EXTERN uc_delay_uni
+        EXTERN uc_done_move
+        EXTERN uc_led_count
+        EXTERN uc_led_scale
+        EXTERN uc_led_value
+        EXTERN uc_msgrxptr
+        EXTERN uc_msgtxprt
+        EXTERN uc_mstimer_hi
+        EXTERN uc_mstimer_lo
+        EXTERN uc_num_moves24
+        EXTERN uc_num_moveshi
+        EXTERN uc_num_moveslo
+        EXTERN uc_powerup_once
+        EXTERN uc_rx_chksum
+        EXTERN uc_rx_chrecv
+        EXTERN uc_rx_process
+        EXTERN uc_rxbuff
+        EXTERN uc_rxrdptr
+        EXTERN uc_rxwrptr
+        EXTERN uc_settlepower
+        EXTERN uc_tx_chout
+        EXTERN uc_unitravel
+        EXTERN uca_msgrx
+        EXTERN uca_msgtx
+        EXTERN ui_axis_diff
+        EXTERN ui_axis_pos
+        EXTERN ui_axis_rup
+        EXTERN ui_axis_set
+        EXTERN ui_axis_uni
+        EXTERN val_ip_hom
+        EXTERN val_ip_lim
+        EXTERN vsstick_stall
+
+// M:\VisualState\ProjectM16Motor\ew\src\VSActionToOutput.c
+//    1 /*****************************************************************************
+//    2 * IAR visualSTATE action functions and error handler.
+//    3 * i.e. flesh out functions corresponding to System1action.h (VisualSTATE)
+//    4 *****************************************************************************/
+//    5 
+//    6 #include <iom16.h>		 	// Atmel up definitions
+//    7 #include <inavr.h>			// AVR intrinsic functions
+//    8 #include "VSMain.h"			// VisualState definitions (further includes)
+//    9 #include "system1Action.h"              // VisualState generated 'action' functions:
+//   10 
+//   11 #include "usart2.h"			// Application (UART) defs
+//   12 #include "defs.h"			// Application (GENERAL) defs
+//   13 #include "globals.h"		// Application global data/variables
+//   14 
+//   15 
+//   16 unsigned char wal_pos_similar( void);
+//   17 void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+//   18 
+//   19 void wal_motor_start( void);
+//   20 void wal_motor_stop( void);
+//   21 void wal_position_store( void);
+//   22 
+//   23 void InitData( void);
+//   24 void LoadNVData( void);	        // read eeprom (nv data)
+//   25 void wal_do_command( void);
+//   26 void wal_picnet_motor( void);
+//   27 
+//   28 void wal_setup_vss_timer( void);
+//   29 void wal_vss_timer_function( void);
+//   30 void vss_seq_error( void);
+//   31 
+//   32 /* Implement timer counter structure */
+//   33 /* Relies upon hardware::application tick generation */
+//   34 
+//   35 
+//   36 typedef struct wdef_vss_timer{
+//   37   VS_UINT event;
+//   38   VS_UINT ticks;
+//   39   unsigned char active;
+//   40   unsigned char other;
+//   41 };
+//   42 
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+	REQUIRE `?<Segment init: NEAR_Z>`
+//   43 struct wdef_vss_timer wvt_period;
+wvt_period:
+        DS 6
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+	REQUIRE `?<Segment init: NEAR_Z>`
+//   44 struct wdef_vss_timer wvt_stall;
+wvt_stall:
+        DS 6
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+	REQUIRE `?<Segment init: NEAR_Z>`
+//   45 struct wdef_vss_timer wvt_txwait;
+wvt_txwait:
+        DS 6
+//   46 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   47 void wal_setup_vss_timer( void)
+wal_setup_vss_timer:
+//   48 {
+//   49 	wvt_period.event = E_Periodic;		        // results in A_Periodic
+	LDI	R16,14
+	LDI	R17,0
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//   50 	wvt_period.ticks = 0;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	STD	Z+2,R16
+	STD	Z+3,R17
+//   51 	wvt_period.active = 0;
+	LDI	R16,0
+	STS	(wvt_period + 4),R16
+//   52 	wvt_period.other = 0;
+	LDI	R16,0
+	STS	(wvt_period + 5),R16
+//   53 	wvt_stall.event = E_AxisStall;			// used within 'MoveTo' state
+	LDI	R16,9
+	LDI	R17,0
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//   54 	wvt_stall.ticks = 0;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	STD	Z+2,R16
+	STD	Z+3,R17
+//   55 	wvt_stall.active = 0;
+	LDI	R16,0
+	STS	(wvt_stall + 4),R16
+//   56 	wvt_stall.other = 0;
+	LDI	R16,0
+	STS	(wvt_stall + 5),R16
+//   57 	wvt_txwait.event = E_TimerTxWait;		// used within 'Sending' state
+	LDI	R16,19
+	LDI	R17,0
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//   58 	wvt_txwait.ticks = 0;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	STD	Z+2,R16
+	STD	Z+3,R17
+//   59 	wvt_txwait.active = 0;
+	LDI	R16,0
+	STS	(wvt_txwait + 4),R16
+//   60 	wvt_txwait.other = 0;
+	LDI	R16,0
+	STS	(wvt_txwait + 5),R16
+//   61 }
+	RET
+//   62 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   63 void wal_vss_timer_function( void)
+wal_vss_timer_function:
+//   64 {
+//   65 // Function for VSS Timer counter activity
+//   66 // Must be called every <x> msec, where <x> = VSS timebase
+//   67 // i.e. this application tick = 0.5 msec
+//   68 
+//   69 // could use timer ->
+//   70 // if timer->active == 1 .. if timer->ticks ... timer->event
+//   71 
+//   72 	if( wvt_period.active == 1)
+	LDS	R16,(wvt_period + 4)
+	CPI	R16,1
+	BRNE	??wal_vss_timer_function_0
+//   73 	{
+//   74 		if( wvt_period.ticks != 0)
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	OR	R16,R17
+	BREQ	??wal_vss_timer_function_0
+//   75 		{
+//   76 			wvt_period.ticks--;
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	SUBI	R16,1
+	SBCI	R17,0
+	STD	Z+2,R16
+	STD	Z+3,R17
+//   77 			if( wvt_period.ticks == 0)
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	OR	R16,R17
+	BRNE	??wal_vss_timer_function_0
+//   78 			{
+//   79 				if( SEQ_AddEvent( wvt_period.event) != UCC_OK )
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	LD	R16,Z
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??wal_vss_timer_function_0
+//   80 				{
+//   81 					vss_seq_error();
+	CALL	vss_seq_error
+//   82 				}
+//   83 			}
+//   84 		}
+//   85 	}
+//   86 	if( wvt_stall.active == 1)
+??wal_vss_timer_function_0:
+	LDS	R16,(wvt_stall + 4)
+	CPI	R16,1
+	BRNE	??wal_vss_timer_function_1
+//   87 	{
+//   88 		if( wvt_stall.ticks != 0)
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	OR	R16,R17
+	BREQ	??wal_vss_timer_function_1
+//   89 		{
+//   90 			wvt_stall.ticks--;
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	SUBI	R16,1
+	SBCI	R17,0
+	STD	Z+2,R16
+	STD	Z+3,R17
+//   91 			if( wvt_stall.ticks == 0)
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	OR	R16,R17
+	BRNE	??wal_vss_timer_function_1
+//   92 			{
+//   93 				if( SEQ_AddEvent( wvt_stall.event) != UCC_OK )
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	LD	R16,Z
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??wal_vss_timer_function_2
+//   94 				{
+//   95 					vss_seq_error();
+	CALL	vss_seq_error
+//   96 				}
+//   97 				wvt_stall.active = 0;
+??wal_vss_timer_function_2:
+	LDI	R16,0
+	STS	(wvt_stall + 4),R16
+//   98 			}
+//   99 		}
+//  100 	}
+//  101 	if( wvt_txwait.active == 1)
+??wal_vss_timer_function_1:
+	LDS	R16,(wvt_txwait + 4)
+	CPI	R16,1
+	BRNE	??wal_vss_timer_function_3
+//  102 	{
+//  103 		if( wvt_txwait.ticks != 0)
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	OR	R16,R17
+	BREQ	??wal_vss_timer_function_3
+//  104 		{
+//  105 			wvt_txwait.ticks--;
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	SUBI	R16,1
+	SBCI	R17,0
+	STD	Z+2,R16
+	STD	Z+3,R17
+//  106 			if( wvt_txwait.ticks == 0)
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	LDD	R16,Z+2
+	LDD	R17,Z+3
+	OR	R16,R17
+	BRNE	??wal_vss_timer_function_3
+//  107 			{
+//  108 				if( SEQ_AddEvent( wvt_txwait.event) != UCC_OK )
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	LD	R16,Z
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??wal_vss_timer_function_3
+//  109 				{
+//  110 					vss_seq_error();
+	CALL	vss_seq_error
+//  111 				}
+//  112 			}
+//  113 		}
+//  114 	}
+//  115 }
+??wal_vss_timer_function_3:
+	RET
+//  116 
+//  117 
+//  118 /* REFER TO VS generated "System1action.h" */
+//  119 /* Last updated 08DEC04 */
+//  120 
+//  121 /* 
+//  122 
+//  123 extern VS_VOID A_AxisCalcProfile (VS_VOID);
+//  124 extern VS_VOID A_AxisPosUpdate (VS_VOID);
+//  125 extern VS_VOID A_ForceStop (VS_VOID);
+//  126 extern VS_VOID A_Initialise (VS_VOID);
+//  127 extern VS_VOID A_MotorError (VS_VOID);
+//  128 extern VS_VOID A_MotorFwd (VS_VOID);
+//  129 extern VS_VOID A_MotorIdle (VS_VOID);
+//  130 extern VS_VOID A_MotorMove (VS_VOID);
+//  131 extern VS_VOID A_MotorOn (VS_VOID);
+//  132 extern VS_VOID A_MotorReRef (VS_VOID);
+//  133 extern VS_VOID A_MotorRev (VS_VOID);
+//  134 extern VS_VOID A_MotorStop (VS_VOID);
+//  135 extern VS_VOID A_MotorTest (VS_VOID);
+//  136 extern VS_VOID A_Periodic (VS_VOID);
+//  137 extern VS_VOID A_RxDoComms (VS_VOID);
+//  138 extern VS_VOID A_RxProcess (VS_VOID);
+//  139 extern VS_VOID A_TxChar (VS_VOID);
+//  140 extern VS_VOID A_TxEnableOff (VS_VOID);
+//  141 extern VS_VOID A_TxEnableOn (VS_VOID);
+//  142 extern VS_VOID A_TxProcessMsg (VS_VOID);
+//  143 extern VS_VOID A_TxTestBusIdle (VS_VOID);
+//  144 extern VS_VOID TM_Stall (VS_UINT event, VS_UINT ticks);
+//  145 extern VS_VOID TM_Status (VS_UINT event, VS_UINT ticks);
+//  146 extern VS_VOID TM_TimerTxWait (VS_UINT event, VS_UINT ticks);
+//  147 
+//  148 */
+//  149 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  150 VS_VOID A_AxisCalcProfile (VS_VOID)
+A_AxisCalcProfile:
+//  151 {
+//  152 // action upon entry to motor profile
+//  153 // associated with A_MotorMove()
+//  154 
+//  155 // use difference to determine motor direction (uc_axis_dir)
+//  156 // prepare ramp-up & ramp-down profile
+//  157 
+//  158 // negative difference so move in reverse
+//  159 // decrease 'set point' for uni-directional motion,
+//  160 // and set unidirection flag:
+//  161 
+//  162   // V1.7 16JAN06: always set 'uni' == 'set'
+//  163   ui_axis_uni = ui_axis_set;
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_uni)
+	LDI	R31,(ui_axis_uni) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  164   // clear 'uni-directional flag' (set later if required)
+//  165   uc_unitravel = 0;
+	LDI	R16,0
+	STS	uc_unitravel,R16
+//  166 
+//  167   if( ui_axis_set == ui_axis_pos)
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	CP	R16,R18
+	CPC	R17,R19
+	BRNE	??A_AxisCalcProfile_0
+//  168   {
+//  169     if( SEQ_AddEvent( E_AxisSetPoint) != UCC_OK )
+	LDI	R16,8
+	CALL	SEQ_AddEvent
+	TST	R16
+	BRNE	$+2+2
+	RJMP	??A_AxisCalcProfile_1
+//  170     {
+//  171       vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  172     }
+//  173     return;
+//  174   }
+//  175 
+//  176   if( ui_axis_set > ui_axis_pos)
+??A_AxisCalcProfile_0:
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	CP	R16,R18
+	CPC	R17,R19
+	BRCC	??A_AxisCalcProfile_2
+//  177   {
+//  178     uc_axis_dir = 1;
+	LDI	R16,1
+	STS	uc_axis_dir,R16
+//  179     ui_axis_diff = ui_axis_set - ui_axis_pos;
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	SUB	R16,R18
+	SBC	R17,R19
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  180     // calculate ramp profile; pwm output value (STEPA) set in A_MotorOn
+//  181     return;
+	RET
+//  182   }
+//  183   
+//  184   // V1.6 12JAN06: implement UNI-DIRECTIONAL travel!
+//  185   // Just force position less than intended, let 'top' control re-send move
+//  186   // (A_MotorMove)
+//  187   // if( ui_axis_set > WAL_UNI_TRAVEL)
+//  188   // {
+//  189   //   ui_axis_set -= WAL_UNI_TRAVEL;
+//  190   // }
+//  191   // else force re-reference.... (maybe set ui_axis_set == 0)
+//  192   
+//  193   // V1.7 16JAN06: re-implement UNI-DIRECTIONAL travel:
+//  194   // but include auto-repositioning based upon internal flag...
+//  195   uc_unitravel = 1;     // force 're-position' at end of travel
+??A_AxisCalcProfile_2:
+	LDI	R16,1
+	STS	uc_unitravel,R16
+//  196   // V1.7.. use A_MotorIdle to force move (E_AxisMove) if uc_unitravel
+//  197   
+//  198   ui_axis_set = 0;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  199   if( ui_axis_uni > WAL_UNI_TRAVEL)
+	LDI	R30,LOW(ui_axis_uni)
+	LDI	R31,(ui_axis_uni) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	CPI	R16,81
+	LDI	R18,0
+	CPC	R17,R18
+	BRCS	??A_AxisCalcProfile_3
+//  200   {
+//  201     ui_axis_set = (ui_axis_uni - WAL_UNI_TRAVEL);
+	LDI	R30,LOW(ui_axis_uni)
+	LDI	R31,(ui_axis_uni) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	SUBI	R16,80
+	SBCI	R17,0
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  202   }
+//  203   
+//  204   
+//  205   uc_axis_dir = 0;
+??A_AxisCalcProfile_3:
+	LDI	R16,0
+	STS	uc_axis_dir,R16
+//  206   ui_axis_diff = ui_axis_pos - ui_axis_set;
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	SUB	R16,R18
+	SBC	R17,R19
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  207   // calculate ramp profile
+//  208 
+//  209 }
+??A_AxisCalcProfile_1:
+	RET
+//  210 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  211 VS_VOID A_AxisPosUpdate (VS_VOID)
+A_AxisPosUpdate:
+//  212 {
+//  213 // action due to E_Tacho (update counter position)
+//  214 // NB. uc_axis_dir fwd == 1, rev == 0
+//  215 
+//  216   // uc_stall_tacin++; updated within tacho input routine
+//  217   
+//  218   // V1.6 13JAN06: rationalise 'tacho' position update within input
+//  219   // only handle 'motion' (vss==2) logic within this function...
+//  220 
+//  221   if( wal_pos_similar() )
+	CALL	wal_pos_similar
+	TST	R16
+	BREQ	??A_AxisPosUpdate_0
+//  222   {
+//  223     wal_motor_stop();
+	CALL	wal_motor_stop
+//  224     wal_position_store();
+	CALL	wal_position_store
+//  225     if( SEQ_AddEvent( E_AxisSetPoint) != UCC_OK )
+	LDI	R16,8
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_AxisPosUpdate_1
+//  226     {
+//  227       vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  228     }
+//  229     return;
+//  230   }
+//  231 
+//  232   if( ui_axis_pos > WAL_MAX_AXIS_TACHO )
+??A_AxisPosUpdate_0:
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	CPI	R16,0
+	LDI	R18,64
+	CPC	R17,R18
+	BRCS	??A_AxisPosUpdate_2
+//  233   {
+//  234     wal_motor_stop();
+	CALL	wal_motor_stop
+//  235     if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+	LDI	R16,1
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_AxisPosUpdate_2
+//  236     {
+//  237             vss_seq_error();
+	CALL	vss_seq_error
+//  238     }
+//  239   }
+//  240   
+//  241   // check ramp-up, ramp-down conditions:
+//  242   // NB. wal_pos_similar calls wal_calc_setpos_diff()
+//  243   // therefore ui_axis_diff already determined...
+//  244   
+//  245   ui_axis_rup++;
+??A_AxisPosUpdate_2:
+	LDI	R30,LOW(ui_axis_rup)
+	LDI	R31,(ui_axis_rup) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	SUBI	R16,255
+	SBCI	R17,255
+	ST	Z,R16
+	STD	Z+1,R17
+//  246   
+//  247   /*
+//  248   if( ui_axis_diff < WAL_PWM_ZONEE)
+//  249   {
+//  250     WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+//  251     return;
+//  252   }
+//  253   
+//  254   if( ui_axis_diff < WAL_PWM_ZONED)
+//  255   {
+//  256     if( ui_axis_rup < WAL_PWM_ZONEE) 
+//  257       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+//  258     else
+//  259       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+//  260     return;
+//  261   }
+//  262 
+//  263   if( ui_axis_diff < WAL_PWM_ZONEC)
+//  264   {
+//  265     if( ui_axis_rup < WAL_PWM_ZONEE) 
+//  266     {
+//  267       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+//  268     }
+//  269     else
+//  270     {
+//  271       if( ui_axis_rup < WAL_PWM_ZONED)
+//  272         WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+//  273       else
+//  274         WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+//  275     }
+//  276     return;
+//  277   }
+//  278 
+//  279   if( ui_axis_diff < WAL_PWM_ZONEB)
+//  280   {
+//  281     if( ui_axis_rup < WAL_PWM_ZONEE) 
+//  282     {
+//  283       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+//  284     }
+//  285     else
+//  286     {
+//  287       if( ui_axis_rup < WAL_PWM_ZONED)
+//  288       {
+//  289         WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+//  290       }
+//  291       else
+//  292       {
+//  293         if( ui_axis_rup < WAL_PWM_ZONEC)
+//  294           WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+//  295         else
+//  296           WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+//  297       }
+//  298     }
+//  299     return;
+//  300   }
+//  301 
+//  302   if( ui_axis_diff < WAL_PWM_ZONEA)
+//  303   {
+//  304     if( ui_axis_rup < WAL_PWM_ZONEE) 
+//  305     {
+//  306       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+//  307     }
+//  308     else
+//  309     {
+//  310       if( ui_axis_rup < WAL_PWM_ZONED)
+//  311       {
+//  312         WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+//  313       }
+//  314       else
+//  315       {
+//  316         if( ui_axis_rup < WAL_PWM_ZONEC)
+//  317         {
+//  318           WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+//  319         }
+//  320         else
+//  321         {
+//  322           if( ui_axis_rup < WAL_PWM_ZONEB)
+//  323             WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+//  324           else
+//  325             WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPE;
+//  326         }
+//  327       }
+//  328     }
+//  329     return;
+//  330   }
+//  331   */
+//  332 
+//  333   // no ramp down in effect; therefore check if ramp up only:
+//  334   // V1.5 15DEC05: 100% PWM on ramp up:
+//  335   /*
+//  336   if( ui_axis_rup < WAL_PWM_ZONEA)              // ZONEA is largest
+//  337   {
+//  338     WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPE;   // STEPE is below max
+//  339     if( ui_axis_rup < WAL_PWM_ZONEB)
+//  340       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+//  341     if( ui_axis_rup < WAL_PWM_ZONEC)
+//  342       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+//  343     if( ui_axis_rup < WAL_PWM_ZONED)
+//  344       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+//  345     if( ui_axis_rup < WAL_PWM_ZONEE)
+//  346       WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;   // STEP A is slowest
+//  347   }
+//  348   else
+//  349   {
+//  350     WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+//  351   }
+//  352   */
+//  353   
+//  354   // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+//  355   // WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+//  356     
+//  357 }
+??A_AxisPosUpdate_1:
+	RET
+//  358 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  359 VS_VOID A_ForceStop (VS_VOID)
+A_ForceStop:
+//  360 {
+//  361   if( SEQ_AddEvent( E_AxisStop) != UCC_OK )
+	LDI	R16,10
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_ForceStop_0
+//  362   {
+//  363     vss_seq_error();
+	CALL	vss_seq_error
+//  364   }
+//  365 }
+??A_ForceStop_0:
+	RET
+//  366 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  367 VS_VOID A_Initialise (VS_VOID)
+A_Initialise:
+//  368 {
+//  369   // Primary initialisation done prior to application start
+//  370   // setup ports and interupts
+//  371   // InitDevice();  
+//  372   // once ports setup, set outputs per application
+//  373   // InitOutputs();
+//  374 
+//  375   // reset variables:
+//  376   InitData();
+	CALL	InitData
+//  377   // read eeprom (nv data)
+//  378   LoadNVData();
+	CALL	LoadNVData
+//  379 
+//  380   // setup baud rate dependent upon option
+//  381   if( uc_comm_hilo == 0)
+	LDS	R16,uc_comm_hilo
+	TST	R16
+	BRNE	??A_Initialise_0
+//  382   {
+//  383     // (max) 115200 ~= 125k baud (vario)
+//  384     USART_Init_High(1);
+	LDI	R16,1
+	LDI	R17,0
+	CALL	USART_Init_High
+	RET
+//  385   }
+//  386   else
+//  387   {
+//  388     // 9600 baud (pic) = 25 with 4MHz osc and U2X = 0
+//  389     USART_Init_Low( 25);
+??A_Initialise_0:
+	LDI	R16,25
+	LDI	R17,0
+	CALL	USART_Init_Low
+//  390   }
+//  391 
+//  392   // SEQ_AddEvent(E_AxisInvalid);
+//  393 }
+	RET
+
+        RSEG CODE:CODE:NOROOT(1)
+//  394 VS_VOID A_MotorError (VS_VOID)
+A_MotorError:
+//  395 {
+//  396   // response to stall, limit detect E_AxisError
+//  397   if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+	LDI	R16,1
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_MotorError_0
+//  398   {
+//  399           vss_seq_error();
+	CALL	vss_seq_error
+//  400   }
+//  401 }
+??A_MotorError_0:
+	RET
+//  402 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  403 VS_VOID A_MotorFwd (VS_VOID)
+A_MotorFwd:
+//  404 {
+//  405 // called upon Axis Home Event
+//  406   wal_motor_stop();
+	CALL	wal_motor_stop
+//  407   uc_axis_dir = 1;
+	LDI	R16,1
+	STS	uc_axis_dir,R16
+//  408   // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+//  409   // WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+//  410   uc_axis_pwm = WAL_PWM_HOME;
+	LDI	R16,204
+	STS	uc_axis_pwm,R16
+//  411   wal_motor_start();
+	CALL	wal_motor_start
+//  412 }
+	RET
+
+        RSEG CODE:CODE:NOROOT(1)
+//  413 VS_VOID A_MotorIdle (VS_VOID)
+A_MotorIdle:
+//  414 {
+//  415   // set internal axis state for status
+//  416   uc_axis_vss = 0;
+	LDI	R16,0
+	STS	uc_axis_vss,R16
+//  417 
+//  418   uc_done_move = 1;
+	LDI	R16,1
+	STS	uc_done_move,R16
+//  419   if( uc_powerup_once )
+	LDS	R16,uc_powerup_once
+	TST	R16
+	BREQ	??A_MotorIdle_0
+//  420   {
+//  421     uc_powerup_once = 0;
+	LDI	R16,0
+	STS	uc_powerup_once,R16
+//  422     uc_done_move = 0;
+	LDI	R16,0
+	STS	uc_done_move,R16
+//  423   }
+//  424   
+//  425   // V1.7 16JAN06: self-contained 'uni-directional travel'
+//  426   // change in direction delayed using 'uc_delay_uni'
+//  427 
+//  428   if( uc_unitravel)
+??A_MotorIdle_0:
+	LDS	R16,uc_unitravel
+	TST	R16
+	BREQ	??A_MotorIdle_1
+//  429   {
+//  430     uc_delay_uni = 1;
+	LDI	R16,1
+	STS	uc_delay_uni,R16
+//  431     uc_mstimer_lo = uc_mstimer_hi = 0;
+	LDI	R16,0
+	STS	uc_mstimer_hi,R16
+	STS	uc_mstimer_lo,R16
+//  432     uc_done_move = 0;
+	LDI	R16,0
+	STS	uc_done_move,R16
+//  433   }
+//  434 }
+??A_MotorIdle_1:
+	RET
+
+        RSEG CODE:CODE:NOROOT(1)
+//  435 VS_VOID A_MotorMove (VS_VOID)
+A_MotorMove:
+//  436 {
+//  437   // set internal axis state for status
+//  438   uc_axis_vss = 2;
+	LDI	R16,2
+	STS	uc_axis_vss,R16
+//  439 }
+	RET
+
+        RSEG CODE:CODE:NOROOT(1)
+//  440 VS_VOID A_MotorOn (VS_VOID)
+A_MotorOn:
+//  441 {
+//  442   // uc_axis_dir = DIR;
+//  443   // uc_axis_pwm = PWM;
+//  444   
+//  445   // Brake Off, Direction Set, Enable = PWM Output
+//  446   uc_axis_rud = 1;	          // ramp up
+	LDI	R16,1
+	STS	uc_axis_rud,R16
+//  447   ui_axis_rup = 0;                // reset 'ramp-up' counter
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ui_axis_rup)
+	LDI	R31,(ui_axis_rup) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  448   // uc_axis_pwm = WAL_PWM_STEPA;
+//  449   // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+//  450   WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+	LDI	R16,255
+	STS	uc_axis_pwm,R16
+	OUT	0x23,R16
+//  451   
+//  452   wal_motor_start();
+	CALL	wal_motor_start
+//  453 }
+	RET
+//  454 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  455 VS_VOID A_MotorReRef (VS_VOID)
+A_MotorReRef:
+//  456 {
+//  457   // set internal axis state for status
+//  458   uc_axis_vss = 1;
+	LDI	R16,1
+	STS	uc_axis_vss,R16
+//  459   
+//  460   // if home switch start moving backwards (rev)
+//  461   if( val_ip_hom == 0)
+	LDS	R16,val_ip_hom
+	TST	R16
+	BRNE	??A_MotorReRef_0
+//  462   {
+//  463     A_MotorRev();
+	RCALL	A_MotorRev
+	RET
+//  464   }
+//  465   else
+//  466   {
+//  467     // else move forwards (if not at limit)
+//  468     if( val_ip_lim == 0)
+??A_MotorReRef_0:
+	LDS	R16,val_ip_lim
+	TST	R16
+	BRNE	??A_MotorReRef_1
+//  469     {
+//  470       A_MotorFwd();
+	RCALL	A_MotorFwd
+//  471     }
+//  472   }
+//  473 }
+??A_MotorReRef_1:
+	RET
+//  474 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  475 VS_VOID A_MotorRev (VS_VOID) 
+A_MotorRev:
+//  476 {
+//  477   uc_axis_dir = 0;
+	LDI	R16,0
+	STS	uc_axis_dir,R16
+//  478   uc_axis_pwm = WAL_PWM_RAMPUP;
+	LDI	R16,204
+	STS	uc_axis_pwm,R16
+//  479   
+//  480   // prevent 
+//  481   wal_motor_start();
+	CALL	wal_motor_start
+//  482 }
+	RET
+//  483 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  484 VS_VOID A_MotorStop (VS_VOID)
+A_MotorStop:
+//  485 {
+//  486   wal_motor_stop();
+	CALL	wal_motor_stop
+//  487   wvt_stall.active = 0;
+	LDI	R16,0
+	STS	(wvt_stall + 4),R16
+//  488 }
+	RET
+//  489 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  490 VS_VOID A_MotorTest (VS_VOID)
+A_MotorTest:
+//  491 {
+//  492   // V1.6 13JAN06: if in 'motion' state stop & set error (A_Handle)
+//  493   if( uc_axis_vss == 2)
+	LDS	R16,uc_axis_vss
+	CPI	R16,2
+	BRNE	??A_MotorTest_0
+//  494   {
+//  495     wal_motor_stop();
+	CALL	wal_motor_stop
+//  496     uc_axis_err = 1;
+	LDI	R16,1
+	STS	uc_axis_err,R16
+//  497     // Rationalise E_AxisError --> E_AxisStop...
+//  498     if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+	LDI	R16,1
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_MotorTest_1
+//  499     {
+//  500       vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  501     }
+//  502     return;
+//  503   }
+//  504   
+//  505   // primary action of state reached from idle due to E_Button
+//  506   // set internal axis state for status
+//  507   uc_axis_vss = 3;
+??A_MotorTest_0:
+	LDI	R16,3
+	STS	uc_axis_vss,R16
+//  508   
+//  509   // V1.5 15DEC05: use 100% PWM button:
+//  510   // uc_axis_pwm = WAL_PWM_TEST;
+//  511   uc_axis_pwm = WAL_PWM_MAXSP;
+	LDI	R16,255
+	STS	uc_axis_pwm,R16
+//  512   
+//  513   vsstick_stall = 4000;
+	LDI	R16,160
+	LDI	R17,15
+	LDI	R30,LOW(vsstick_stall)
+	LDI	R31,(vsstick_stall) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  514   
+//  515   if( uc_axis_dir)
+	LDS	R16,uc_axis_dir
+	TST	R16
+	BREQ	??A_MotorTest_2
+//  516   {
+//  517     if( SEQ_AddEvent( E_AxisRev) != UCC_OK )
+	LDI	R16,7
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_MotorTest_3
+//  518     {
+//  519       vss_seq_error();
+	CALL	vss_seq_error
+	RJMP	??A_MotorTest_3
+//  520     }
+//  521   }
+//  522   else
+//  523   {
+//  524     if( SEQ_AddEvent( E_AxisFwd) != UCC_OK )
+??A_MotorTest_2:
+	LDI	R16,2
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_MotorTest_3
+//  525     {
+//  526       vss_seq_error();
+	CALL	vss_seq_error
+//  527     }
+//  528   }
+//  529   
+//  530   // force test transmission: E_SendRequest
+//  531   uca_msgtx[0] = 0x27;    	        // send to dummy bin
+??A_MotorTest_3:
+	LDI	R16,39
+	STS	uca_msgtx,R16
+//  532   uca_msgtx[1] = uc_comm_adid; 		// from me...
+	LDS	R16,uc_comm_adid
+	STS	(uca_msgtx + 1),R16
+//  533   uca_msgtx[2] = WAL_OP_PWM;    	// current PWM value
+	IN	R16,0x23
+	STS	(uca_msgtx + 2),R16
+//  534   uca_msgtx[3] = PINB;    	        // 
+	IN	R16,0x16
+	STS	(uca_msgtx + 3),R16
+//  535   uca_msgtx[4] = PIND;    	        // ..
+	IN	R16,0x10
+	STS	(uca_msgtx + 4),R16
+//  536   if( SEQ_AddEvent( E_SendRequest) != UCC_OK )
+	LDI	R16,18
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_MotorTest_1
+//  537   {
+//  538     vss_seq_error();
+	CALL	vss_seq_error
+??A_MotorTest_1:
+	RET
+//  539   }
+//  540 }
+//  541 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  542 VS_VOID A_Periodic (VS_VOID)
+A_Periodic:
+//  543 {
+//  544 // This function is indicative of concurrent state activity.
+//  545 // A_Periodic is called upon E_Periodic due to timer TM_Status 
+//  546 // tick value = 10, i.e. every 5msec
+//  547 
+//  548   __watchdog_reset();
+	WDR
+//  549   
+//  550   if( uc_settlepower)
+	LDS	R16,uc_settlepower
+	TST	R16
+	BREQ	??A_Periodic_0
+//  551   {
+//  552     uc_settlepower--;
+	LDI	R30,LOW(uc_settlepower)
+	LDI	R31,(uc_settlepower) >> 8
+	LD	R16,Z
+	DEC	R16
+	ST	Z,R16
+//  553   }
+//  554   
+//  555   // V1.7 16JAN06: add 'move-count' feature:
+//  556   if( uc_done_move)
+??A_Periodic_0:
+	LDS	R16,uc_done_move
+	TST	R16
+	BREQ	??A_Periodic_1
+//  557   {
+//  558     uc_done_move = 0;
+	LDI	R16,0
+	STS	uc_done_move,R16
+//  559     uc_num_moveslo++;
+	LDI	R30,LOW(uc_num_moveslo)
+	LDI	R31,(uc_num_moveslo) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  560     if( uc_num_moveslo == 0)
+	LDS	R16,uc_num_moveslo
+	TST	R16
+	BRNE	??A_Periodic_2
+//  561     {
+//  562       uc_num_moveshi++;
+	LDI	R30,LOW(uc_num_moveshi)
+	LDI	R31,(uc_num_moveshi) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  563       if( uc_num_moveshi == 0)
+	LDS	R16,uc_num_moveshi
+	TST	R16
+	BRNE	??A_Periodic_2
+//  564       {
+//  565         uc_num_moves24++;
+	LDI	R30,LOW(uc_num_moves24)
+	LDI	R31,(uc_num_moves24) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  566       }
+//  567     }
+//  568     wal_eetbl_write( WAL_EE_MOVELO, uc_num_moveslo);
+??A_Periodic_2:
+	LDS	R17,uc_num_moveslo
+	LDI	R16,8
+	CALL	wal_eetbl_write
+//  569     wal_eetbl_write( WAL_EE_MOVEHI, uc_num_moveshi);
+	LDS	R17,uc_num_moveshi
+	LDI	R16,9
+	CALL	wal_eetbl_write
+//  570     wal_eetbl_write( WAL_EE_MOVE24, uc_num_moves24);
+	LDS	R17,uc_num_moves24
+	LDI	R16,10
+	CALL	wal_eetbl_write
+//  571   }
+//  572 
+//  573   // Indicate current status using LED1
+//  574   if( uc_led_scale == 0)
+??A_Periodic_1:
+	LDS	R16,uc_led_scale
+	TST	R16
+	BRNE	??A_Periodic_3
+//  575   {
+//  576     uc_led_scale = WAL_LED_SCALE;		// Scale factor to LED timebase
+	LDI	R16,20
+	STS	uc_led_scale,R16
+//  577     uc_led_count++;				// use uc_led_count wrt value to set flash rate
+	LDI	R30,LOW(uc_led_count)
+	LDI	R31,(uc_led_count) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  578 
+//  579     // LED1 'status' usage:
+//  580     // Solid on = moving
+//  581     // Solid off = Home or Limit active
+//  582     // Normal flash = idle, Fast flash = error, Slow flash = comms
+//  583 
+//  584     if( (val_ip_hom == 1) || (val_ip_lim == 1) )
+	LDS	R16,val_ip_hom
+	CPI	R16,1
+	BREQ	??A_Periodic_4
+	LDS	R16,val_ip_lim
+	CPI	R16,1
+	BRNE	??A_Periodic_5
+//  585     {
+//  586       WAL_OP_LED = 1;
+??A_Periodic_4:
+	SBI	0x18,0x00
+	RET
+//  587     }
+//  588     else
+//  589     {
+//  590       if( uc_axis_vss != 0)
+??A_Periodic_5:
+	LDS	R16,uc_axis_vss
+	TST	R16
+	BREQ	??A_Periodic_6
+//  591       {
+//  592         WAL_OP_LED = 0;
+	CBI	0x18,0x00
+	RET
+//  593       }
+//  594       else
+//  595       {
+//  596         if( uc_led_count >= uc_led_value)
+??A_Periodic_6:
+	LDS	R16,uc_led_count
+	LDS	R17,uc_led_value
+	CP	R16,R17
+	BRCS	??A_Periodic_7
+//  597         {
+//  598           // Toggle LED1 (PB.0)
+//  599           PORTB = PINB ^ 0x01;
+	IN	R17,0x16
+	LDI	R16,1
+	EOR	R16,R17
+	OUT	0x18,R16
+//  600           uc_led_count = 0;
+	LDI	R16,0
+	STS	uc_led_count,R16
+	RET
+//  601         }
+//  602       }
+//  603     }
+//  604   }
+//  605   else
+//  606   {
+//  607     uc_led_scale--;
+??A_Periodic_3:
+	LDI	R30,LOW(uc_led_scale)
+	LDI	R31,(uc_led_scale) >> 8
+	LD	R16,Z
+	DEC	R16
+	ST	Z,R16
+//  608     // V1.7 16JAN06: ensure LED flashes even if limits active
+//  609     if( uc_led_scale == 0)
+	LDS	R16,uc_led_scale
+	TST	R16
+	BRNE	??A_Periodic_7
+//  610     {
+//  611       if( (val_ip_hom == 1) || (val_ip_lim == 1))
+	LDS	R16,val_ip_hom
+	CPI	R16,1
+	BREQ	??A_Periodic_8
+	LDS	R16,val_ip_lim
+	CPI	R16,1
+	BRNE	??A_Periodic_7
+//  612       {
+//  613         WAL_OP_LED = 0;
+??A_Periodic_8:
+	CBI	0x18,0x00
+//  614       }
+//  615     }
+//  616   }
+//  617 }
+??A_Periodic_7:
+	RET
+//  618 
+//  619 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  620 VS_VOID A_RxDoComms (VS_VOID)
+A_RxDoComms:
+//  621 {
+//  622 	// E_RxMsg, valid message received:
+//  623 	// if valid address (i.e. match or global process message)
+//  624 	// process according to hi or lo-speed comms:
+//  625     if( (uca_msgrx[0] == WAL_COMMS_GLOBAL) || (uca_msgrx[0] == uc_comm_adid) )
+	LDS	R16,uca_msgrx
+	CPI	R16,255
+	BREQ	??A_RxDoComms_0
+	LDS	R16,uca_msgrx
+	LDS	R17,uc_comm_adid
+	CP	R16,R17
+	BRNE	??A_RxDoComms_1
+//  626     {
+//  627         // assume response (echo) always (unless no-echo specifically set)
+//  628         uc_comm_noecho = 0;
+??A_RxDoComms_0:
+	LDI	R16,0
+	STS	uc_comm_noecho,R16
+//  629 
+//  630         // response to message (transition to Sending state)
+//  631         wal_do_command();
+	CALL	wal_do_command
+//  632 
+//  633         // NB. reply may be suppressed:
+//  634         if( uc_comm_noecho == 0)
+	LDS	R16,uc_comm_noecho
+	TST	R16
+	BRNE	??A_RxDoComms_1
+//  635         {
+//  636             if( SEQ_AddEvent( E_SendRequest) != UCC_OK )
+	LDI	R16,18
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_RxDoComms_1
+//  637             {
+//  638                 vss_seq_error();
+	CALL	vss_seq_error
+//  639             }
+//  640         }
+//  641     }
+//  642 
+//  643     // usually response required: E_SendRequest
+//  644     // in any case, reset receive buffer & flags:
+//  645     uc_comm_flag &= ~WAL_COMM_DERR;
+??A_RxDoComms_1:
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xFD
+	ST	Z,R16
+//  646     uc_comm_flag &= ~WAL_COMM_DRDY;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xFE
+	ST	Z,R16
+//  647     uc_msgrxptr = 0;
+	LDI	R16,0
+	STS	uc_msgrxptr,R16
+//  648     uc_rx_chksum = 0;
+	LDI	R16,0
+	STS	uc_rx_chksum,R16
+//  649 }
+	RET
+//  650 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  651 VS_VOID A_RxProcess (VS_VOID)
+A_RxProcess:
+//  652 {
+//  653 // structure uc_rxbuff( charin & status) loaded into uc_rx_chrecv & uc_comm_9set
+//  654 
+//  655   uc_rx_process = 0;				// reset rx processed flag (semaphore)
+	LDI	R16,0
+	STS	uc_rx_process,R16
+//  656 
+//  657   // if error detected then reset any message (in) in-progress
+//  658   if( (uc_comm_flag & WAL_COMM_DERR) == WAL_COMM_DERR)
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	SBRS	R16,1
+	RJMP	??A_RxProcess_0
+//  659   {
+//  660     // reset error, but clear any existing in-progress:
+//  661     uc_comm_flag &= ~WAL_COMM_DERR;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xFD
+	ST	Z,R16
+//  662     uc_comm_flag &= ~WAL_COMM_DRDY;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xFE
+	ST	Z,R16
+//  663     uc_msgrxptr = 0;
+	LDI	R16,0
+	STS	uc_msgrxptr,R16
+//  664     uc_rx_chksum = 0;
+	LDI	R16,0
+	STS	uc_rx_chksum,R16
+//  665 
+//  666     // uc_rx_process = 0;	// reset rx processed flag (semaphore)
+//  667     return;
+	RET
+//  668   }
+//  669 
+//  670   // process according to hi or lo-speed comms:
+//  671   // Hi-speed 9-bit comms
+//  672   // Check if 9th bit set: NB UCSRB bit.1 has RXB8 if so = start of message
+//  673   if( uc_comm_9set)
+??A_RxProcess_0:
+	LDS	R16,uc_comm_9set
+	TST	R16
+	BREQ	??A_RxProcess_1
+//  674   {
+//  675     uca_msgrx[0] = uc_rx_chksum = uc_rx_chrecv;
+	LDS	R16,uc_rx_chrecv
+	STS	uc_rx_chksum,R16
+	STS	uca_msgrx,R16
+//  676     uc_msgrxptr = 1;
+	LDI	R16,1
+	STS	uc_msgrxptr,R16
+//  677     uc_comm_flag |= WAL_COMM_DRDY;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ORI	R16,0x01
+	ST	Z,R16
+//  678     return;
+	RET
+//  679   }
+//  680   
+//  681   // check that address byte has been received:
+//  682   if( (uc_comm_flag & WAL_COMM_DRDY) != WAL_COMM_DRDY)
+??A_RxProcess_1:
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	SBRS	R16,0
+	RJMP	??A_RxProcess_2
+//  683   {
+//  684     // ignore: byte received but not valid 'start of message'.
+//  685     return;
+//  686   }
+//  687   
+//  688   // at this point buffer (uc_rxrdptr != uc_rxwrptr)
+//  689   // may contain complete message received
+//  690   if( uc_msgrxptr < 5)
+	LDS	R16,uc_msgrxptr
+	CPI	R16,5
+	BRCS	$+2+2
+	RJMP	??A_RxProcess_3
+//  691   {
+//  692     uc_rx_chksum += uc_rx_chrecv;
+	LDS	R16,uc_rx_chrecv
+	LDI	R30,LOW(uc_rx_chksum)
+	LDI	R31,(uc_rx_chksum) >> 8
+	LD	R17,Z
+	ADD	R17,R16
+	ST	Z,R17
+//  693     uca_msgrx[uc_msgrxptr] = uc_rx_chrecv;
+	LDS	R18,uc_rx_chrecv
+	LDS	R16,uc_msgrxptr
+	LDI	R17,0
+	MOVW	R31 : R30,R17 : R16
+	SUBI	R30,LOW((-(uca_msgrx) & 0xFFFF))
+	SBCI	R31,(-(uca_msgrx) & 0xFFFF) >> 8
+	ST	Z,R18
+//  694     uc_msgrxptr++;
+	LDI	R30,LOW(uc_msgrxptr)
+	LDI	R31,(uc_msgrxptr) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  695 
+//  696     // maybe use conditional flag to break while loop:
+//  697     while( uc_rxrdptr != uc_rxwrptr )
+??A_RxProcess_4:
+	LDS	R16,uc_rxrdptr
+	LDS	R17,uc_rxwrptr
+	CP	R16,R17
+	BRNE	$+2+2
+	RJMP	??A_RxProcess_2
+//  698     {
+//  699       uc_rx_chrecv = uc_rxbuff[uc_rxrdptr].charin;
+	LDS	R16,uc_rxrdptr
+	LDI	R17,0
+	LSL	R16
+	ROL	R17
+	MOVW	R31 : R30,R17 : R16
+	SUBI	R30,LOW((-(uc_rxbuff) & 0xFFFF))
+	SBCI	R31,(-(uc_rxbuff) & 0xFFFF) >> 8
+	LD	R16,Z
+	STS	uc_rx_chrecv,R16
+//  700       uc_comm_9set = (uc_rxbuff[uc_rxrdptr].status & 0x02) ? 1 : 0;
+	LDI	R30,LOW(uc_rxbuff)
+	LDI	R31,(uc_rxbuff) >> 8
+	LDS	R16,uc_rxrdptr
+	LDI	R17,0
+	LSL	R16
+	ROL	R17
+	ADD	R30,R16
+	ADC	R31,R17
+	LDD	R16,Z+1
+	SBRS	R16,1
+	RJMP	??A_RxProcess_5
+	LDI	R16,1
+	RJMP	??A_RxProcess_6
+??A_RxProcess_5:
+	LDI	R16,0
+??A_RxProcess_6:
+	STS	uc_comm_9set,R16
+//  701       uc_rxrdptr++;
+	LDI	R30,LOW(uc_rxrdptr)
+	LDI	R31,(uc_rxrdptr) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  702       uc_rxrdptr &= (WAL_MAX_RXBUFF-1);
+	LDI	R30,LOW(uc_rxrdptr)
+	LDI	R31,(uc_rxrdptr) >> 8
+	LD	R16,Z
+	ANDI	R16,0x1F
+	ST	Z,R16
+//  703       if( uc_comm_9set)
+	LDS	R16,uc_comm_9set
+	TST	R16
+	BREQ	??A_RxProcess_7
+//  704       {
+//  705         uca_msgrx[0] = uc_rx_chksum = uc_rx_chrecv;
+	LDS	R16,uc_rx_chrecv
+	STS	uc_rx_chksum,R16
+	STS	uca_msgrx,R16
+//  706         uc_msgrxptr = 1;
+	LDI	R16,1
+	STS	uc_msgrxptr,R16
+//  707         uc_comm_flag |= WAL_COMM_DRDY;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ORI	R16,0x01
+	ST	Z,R16
+//  708         // break while loop
+//  709         break;
+	RET
+//  710       }
+//  711       else
+//  712       {
+//  713         if( uc_msgrxptr < 5)
+??A_RxProcess_7:
+	LDS	R16,uc_msgrxptr
+	CPI	R16,5
+	BRCC	??A_RxProcess_8
+//  714         {
+//  715           uc_rx_chksum += uc_rx_chrecv;
+	LDS	R16,uc_rx_chrecv
+	LDI	R30,LOW(uc_rx_chksum)
+	LDI	R31,(uc_rx_chksum) >> 8
+	LD	R17,Z
+	ADD	R17,R16
+	ST	Z,R17
+//  716           uca_msgrx[uc_msgrxptr] = uc_rx_chrecv;
+	LDS	R18,uc_rx_chrecv
+	LDS	R16,uc_msgrxptr
+	LDI	R17,0
+	MOVW	R31 : R30,R17 : R16
+	SUBI	R30,LOW((-(uca_msgrx) & 0xFFFF))
+	SBCI	R31,(-(uca_msgrx) & 0xFFFF) >> 8
+	ST	Z,R18
+//  717           uc_msgrxptr++;
+	LDI	R30,LOW(uc_msgrxptr)
+	LDI	R31,(uc_msgrxptr) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+	RJMP	??A_RxProcess_4
+//  718         }
+//  719         else
+//  720         {
+//  721           // break while loop
+//  722           uc_comm_flag &= ~WAL_COMM_DRDY;
+??A_RxProcess_8:
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xFE
+	ST	Z,R16
+//  723           // if checksum matches then this is a valid message:
+//  724           if( uc_rx_chksum == uc_rx_chrecv)
+	LDS	R16,uc_rx_chksum
+	LDS	R17,uc_rx_chrecv
+	CP	R16,R17
+	BRNE	??A_RxProcess_2
+//  725           {
+//  726             if( SEQ_AddEvent( E_RxMsg) != UCC_OK )
+	LDI	R16,16
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_RxProcess_2
+//  727             {
+//  728               vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  729             }
+//  730           }
+//  731           break;
+//  732         }
+//  733       }
+//  734     }		// while RX buffer loaded
+//  735   }
+//  736   else
+//  737   {
+//  738     // should have received last byte of message, so clear DRDY
+//  739     uc_comm_flag &= ~WAL_COMM_DRDY;
+??A_RxProcess_3:
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xFE
+	ST	Z,R16
+//  740     // if checksum matches then this is a valid message:
+//  741     if( uc_rx_chksum == uc_rx_chrecv)
+	LDS	R16,uc_rx_chksum
+	LDS	R17,uc_rx_chrecv
+	CP	R16,R17
+	BRNE	??A_RxProcess_2
+//  742     {
+//  743       if( SEQ_AddEvent( E_RxMsg) != UCC_OK )
+	LDI	R16,16
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_RxProcess_2
+//  744       {
+//  745         vss_seq_error();
+	CALL	vss_seq_error
+??A_RxProcess_2:
+	RET
+//  746       }
+//  747     }
+//  748   }
+//  749 
+//  750   // uc_rx_process = 0;				// reset rx processed flag (semaphore)
+//  751 }
+//  752 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  753 VS_VOID A_TxChar (VS_VOID)
+A_TxChar:
+//  754 {
+//  755 // TxChar state (initial entry & TxMoreMsg)
+//  756 
+//  757   uc_tx_chout = uca_msgtx[uc_msgtxprt];
+	LDS	R16,uc_msgtxprt
+	LDI	R17,0
+	MOVW	R31 : R30,R17 : R16
+	SUBI	R30,LOW((-(uca_msgtx) & 0xFFFF))
+	SBCI	R31,(-(uca_msgtx) & 0xFFFF) >> 8
+	LD	R16,Z
+	STS	uc_tx_chout,R16
+//  758 
+//  759   if( uc_comm_hilo == 0)
+	LDS	R16,uc_comm_hilo
+	TST	R16
+	BRNE	??A_TxChar_0
+//  760   {
+//  761     if( uc_msgtxprt < 5)
+	LDS	R16,uc_msgtxprt
+	CPI	R16,5
+	BRCC	??A_TxChar_1
+//  762     {
+//  763       // checksum generation:
+//  764       uca_msgtx[5] += uc_tx_chout;
+	LDS	R16,uc_tx_chout
+	LDI	R30,LOW(uca_msgtx)
+	LDI	R31,(uca_msgtx) >> 8
+	LDD	R17,Z+5
+	ADD	R17,R16
+	STD	Z+5,R17
+//  765       uc_msgtxprt++;
+	LDI	R30,LOW(uc_msgtxprt)
+	LDI	R31,(uc_msgtxprt) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+	RJMP	??A_TxChar_1
+//  766     }
+//  767   }
+//  768   else
+//  769   {
+//  770     if( uc_msgtxprt < 4)
+??A_TxChar_0:
+	LDS	R16,uc_msgtxprt
+	CPI	R16,4
+	BRCC	??A_TxChar_1
+//  771     {
+//  772       // checksum generation:
+//  773       uca_msgtx[4] ^= uc_tx_chout;
+	LDS	R16,uc_tx_chout
+	LDI	R30,LOW(uca_msgtx)
+	LDI	R31,(uca_msgtx) >> 8
+	LDD	R17,Z+4
+	EOR	R17,R16
+	STD	Z+4,R17
+//  774       uc_msgtxprt++;
+	LDI	R30,LOW(uc_msgtxprt)
+	LDI	R31,(uc_msgtxprt) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  775     }
+//  776   }
+//  777 
+//  778   uc_comm_flag &= ~WAL_COMM_MISM;
+??A_TxChar_1:
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xDF
+	ST	Z,R16
+//  779 
+//  780   UDR = uc_tx_chout;
+	LDS	R16,uc_tx_chout
+	OUT	0x0C,R16
+//  781   // reset 9th bit once character TXC
+//  782 }
+	RET
+//  783 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  784 VS_VOID A_TxEnableOff (VS_VOID)
+A_TxEnableOff:
+//  785 {
+//  786   // end of Tx Message
+//  787   PORTB = (PINB & ~0x10);		// Switch off line driver
+	IN	R16,0x16
+	ANDI	R16,0xEF
+	OUT	0x18,R16
+//  788   UCSRB |= (1<<RXCIE);    	        // enable RX interrupt
+	SBI	0x0A,0x07
+//  789 
+//  790   uc_comm_flag &= ~WAL_COMM_SMSG;	// Flag data sent (msgtx complete)
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xF7
+	ST	Z,R16
+//  791   
+//  792   // force re-do of RX char event if uc_rx_process set
+//  793   if( uc_rx_process != 0)
+	LDS	R16,uc_rx_process
+	TST	R16
+	BREQ	??A_TxEnableOff_0
+//  794   {
+//  795     if( SEQ_AddEvent( E_RxChar) != UCC_OK )
+	LDI	R16,15
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_TxEnableOff_0
+//  796     {
+//  797       vss_seq_error();
+	CALL	vss_seq_error
+//  798     }
+//  799   }
+//  800 }
+??A_TxEnableOff_0:
+	RET
+//  801 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  802 VS_VOID A_TxEnableOn (VS_VOID)
+A_TxEnableOn:
+//  803 {
+//  804 
+//  805     // uc_tx_chout = uca_msgtx[0];
+//  806 
+//  807     // disable rx interrupt & setup TX_En 
+//  808     
+//  809     UCSRB &= ~(1<<RXCIE);		// disable rx interrupt
+	CBI	0x0A,0x07
+//  810     PORTB = (PINB | 0x10);  		// Switch line driver on
+	IN	R16,0x16
+	ORI	R16,0x10
+	OUT	0x18,R16
+//  811     // ? set address bit ?
+//  812     uc_comm_flag |= WAL_COMM_SMSG;	// Transmission in progress
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ORI	R16,0x08
+	ST	Z,R16
+//  813 
+//  814     // start of Tx Message
+//  815     uc_msgtxprt = 0;
+	LDI	R16,0
+	STS	uc_msgtxprt,R16
+//  816 
+//  817     if( uc_comm_hilo == 0)
+	LDS	R16,uc_comm_hilo
+	TST	R16
+	BRNE	??A_TxEnableOn_0
+//  818     {
+//  819       uca_msgtx[5]= 0;	// clear checksum
+	LDI	R16,0
+	STS	(uca_msgtx + 5),R16
+//  820       // if hi-speed then set 9bit (= start of message)
+//  821       UCSRB |= (1<<TXB8);
+	SBI	0x0A,0x00
+	RET
+//  822     }
+//  823     else
+//  824     {
+//  825       uca_msgtx[4]= 0;	// clear checksum
+??A_TxEnableOn_0:
+	LDI	R16,0
+	STS	(uca_msgtx + 4),R16
+//  826     }
+//  827 
+//  828 }
+	RET
+//  829 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  830 VS_VOID A_TxProcessMsg (VS_VOID)
+A_TxProcessMsg:
+//  831 {
+//  832 // response to E_TxComplete i.e. TXC event
+//  833 
+//  834 	// test if error condition exists, if so then return to wait state (retry send)
+//  835 	if( (uc_comm_flag & WAL_COMM_MISM) == WAL_COMM_MISM)
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	SBRS	R16,5
+	RJMP	??A_TxProcessMsg_0
+//  836 	{
+//  837 		// i.e. abort send message
+//  838 		// but must also end transmission:
+//  839 		// so either quit 'sending' state completely
+//  840 		// (let master resend original message...)
+//  841 		// using E_SendComplete
+//  842 		
+//  843 		// or remain in 'sending' state, & retry
+//  844 		// using E_TxBusIdle ??
+//  845 		
+//  846 		if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+	LDI	R16,17
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_TxProcessMsg_1
+//  847 		{
+//  848 			vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  849 		}
+//  850 		return;
+//  851 	}
+//  852 
+//  853 	// if last character of message tx'd then end Tx Msg using E_SendComplete
+//  854 	// otherwise push next character of message to transmit
+//  855 	// uc_tx_chout = uca_msgtx[uc_msgtxprt]
+//  856 
+//  857 	if( uc_comm_hilo == 0)
+??A_TxProcessMsg_0:
+	LDS	R16,uc_comm_hilo
+	TST	R16
+	BRNE	??A_TxProcessMsg_2
+//  858 	{
+//  859 		if( uc_msgtxprt >= 5)
+	LDS	R16,uc_msgtxprt
+	CPI	R16,5
+	BRCS	??A_TxProcessMsg_3
+//  860 		{
+//  861 			SEQ_AddEvent(E_SendComplete);
+	LDI	R16,17
+	CALL	SEQ_AddEvent
+	RET
+//  862 		}
+//  863 		else
+//  864 		{
+//  865 			if( SEQ_AddEvent( E_TxMoreMsg) != UCC_OK )
+??A_TxProcessMsg_3:
+	LDI	R16,24
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_TxProcessMsg_1
+//  866 			{
+//  867 				vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  868 			}
+//  869 		}
+//  870 	}
+//  871 	else
+//  872 	{
+//  873 		if( uc_msgtxprt >= 4)
+??A_TxProcessMsg_2:
+	LDS	R16,uc_msgtxprt
+	CPI	R16,4
+	BRCS	??A_TxProcessMsg_4
+//  874 		{
+//  875 			if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+	LDI	R16,17
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_TxProcessMsg_1
+//  876 			{
+//  877 				vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  878 			}
+//  879 		}
+//  880 		else
+//  881 		{
+//  882 			if( SEQ_AddEvent( E_TxMoreMsg) != UCC_OK )
+??A_TxProcessMsg_4:
+	LDI	R16,24
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_TxProcessMsg_1
+//  883 			{
+//  884 				vss_seq_error();
+	CALL	vss_seq_error
+??A_TxProcessMsg_1:
+	RET
+//  885 			}
+//  886 		}
+//  887 	}
+//  888 }
+//  889 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  890 VS_VOID A_TxTestBusIdle (VS_VOID)
+A_TxTestBusIdle:
+//  891 {
+//  892 // Test if RS485 bus idle using 'uc_line_idle':
+//  893 // NB. as uc_comm_idle may be written during RX interrupt disable
+//  894 	__disable_interrupt();
+	CLI
+//  895 	if( uc_comm_idle >= 3)
+	LDS	R16,uc_comm_idle
+	CPI	R16,3
+	BRCS	??A_TxTestBusIdle_0
+//  896 	{
+//  897 		// E_TxBusIdle will cause State 'Transmit' to begin
+//  898 		uc_comm_flag |= WAL_COMM_IDLE;
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ORI	R16,0x04
+	ST	Z,R16
+//  899 
+//  900 		if( uc_comm_hilo == 0)
+	LDS	R16,uc_comm_hilo
+	TST	R16
+	BRNE	??A_TxTestBusIdle_1
+//  901 		{
+//  902 			// different transition required if hi-speed comms:
+//  903 			if( SEQ_AddEvent( E_TxHiSpeed) != UCC_OK )
+	LDI	R16,23
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_TxTestBusIdle_2
+//  904 			{
+//  905 				vss_seq_error();
+	CALL	vss_seq_error
+	RJMP	??A_TxTestBusIdle_2
+//  906 			}
+//  907 		}
+//  908 		else
+//  909 		{
+//  910 			if( SEQ_AddEvent( E_TxBusIdle) != UCC_OK )
+??A_TxTestBusIdle_1:
+	LDI	R16,20
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??A_TxTestBusIdle_2
+//  911 			{
+//  912 				vss_seq_error();
+	CALL	vss_seq_error
+	RJMP	??A_TxTestBusIdle_2
+//  913 			}
+//  914 		}
+//  915 	}
+//  916 	else
+//  917 	{
+//  918 		uc_comm_idle++;
+??A_TxTestBusIdle_0:
+	LDI	R30,LOW(uc_comm_idle)
+	LDI	R31,(uc_comm_idle) >> 8
+	LD	R16,Z
+	INC	R16
+	ST	Z,R16
+//  919 	}
+//  920 	__enable_interrupt(); 
+??A_TxTestBusIdle_2:
+	SEI
+//  921 }
+	RET
+//  922 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  923 VS_VOID TM_Stall (VS_UINT event, VS_UINT ticks)
+TM_Stall:
+//  924 {
+//  925 // Seed E_AxisStall
+//  926 // NB. this routine called with VS_UINT vsstick_stall as tick parameter
+//  927 	wvt_stall.event = event;
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  928 	wvt_stall.ticks = ticks;
+	LDI	R30,LOW(wvt_stall)
+	LDI	R31,(wvt_stall) >> 8
+	STD	Z+2,R18
+	STD	Z+3,R19
+//  929 	// V1.6 13JAN06: disable this method of stall detection
+//  930 	wvt_stall.active = 0; // 1->0
+	LDI	R20,0
+	STS	(wvt_stall + 4),R20
+//  931 }
+	RET
+
+        RSEG CODE:CODE:NOROOT(1)
+//  932 VS_VOID TM_Status (VS_UINT event, VS_UINT ticks)
+TM_Status:
+//  933 {
+//  934 // Seed E_Periodic
+//  935 	wvt_period.event = event;
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  936 	wvt_period.ticks = ticks;
+	LDI	R30,LOW(wvt_period)
+	LDI	R31,(wvt_period) >> 8
+	STD	Z+2,R18
+	STD	Z+3,R19
+//  937 	wvt_period.active = 1;
+	LDI	R20,1
+	STS	(wvt_period + 4),R20
+//  938 }
+	RET
+
+        RSEG CODE:CODE:NOROOT(1)
+//  939 VS_VOID TM_TimerTxWait (VS_UINT event, VS_UINT ticks)
+TM_TimerTxWait:
+//  940 {
+//  941 // Seed E_TimerTxWait
+//  942 // NB. this routine called with VS_UINT vsstick_txwait as tick parameter
+//  943 	wvt_txwait.event = event;
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  944 	wvt_txwait.ticks = ticks;
+	LDI	R30,LOW(wvt_txwait)
+	LDI	R31,(wvt_txwait) >> 8
+	STD	Z+2,R18
+	STD	Z+3,R19
+//  945 	wvt_txwait.active = 1;
+	LDI	R20,1
+	STS	(wvt_txwait + 4),R20
+//  946 }
+	RET
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_Z>`:
+	DW	SFE(NEAR_Z) - SFB(NEAR_Z)
+	DW	SFB(NEAR_Z)
+	DW	0
+	REQUIRE ?need_segment_init
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02aH
+// union <unnamed> volatile __io _A_UCSRB
+_A_UCSRB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02cH
+// union <unnamed> volatile __io _A_UDR
+_A_UDR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,030H
+// union <unnamed> volatile __io _A_PIND
+_A_PIND:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,036H
+// union <unnamed> volatile __io _A_PINB
+_A_PINB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,038H
+// union <unnamed> volatile __io _A_PORTB
+_A_PORTB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,043H
+// union <unnamed> volatile __io _A_OCR2
+_A_OCR2:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01cH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01dH
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01eH
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EEARH:
+
+        END
+//  947 
+//  948 // VS_VOID TM_Timer0 (VS_UINT event, VS_UINT ticks){  TIMER0_SW_start( event, ticks );}
+//  949 
+//  950 
+//  951 
+// 
+//     6 bytes in segment ABSOLUTE
+// 2 186 bytes in segment CODE
+//     6 bytes in segment INITTAB
+//    18 bytes in segment NEAR_Z
+// 
+// 2 186 bytes of CODE memory (+ 6 bytes shared)
+//    18 bytes of DATA memory (+ 6 bytes shared)
+//
+//Errors: none
+//Warnings: 4

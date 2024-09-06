@@ -1,0 +1,107 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  01/Oct/2012  09:22:54 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\timers.c                           #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\timers.c                           #
+#    List file    =  C:\hmhome\900212\Debug\List\timers.lst                  #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\timers.r90                   #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\timers.c
+      1          /* Centralise all timer functions (as timer functions tend to be critical) */
+      2          
+      3          #include <iom16.h>		 	// Atmel up definitions
+      4          #include <inavr.h>			// AVR intrinsic functions
+      5          #include "VSMain.h"			// VisualState definitions (further includes)
+      6          
+      7          #include "defs.h"			// Application (GENERAL) defs
+      8          #include "globals.h"		// Application global data/variables
+      9          
+     10          
+     11          /* Timer routines */
+     12          void wal_tc_tick( void);
+     13          void wal_tc_stall( void);
+     14          void wal_timer_counter( void);
+     15          
+     16          /* use structure wdef_ctimer to provide timer-counter functions */
+     17          /* ws_ctimer[] is the available counter timer array */
+     18          /* maximum allowable functions according to WDEF_MAX_TIMERS */
+     19          
+     20          void wal_tc_tick( void)
+     21          {
+     22          // generate VSS SEQ tick function (periodic function)
+     23          }
+     24          
+     25          void wal_tc_stall( void)
+     26          {
+     27          // generate VSS SEQ stall function
+     28          }
+     29          
+     30          void wal_timer_counter( void)
+     31          {
+     32          // basic application counter timer using struct wdef_ctimer
+     33          // unsigned char used;
+     34          // unsigned int count;
+     35          // void (*exp_routine)();
+     36          
+     37          	wsp_tc = ws_ctimer;		// &ws_ctimer[0];
+     38          
+     39          	if( wsp_tc->exp_routine != NULL)
+     40          	{
+     41          		if( wsp_tc->used == 1)
+     42          		{
+     43          			// tc active
+     44          			if( wsp_tc->count != 0)
+     45          			{
+     46          				wsp_tc->count--;
+     47          				if( wsp_tc->count == 0)
+     48          				{
+     49          					// call expiry routine
+     50          					(*wsp_tc->exp_routine)();
+     51          				}
+     52          			}
+     53          		}
+     54          		wsp_tc++;
+     55          	}
+     56          }
+     57          
+     58          
+
+   Maximum stack usage in bytes:
+
+     Function             CSTACK RSTACK
+     --------             ------ ------
+     wal_tc_stall             0      2
+     wal_tc_tick              0      2
+     wal_timer_counter        2      2
+       ->   Indirect call     2      2
+
+
+   Segment part sizes:
+
+     Function/Label    Bytes
+     --------------    -----
+     wal_tc_tick          2
+     wal_tc_stall         2
+     wal_timer_counter  142
+
+ 
+ 146 bytes in segment CODE
+ 
+ 146 bytes of CODE memory
+
+Errors: none
+Warnings: 3

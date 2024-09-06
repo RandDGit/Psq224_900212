@@ -1,0 +1,72 @@
+[Header]
+Filetype=visualSTATE Validator workspace
+Revision=2
+[ProjectSetup]
+ProjectFile=M16Motor.vsp
+AutoQueue=FALSE
+TimerMsg=TRUE
+PromptActions=FALSE
+System1=00000000010000000000000001
+System1_RL=0000000001000000FFFFFFFFFD
+NofBreakPoints=0
+[RealLink Setup]
+Plugin Module=
+Timeout=0
+[Altia Properties]
+Timeout=5000
+Arguments=-xrm Altia*AltiaScene*background:#f7e400
+ResetAtConnect=1
+ResetOnReset=1
+[Altia Event Parameters]
+System1.E_AxisError=0
+System1.E_AxisHome=0
+System1.E_AxisInvalid=0
+System1.E_SendRequest=0
+System1.E_AxisMove=0
+System1.E_AxisSetPoint=0
+System1.E_Periodic=0
+SE_RESET=0
+System1.E_SendComplete=0
+[Altia Action Parameters]
+System1.A_Periodic=0
+System1.A_MotorStop=0
+System1.A_Initialise=0
+System1.A_MotorRev=0
+[Windows]
+nofSystemWnds=1
+nofEventWnds=1
+nofVariableWnds=0
+nofGuardWnds=0
+nofActionWnds=1
+nofSignalWnds=0
+nofTSF=0
+nofDynamicAnalyzeWnds=0
+nofStaticAnalyzeWnds=0
+[SystemWnd_0]
+WindowPlacement=2C0000000000000001000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF7201000000000000E40200001201000089
+RealLink View=Off
+NofTrees=1
+Tree_0_System=System1
+Tree_0_Topstate=M16Motor
+OnlyCurrent=False
+ShowPrevious=False
+[EventWnd_0]
+WindowPlacement=2C0000000000000001000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000007201000012010000A3
+RealLink View=Off
+nofColumns=3
+ColumnData_0=00000000AD00000001000000AE
+ColumnData_1=01000000640000000000000065
+ColumnData_2=02000000640000000000000066
+View Active Events=False
+Include Guards=True
+Global=Show
+System1=Show
+Number of hidden Events=0
+[ActionWnd_0]
+WindowPlacement=2C0000000000000001000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE402000000000000560400001201000070
+RealLink View=Off
+nofColumns=2
+ColumnData_0=00000000930000000100000094
+ColumnData_1=01000000640000000100000066
+[Watch Window]
+Number of items=0

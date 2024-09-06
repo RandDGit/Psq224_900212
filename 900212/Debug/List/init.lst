@@ -1,0 +1,370 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  01/Oct/2012  09:22:51 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\init.c                             #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\init.c                             #
+#    List file    =  C:\hmhome\900212\Debug\List\init.lst                    #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\init.r90                     #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\init.c
+      1          #include "iom16.h"			// Atmel definitions Mega16
+      2          #include "inavr.h"			// Atmel register definitions
+      3          #include "VSMain.h"			// Visual State definitions
+      4          
+      5          #include "defs.h"			// Application (GENERAL) defs
+      6          #include "globals.h"		// Application global data/variables
+      7          
+      8          
+      9          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+     10          unsigned char wal_bsf_eeget( unsigned char s_address);
+     11          
+     12          // REFERENCE TO HARDWARE 900-152C
+     13          
+     14          void LoadNVData( void)
+     15          {
+     16          	// read predefined EE locations: 
+     17          
+     18          	// comms ID, vital for comms, DEST & FROM
+     19          	// comm ID limited to 0..31
+     20          	uc_comm_adid = wal_bsf_eeget( WAL_EE_COMMID);
+     21          	if( uc_comm_adid > 37 || uc_comm_adid == 0xFF || uc_comm_adid == 0)
+     22          	{
+     23          		uc_comm_adid = WAL_UNDEFINED_ID;  // WAL_UNIQUE_COMMID;
+     24          	}
+     25          
+     26          	// communications mode baud: 0 = Hi (125k) or 1 = Lo (9600):
+     27          	// NB. consider baud rate mode as pre-programmed (pragma def)
+     28          	uc_comm_hilo = wal_bsf_eeget( WAL_EE_COMMHILO);
+     29          	if( (uc_comm_hilo > 1) || (uc_comm_hilo == 0xFF))
+     30          	{
+     31          		uc_comm_hilo = 0;     // 0 is hi-speed comms
+     32          	}
+     33          	// V1.7 16JAN06: Hi-speed comms only:
+     34          	uc_comm_hilo = 0;     // 0 is hi-speed comms
+     35          
+     36          	uc_axis_chi = wal_bsf_eeget( WAL_EE_MAXTHI);
+     37          	uc_axis_clo = wal_bsf_eeget( WAL_EE_MAXTLO);
+     38                  ui_axis_maxallow = (unsigned int) (uc_axis_chi << 8) + uc_axis_clo;
+     39          
+     40          	uc_axis_chi = wal_bsf_eeget( WAL_EE_COUNTHI);
+     41          	uc_axis_clo = wal_bsf_eeget( WAL_EE_COUNTLO);
+     42          	
+     43          	uc_axis_err = wal_bsf_eeget( WAL_EE_ERROR);
+     44          
+     45              // block re-load if at home or limit position:
+     46              if( uc_axis_err == 0 && ( WAL_IN_HOM == 0) && ( WAL_IN_LIM == 0) )
+     47              {	
+     48          	  ui_axis_pos = (unsigned int) (uc_axis_chi << 8);
+     49          	  ui_axis_pos += (unsigned int) (uc_axis_clo);
+     50          	}
+     51          	else
+     52          	{
+     53          	  ui_axis_pos = 0;
+     54          	  uc_axis_err = 6;
+     55          	  // axis error 'not' recorded at power on
+     56          	}
+     57          	
+     58          	uc_num_moveslo = wal_bsf_eeget( WAL_EE_MOVELO);
+     59          	uc_num_moveshi = wal_bsf_eeget( WAL_EE_MOVEHI);
+     60          	uc_num_moves24 = wal_bsf_eeget( WAL_EE_MOVE24);
+     61          	if( uc_num_moves24 & 0xC0 )
+     62          	{
+     63          	  uc_num_moveslo = uc_num_moveshi = uc_num_moves24 = 0;
+     64          	}
+     65          
+     66          	
+     67          	uc_atbl_err = wal_bsf_eeget( WAL_EE_ERRTBLA);
+     68          	uc_atbl_phi = wal_bsf_eeget( WAL_EE_ERRACHI);
+     69          	uc_atbl_plo = wal_bsf_eeget( WAL_EE_ERRACLO);
+     70          	if( uc_atbl_phi & 0x80)
+     71          	{
+     72          	  uc_atbl_plo = uc_atbl_phi = uc_atbl_err = 0;
+     73          	  uc_wr_errtbl = 1;
+     74          	}
+     75          
+     76          	uc_btbl_err = wal_bsf_eeget( WAL_EE_ERRTBLB);
+     77          	uc_btbl_phi = wal_bsf_eeget( WAL_EE_ERRBCHI);
+     78          	uc_btbl_plo = wal_bsf_eeget( WAL_EE_ERRBCLO);
+     79          	if( uc_btbl_phi & 0x80)
+     80          	{
+     81          	  uc_btbl_plo = uc_btbl_phi = uc_btbl_err = 0;
+     82          	}
+     83          
+     84          	uc_ctbl_err = wal_bsf_eeget( WAL_EE_ERRTBLC);
+     85          	uc_ctbl_phi = wal_bsf_eeget( WAL_EE_ERRCCHI);
+     86          	uc_ctbl_plo = wal_bsf_eeget( WAL_EE_ERRCCLO);
+     87          	if( uc_ctbl_phi & 0x80)
+     88          	{
+     89          	  uc_ctbl_plo = uc_ctbl_phi = uc_ctbl_err = 0;
+     90          	}
+     91          
+     92              // record each power on: (use as reference for errors)
+     93              // WAL_EE_MCUCSR
+     94              uc_por_hi = wal_bsf_eeget( WAL_EE_PORCHI);
+     95              uc_por_lo = wal_bsf_eeget( WAL_EE_PORCLO);
+     96              uc_por_fd = uc_por_lo;
+     97              
+     98              if( uc_por_hi & 0x80)
+     99              {
+    100                uc_por_lo = uc_por_hi = 0;
+    101                wal_eetbl_write( WAL_EE_PORCHI, uc_por_hi);
+    102              }
+    103              
+    104              uc_por_fd = uc_por_lo;
+    105          
+    106              // NB. compiler may skip next line!?
+    107              uc_por_lo++;
+    108              if( uc_por_fd == uc_por_lo)
+    109                uc_por_lo++;
+    110          
+    111              // and the next ?    
+    112              wal_eetbl_write( WAL_EE_PORCLO, uc_por_lo);
+    113              // ?
+    114              if( uc_por_lo == 0)
+    115              {
+    116                uc_por_hi++;
+    117                wal_eetbl_write( WAL_EE_PORCHI, uc_por_hi);
+    118              }
+    119          
+    120              uc_ee_cpuser_hi = wal_bsf_eeget( WAL_EE_CPUSERHI);
+    121              uc_ee_cpuser_lo = wal_bsf_eeget( WAL_EE_CPUSERLO);
+    122          
+    123              uc_ee_calib_hi = wal_bsf_eeget( WAL_EE_CALIBHI);
+    124              uc_ee_calib_lo = wal_bsf_eeget( WAL_EE_CALIBLO);
+    125              //if( uc_ee_calib_hi & 0x80)
+    126              // {
+    127              //  uc_ee_calib_lo = uc_ee_calib_hi = 0;
+    128              //  wal_eetbl_write( WAL_EE_CALIBHI, uc_ee_calib_hi);
+    129              //  wal_eetbl_write( WAL_EE_CALIBLO, uc_ee_calib_lo);
+    130              // }
+    131          }
+    132          
+    133          void InitOutputs( void)
+    134          {
+    135          // Once device had been correctly setup (Port I/O, and peripheral usage)
+    136          // ensure all ports are correctly configured as per idle state:
+    137          
+    138          	WAL_OP_PWM = 0;		// PWM OC2 output (=Byte)
+    139          	WAL_OP_TRO = 1;		// Trigger default = Hi
+    140          	WAL_OP_LED = 0;		// LED1 (Lo = ON)
+    141          	WAL_OP_DIR = 0;		// Direction towards Home
+    142          	WAL_OP_BRK = 0;		// Brake (Motor Enable)
+    143          	uc_braketimer = 200; // 100ms
+    144          	
+    145              // WAL_DEBUG_MISO = 1;
+    146              // WAL_DEBUG_MISO = 0;
+    147          
+    148          }
+    149          
+    150          void InitData( void)
+    151          {
+    152            // InitData called before 'LoadNVData'..
+    153          
+    154          	uc_readdr_timer = 0;
+    155          	
+    156          	uc_braketimer = 0;
+    157          	
+    158          	vsstick_stall = 240;
+    159          	vsstick_txwait = 3;
+    160          
+    161          	uc_tprim = 0;
+    162          	uc_tprev = 0;
+    163          
+    164          	uc_rxrdptr = uc_rxwrptr = 0;
+    165          
+    166          	uc_tx_chsent = 0;
+    167          	uc_rx_process = 0;
+    168          
+    169          	uc_led_value = WAL_LED_DEFAULT;	// Status LED (reload value = frequency)
+    170          	uc_led_count = 0;				// Status LED (counter)
+    171          
+    172          	dblead_ip_enc = WAL_DBNC_IN_ENC;
+    173          	dbtail_ip_enc = WAL_DBNC_IN_ENC;
+    174          	val_ip_enc = 2;			// set = 2 ==> don't care
+    175          
+    176          	dblead_ip_trg = WAL_DBNC_IN_TRG;
+    177          	dbtail_ip_trg = WAL_DBNC_IN_TRG;
+    178          	val_ip_trg = 0;			// assume (set) trigger inactive at POR
+    179          
+    180          	dblead_ip_hom = WAL_DBNC_IN_HOM;
+    181          	dbtail_ip_hom = 0;
+    182          	val_ip_hom = 0;			// assume (set) home inactive at POR
+    183          
+    184          	dblead_ip_lim = WAL_DBNC_IN_LIM;
+    185          	dbtail_ip_lim = 0;
+    186          	val_ip_lim = 0;			// assume (set) limit inactive at POR
+    187          
+    188          	dblead_ip_sw1 = 0;              // start with IN_SW1 set at hi
+    189          	dbtail_ip_sw1 = WAL_DBNC_IN_SW1;
+    190          	val_ip_sw1 = 0;			// assume (set) button inactive at POR
+    191          
+    192          
+    193                  // V1.6 12JAN06: setting uc_axis_dir = 1 forces 'reverse' on first button press
+    194                  uc_powerup_once = 1;
+    195                  uc_axis_dir = 1;    
+    196                  uc_motoron = 0;
+    197                  uc_unitravel = 0;
+    198          
+    199          	    uc_wr_errtbl = 0;
+    200                  
+    201                  uc_settlepower = 200;     // Prevent i-o until power-up
+    202          
+    203                  
+    204          	// set comm_id must be unique for this hardware
+    205          	// uc_comm_adid = WAL_UNIQUE_COMMID;
+    206          
+    207          	// clear counter timer and setup functions
+    208          	ws_ctimer[0].exp_routine = NULL;
+    209          	ws_ctimer[1].exp_routine = NULL;
+    210          	ws_ctimer[2].exp_routine = NULL;
+    211          	ws_ctimer[3].exp_routine = NULL;
+    212          	ws_ctimer[4].exp_routine = NULL;
+    213          	ws_ctimer[5].exp_routine = NULL;
+    214          	ws_ctimer[6].exp_routine = NULL;
+    215          	ws_ctimer[7].exp_routine = NULL;
+    216          }
+    217          
+    218          
+    219          
+    220          void InitDevice(void)
+    221          {
+    222          // __disable_interrupt();
+    223          
+    224            por_reset = MCUCSR;
+    225            // MCUCSR = 0;
+    226            MCUCSR &= ~0x01;
+    227            MCUCSR &= ~0x02;
+    228            MCUCSR &= ~0x04;
+    229            MCUCSR &= ~0x08;
+    230            MCUCSR &= ~0x10;
+    231          
+    232            MCUCSR |= 0x80;
+    233            /* Configure PortA..  +28V */
+    234            DDRA = 0x00;
+    235            /* Port B..7..0 , rxtx_en, op_tr0, in_trg, in_enc, heart*/
+    236            /* V1.6 13JAN06: use PB.6 as debug pin WAL_DEBUG_MISO */
+    237            /* DDRB = 0x19; */
+    238            DDRB = 0x59;
+    239            /* Port C.. n/c */
+    240            DDRC = 0x00;
+    241            /* Port D.7..0. OP_PWM, IN_SW1, OP_BRK, OP_DIR, IN_LIM, IN_HOM, TX, RX */
+    242            DDRD = 0xB0;
+    243          
+    244            WDTCR = 0x0F;
+    245          
+    246            // Configure Timer 0 to expire for each ~1 ms.
+    247            // TCCR0 = 0x03;   		// Start the timer by prescale CK/64
+    248            // mTCNT = 193;    		// Load timer to expire for each ~1ms
+    249            TCCR0 = 0x02;   			// Start the timer by prescale CK/8 (2us/pulse)
+    250            // uc_tm0preset = 206;    // Load timer to expire for each ~0.1ms (400 instr/int)
+    251            uc_tm0preset = 8;    		// Load timer to expire for each ~0.5ms (2000 instr/int)
+    252          							// 256 - 250 = 6, but allow for latency (16 instr)
+    253          
+    254            TCNT0 = uc_tm0preset;  	// Load the timer counter register
+    255            TIMSK |= 0x01;  		// Enable Timer0 overflow interrupt
+    256          
+    257            MCUCR |= 0X0A;    		// Falling edge int0, int1 and int2
+    258          							// However, INT0, INT1, INT2 not used
+    259            // GICR |= (1<<INT1);  GICR |= (1<<INT0);   GICR |= (1<<INT2); 
+    260          
+    261            // Setup TIMER2 = PWM output on OC2
+    262            // Phase correct PWM (WGM20), Set OC2 on compare (COM21,20), Clk/1024 = (CS22,21,20) = 0x07
+    263            // Clk/8 | (1<<CS22)  | (1<<CS20)
+    264            TCCR2 = (1<<WGM20) | (1<<COM21) | (1<<COM20) | (1<<CS21);
+    265            OCR2 = 0;
+    266          
+    267            ASSR = 0;					// non Asynchronous operation
+    268            
+    269            // __enable_interrupt();
+    270            
+    271          }
+    272          
+    273          
+    274          
+
+   Maximum stack usage in bytes:
+
+     Function             CSTACK RSTACK
+     --------             ------ ------
+     InitData                 0      2
+     InitDevice               0      2
+     InitOutputs              0      2
+     LoadNVData               0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_eetbl_write     0      2
+       -> wal_eetbl_write     0      2
+       -> wal_eetbl_write     0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+       -> wal_bsf_eeget       0      2
+
+
+   Segment part sizes:
+
+     Function/Label Bytes
+     -------------- -----
+     LoadNVData      624
+     InitOutputs      20
+     InitData        306
+     InitDevice      104
+     _A_PIND           1
+     _A_DDRD           1
+     _A_PORTD          1
+     _A_DDRC           1
+     _A_DDRB           1
+     _A_PORTB          1
+     _A_DDRA           1
+     _A_WDTCR          1
+     _A_ASSR           1
+     _A_OCR2           1
+     _A_TCCR2          1
+     _A_TCNT0          1
+     _A_TCCR0          1
+     _A_MCUCSR         1
+     _A_MCUCR          1
+     _A_TIMSK          1
+
+ 
+    16 bytes in segment ABSOLUTE
+ 1 054 bytes in segment CODE
+ 
+ 1 054 bytes of CODE memory
+     0 bytes of DATA memory (+ 16 bytes shared)
+
+Errors: none
+Warnings: 3

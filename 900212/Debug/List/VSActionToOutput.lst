@@ -1,0 +1,1153 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  01/Oct/2012  09:22:49 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\VSActionToOutput.c                 #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\VSActionToOutput.c                 #
+#    List file    =  C:\hmhome\900212\Debug\List\VSActionToOutput.lst        #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\VSActionToOutput.r90         #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\VSActionToOutput.c
+      1          /*****************************************************************************
+      2          * IAR visualSTATE action functions and error handler.
+      3          * i.e. flesh out functions corresponding to System1action.h (VisualSTATE)
+      4          *****************************************************************************/
+      5          
+      6          #include <iom16.h>		 	// Atmel up definitions
+      7          #include <inavr.h>			// AVR intrinsic functions
+      8          #include "VSMain.h"			// VisualState definitions (further includes)
+      9          #include "system1Action.h"              // VisualState generated 'action' functions:
+     10          
+     11          #include "usart2.h"			// Application (UART) defs
+     12          #include "defs.h"			// Application (GENERAL) defs
+     13          #include "globals.h"		// Application global data/variables
+     14          
+     15          
+     16          unsigned char wal_pos_similar( void);
+     17          unsigned char wal_stop_pos_similar( void);
+     18          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+     19          
+     20          void wal_motor_start( void);
+     21          void wal_motor_stop( void);
+     22          void wal_position_store( void);
+     23          
+     24          void InitData( void);
+     25          void LoadNVData( void);	        // read eeprom (nv data)
+     26          void wal_do_command( void);
+     27          void wal_picnet_motor( void);
+     28          
+     29          void wal_clear_position( void);
+     30          
+     31          void wal_setup_vss_timer( void);
+     32          void wal_vss_timer_function( void);
+     33          void vss_seq_error( void);
+     34          
+     35          /* Implement timer counter structure */
+     36          /* Relies upon hardware::application tick generation */
+     37          
+     38          
+     39          typedef struct wdef_vss_timer{
+     40            VS_UINT event;
+     41            VS_UINT ticks;
+     42            unsigned char active;
+     43            unsigned char other;
+     44          };
+     45          
+     46          struct wdef_vss_timer wvt_period;
+     47          struct wdef_vss_timer wvt_stall;
+     48          struct wdef_vss_timer wvt_txwait;
+     49          
+     50          void wal_setup_vss_timer( void)
+     51          {
+     52          	wvt_period.event = E_Periodic;		        // results in A_Periodic
+     53          	wvt_period.ticks = 0;
+     54          	wvt_period.active = 0;
+     55          	wvt_period.other = 0;
+     56          	wvt_stall.event = E_AxisStall;			// used within 'MoveTo' state
+     57          	wvt_stall.ticks = 0;
+     58          	wvt_stall.active = 0;
+     59          	wvt_stall.other = 0;
+     60          	wvt_txwait.event = E_TimerTxWait;		// used within 'Sending' state
+     61          	wvt_txwait.ticks = 0;
+     62          	wvt_txwait.active = 0;
+     63          	wvt_txwait.other = 0;
+     64          }
+     65          
+     66          void wal_vss_timer_function( void)
+     67          {
+     68          // Function for VSS Timer counter activity
+     69          // Must be called every <x> msec, where <x> = VSS timebase
+     70          // i.e. this application tick = 0.5 msec
+     71          
+     72          // could use timer ->
+     73          // if timer->active == 1 .. if timer->ticks ... timer->event
+     74          
+     75          	if( wvt_period.active == 1)
+     76          	{
+     77          		if( wvt_period.ticks != 0)
+     78          		{
+     79          			wvt_period.ticks--;
+     80          			if( wvt_period.ticks == 0)
+     81          			{
+     82          				if( SEQ_AddEvent( wvt_period.event) != UCC_OK )
+     83          				{
+     84          					vss_seq_error();
+     85          				}
+     86          			}
+     87          		}
+     88          	}
+     89          	if( wvt_stall.active == 1)
+     90          	{
+     91          		if( wvt_stall.ticks != 0)
+     92          		{
+     93          			wvt_stall.ticks--;
+     94          			if( wvt_stall.ticks == 0)
+     95          			{
+     96          				if( SEQ_AddEvent( wvt_stall.event) != UCC_OK )
+     97          				{
+     98          					vss_seq_error();
+     99          				}
+    100          				wvt_stall.active = 0;
+    101          			}
+    102          		}
+    103          	}
+    104          	if( wvt_txwait.active == 1)
+    105          	{
+    106          		if( wvt_txwait.ticks != 0)
+    107          		{
+    108          			wvt_txwait.ticks--;
+    109          			if( wvt_txwait.ticks == 0)
+    110          			{
+    111          				if( SEQ_AddEvent( wvt_txwait.event) != UCC_OK )
+    112          				{
+    113          					vss_seq_error();
+    114          				}
+    115          			}
+    116          		}
+    117          	}
+    118          }
+    119          
+    120          
+    121          /* REFER TO VS generated "System1action.h" */
+    122          /* Last updated 08DEC04 */
+    123          
+    124          /* 
+    125          
+    126          extern VS_VOID A_AxisCalcProfile (VS_VOID);
+    127          extern VS_VOID A_AxisPosUpdate (VS_VOID);
+    128          extern VS_VOID A_ForceStop (VS_VOID);
+    129          extern VS_VOID A_Initialise (VS_VOID);
+    130          extern VS_VOID A_MotorError (VS_VOID);
+    131          extern VS_VOID A_MotorFwd (VS_VOID);
+    132          extern VS_VOID A_MotorIdle (VS_VOID);
+    133          extern VS_VOID A_MotorMove (VS_VOID);
+    134          extern VS_VOID A_MotorOn (VS_VOID);
+    135          extern VS_VOID A_MotorReRef (VS_VOID);
+    136          extern VS_VOID A_MotorRev (VS_VOID);
+    137          extern VS_VOID A_MotorStop (VS_VOID);
+    138          extern VS_VOID A_MotorTest (VS_VOID);
+    139          extern VS_VOID A_Periodic (VS_VOID);
+    140          extern VS_VOID A_RxDoComms (VS_VOID);
+    141          extern VS_VOID A_RxProcess (VS_VOID);
+    142          extern VS_VOID A_TxChar (VS_VOID);
+    143          extern VS_VOID A_TxEnableOff (VS_VOID);
+    144          extern VS_VOID A_TxEnableOn (VS_VOID);
+    145          extern VS_VOID A_TxProcessMsg (VS_VOID);
+    146          extern VS_VOID A_TxTestBusIdle (VS_VOID);
+    147          extern VS_VOID TM_Stall (VS_UINT event, VS_UINT ticks);
+    148          extern VS_VOID TM_Status (VS_UINT event, VS_UINT ticks);
+    149          extern VS_VOID TM_TimerTxWait (VS_UINT event, VS_UINT ticks);
+    150          
+    151          */
+    152          
+    153          VS_VOID A_AxisCalcProfile (VS_VOID)
+    154          {
+    155          // action upon entry to motor profile
+    156          // associated with A_MotorMove()
+    157          
+    158          // use difference to determine motor direction (uc_axis_dir)
+    159          // prepare ramp-up & ramp-down profile
+    160          
+    161          // negative difference so move in reverse
+    162          // decrease 'set point' for uni-directional motion,
+    163          // and set unidirection flag:
+    164          
+    165            // V1.7 16JAN06: always set 'uni' == 'set'
+    166            ui_axis_uni = ui_axis_set;
+    167            // clear 'uni-directional flag' (set later if required)
+    168            uc_unitravel = 0;
+    169          
+    170            // if( ui_axis_set == ui_axis_pos)
+    171            if( wal_pos_similar() )
+    172            {
+    173              if( SEQ_AddEvent( E_AxisSetPoint) != UCC_OK )
+    174              {
+    175                vss_seq_error();
+    176              }
+    177              return;
+    178            }
+    179          
+    180            if( ui_axis_set > ui_axis_pos)
+    181            {
+    182              uc_axis_dir = 1;
+    183              ui_axis_diff = ui_axis_set - ui_axis_pos;
+    184              // calculate ramp profile; pwm output value (STEPA) set in A_MotorOn
+    185              return;
+    186            }
+    187            
+    188            // V1.6 12JAN06: implement UNI-DIRECTIONAL travel!
+    189            // Just force position less than intended, let 'top' control re-send move
+    190            // (A_MotorMove)
+    191            // if( ui_axis_set > WAL_UNI_TRAVEL)
+    192            // {
+    193            //   ui_axis_set -= WAL_UNI_TRAVEL;
+    194            // }
+    195            // else force re-reference.... (maybe set ui_axis_set == 0)
+    196            
+    197            // V1.7 16JAN06: re-implement UNI-DIRECTIONAL travel:
+    198            // but include auto-repositioning based upon internal flag...
+    199            uc_unitravel = 1;     // force 're-position' at end of travel
+    200            // V1.7.. use A_MotorIdle to force move (E_AxisMove) if uc_unitravel
+    201            
+    202            ui_axis_set = 0;
+    203            if( ui_axis_uni > WAL_UNI_TRAVEL)
+    204            {
+    205              ui_axis_set = (ui_axis_uni - WAL_UNI_TRAVEL);
+    206            }
+    207            
+    208            
+    209            uc_axis_dir = 0;
+    210            ui_axis_diff = ui_axis_pos - ui_axis_set;
+    211            // calculate ramp profile
+    212          
+    213          }
+    214          
+    215          VS_VOID A_AxisPosUpdate (VS_VOID)
+    216          {
+    217          // action due to E_Tacho (update counter position)
+    218          // NB. uc_axis_dir fwd == 1, rev == 0
+    219          
+    220            // uc_stall_tacin++; updated within tacho input routine
+    221            
+    222            // V1.6 13JAN06: rationalise 'tacho' position update within input
+    223            // only handle 'motion' (vss==2) logic within this function...
+    224          
+    225            if( wal_stop_pos_similar() )
+    226            {
+    227              wal_motor_stop();
+    228              wal_position_store();
+    229              if( SEQ_AddEvent( E_AxisSetPoint) != UCC_OK )
+    230              {
+    231                vss_seq_error();
+    232              }
+    233              return;
+    234            }
+    235          
+    236            if( ui_axis_pos > WAL_MAX_AXIS_TACHO )
+    237            {
+    238              wal_motor_stop();
+    239              uc_axis_err = 7;
+    240              // V2.4: store in table:
+    241              wal_record_axis_err();
+    242              if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+    243              {
+    244                      vss_seq_error();
+    245              }
+    246            }
+    247            
+    248            // check ramp-up, ramp-down conditions:
+    249            // NB. wal_pos_similar calls wal_calc_setpos_diff()
+    250            // therefore ui_axis_diff already determined...
+    251            
+    252            ui_axis_rup++;
+    253            
+    254            /*
+    255            if( ui_axis_diff < WAL_PWM_ZONEE)
+    256            {
+    257              WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    258              return;
+    259            }
+    260            
+    261            if( ui_axis_diff < WAL_PWM_ZONED)
+    262            {
+    263              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    264                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    265              else
+    266                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    267              return;
+    268            }
+    269          
+    270            if( ui_axis_diff < WAL_PWM_ZONEC)
+    271            {
+    272              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    273              {
+    274                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    275              }
+    276              else
+    277              {
+    278                if( ui_axis_rup < WAL_PWM_ZONED)
+    279                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    280                else
+    281                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    282              }
+    283              return;
+    284            }
+    285          
+    286            if( ui_axis_diff < WAL_PWM_ZONEB)
+    287            {
+    288              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    289              {
+    290                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    291              }
+    292              else
+    293              {
+    294                if( ui_axis_rup < WAL_PWM_ZONED)
+    295                {
+    296                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    297                }
+    298                else
+    299                {
+    300                  if( ui_axis_rup < WAL_PWM_ZONEC)
+    301                    WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    302                  else
+    303                    WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+    304                }
+    305              }
+    306              return;
+    307            }
+    308          
+    309            if( ui_axis_diff < WAL_PWM_ZONEA)
+    310            {
+    311              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    312              {
+    313                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    314              }
+    315              else
+    316              {
+    317                if( ui_axis_rup < WAL_PWM_ZONED)
+    318                {
+    319                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    320                }
+    321                else
+    322                {
+    323                  if( ui_axis_rup < WAL_PWM_ZONEC)
+    324                  {
+    325                    WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    326                  }
+    327                  else
+    328                  {
+    329                    if( ui_axis_rup < WAL_PWM_ZONEB)
+    330                      WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+    331                    else
+    332                      WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPE;
+    333                  }
+    334                }
+    335              }
+    336              return;
+    337            }
+    338            */
+    339          
+    340            // no ramp down in effect; therefore check if ramp up only:
+    341            // V1.5 15DEC05: 100% PWM on ramp up:
+    342            /*
+    343            if( ui_axis_rup < WAL_PWM_ZONEA)              // ZONEA is largest
+    344            {
+    345              WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPE;   // STEPE is below max
+    346              if( ui_axis_rup < WAL_PWM_ZONEB)
+    347                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+    348              if( ui_axis_rup < WAL_PWM_ZONEC)
+    349                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    350              if( ui_axis_rup < WAL_PWM_ZONED)
+    351                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    352              if( ui_axis_rup < WAL_PWM_ZONEE)
+    353                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;   // STEP A is slowest
+    354            }
+    355            else
+    356            {
+    357              WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+    358            }
+    359            */
+    360            
+    361            // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+    362            // WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+    363              
+    364          }
+    365          
+    366          VS_VOID A_ForceStop (VS_VOID)
+    367          {
+    368            if( SEQ_AddEvent( E_AxisStop) != UCC_OK )
+    369            {
+    370              vss_seq_error();
+    371            }
+    372          }
+    373          
+    374          VS_VOID A_Initialise (VS_VOID)
+    375          {
+    376            // Primary initialisation done prior to application start
+    377            // setup ports and interupts
+    378            // InitDevice();  
+    379            // once ports setup, set outputs per application
+    380            // InitOutputs();
+    381          
+    382            // reset variables:
+    383            InitData();
+    384            // read eeprom (nv data)
+    385            LoadNVData();
+    386          
+    387            // setup baud rate dependent upon option
+    388            if( uc_comm_hilo == 0)
+    389            {
+    390              // (max) 115200 ~= 125k baud (vario)
+    391              USART_Init_High(1);
+    392            }
+    393            else
+    394            {
+    395              // 9600 baud (pic) = 25 with 4MHz osc and U2X = 0
+    396              USART_Init_Low( 25);
+    397            }
+    398          
+    399            // WAL_DEBUG_MISO = 0;
+    400          
+    401            if( WAL_IN_SW1 == 0)
+    402            {
+    403              // SW1 button depressed at power up
+    404              // start timer... if still depressed after <n> seconds
+    405              // reset comms address?
+    406            }
+    407            // SEQ_AddEvent(E_AxisInvalid);
+    408          }
+    409          VS_VOID A_MotorError (VS_VOID)
+    410          {
+    411            // response to stall, limit detect E_AxisError
+    412            if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+    413            {
+    414                    vss_seq_error();
+    415            }
+    416          }
+    417          
+    418          VS_VOID A_MotorFwd (VS_VOID)
+    419          {
+    420          // called upon Axis Home Event
+    421            wal_motor_stop();
+    422            uc_axis_dir = 1;
+    423            // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+    424            // WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+    425            uc_axis_pwm = WAL_PWM_HOME;
+    426            wal_motor_start();
+    427          }
+    428          VS_VOID A_MotorIdle (VS_VOID)
+    429          {
+    430            // set internal axis state for status
+    431            uc_axis_vss = 0;
+    432          
+    433            uc_done_move = 1;
+    434            if( uc_powerup_once )
+    435            {
+    436              uc_powerup_once = 0;
+    437              uc_done_move = 0;
+    438            }
+    439            
+    440            // V1.7 16JAN06: self-contained 'uni-directional travel'
+    441            // change in direction delayed using 'uc_delay_uni'
+    442          
+    443            if( uc_unitravel)
+    444            {
+    445              uc_delay_uni = 1;
+    446              uc_mstimer_lo = uc_mstimer_hi = 0;
+    447              uc_done_move = 0;
+    448            }
+    449          }
+    450          
+    451          VS_VOID A_MotorMove (VS_VOID)
+    452          {
+    453            // set internal axis state for status
+    454            uc_axis_vss = 2;
+    455            // clear stored position for recall:
+    456            wal_clear_position();
+    457          }
+    458          
+    459          VS_VOID A_MotorOn (VS_VOID)
+    460          {
+    461            // uc_axis_dir = DIR;
+    462            // uc_axis_pwm = PWM;
+    463            
+    464            // Brake Off, Direction Set, Enable = PWM Output
+    465            uc_axis_rud = 1;	          // ramp up
+    466            ui_axis_rup = 0;                // reset 'ramp-up' counter
+    467            // uc_axis_pwm = WAL_PWM_STEPA;
+    468            // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+    469            WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+    470            
+    471            wal_motor_start();
+    472          }
+    473          
+    474          VS_VOID A_MotorReRef (VS_VOID)
+    475          {
+    476            // set internal axis state for status
+    477            uc_axis_vss = 1;
+    478            
+    479            wal_clear_position();
+    480            
+    481            // if home switch start moving backwards (rev)
+    482            if( val_ip_hom == 0)
+    483            {
+    484              A_MotorRev();
+    485            }
+    486            else
+    487            {
+    488              // else move forwards (if not at limit)
+    489              if( val_ip_lim == 0)
+    490              {
+    491                A_MotorFwd();
+    492              }
+    493            }
+    494          }
+    495          
+    496          VS_VOID A_MotorRev (VS_VOID) 
+    497          {
+    498            uc_axis_dir = 0;
+    499            uc_axis_pwm = WAL_PWM_RAMPUP;
+    500            
+    501            // prevent 
+    502            wal_motor_start();
+    503          }
+    504          
+    505          VS_VOID A_MotorStop (VS_VOID)
+    506          {
+    507            uc_axis_vss = 0;
+    508            wal_motor_stop();
+    509            wvt_stall.active = 0;
+    510          }
+    511          
+    512          VS_VOID A_MotorTest (VS_VOID)
+    513          {
+    514            // V1.6 13JAN06: if in 'motion' state stop & set error (A_Handle)
+    515            if( uc_axis_vss == 2)
+    516            {
+    517              wal_motor_stop();
+    518              uc_axis_err = 2;
+    519              // V2.4: store in table:
+    520              wal_record_axis_err();
+    521              // Rationalise E_AxisError --> E_AxisStop...
+    522              if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+    523              {
+    524                vss_seq_error();
+    525              }
+    526              return;
+    527            }
+    528            
+    529            // primary action of state reached from idle due to E_Button
+    530            // set internal axis state for status
+    531            uc_axis_vss = 3;
+    532            
+    533            // V1.5 15DEC05: use 100% PWM button:
+    534            // uc_axis_pwm = WAL_PWM_TEST;
+    535            uc_axis_pwm = WAL_PWM_MAXSP;
+    536            
+    537            vsstick_stall = 4000;
+    538            
+    539            if( uc_axis_dir)
+    540            {
+    541              if( SEQ_AddEvent( E_AxisRev) != UCC_OK )
+    542              {
+    543                vss_seq_error();
+    544              }
+    545            }
+    546            else
+    547            {
+    548              if( SEQ_AddEvent( E_AxisFwd) != UCC_OK )
+    549              {
+    550                vss_seq_error();
+    551              }
+    552            }
+    553            
+    554            // force test transmission: E_SendRequest
+    555            uca_msgtx[0] = 0x27;    	        // send to dummy bin
+    556            uca_msgtx[1] = uc_comm_adid; 		// from me...
+    557            uca_msgtx[2] = WAL_OP_PWM;    	// current PWM value
+    558            uca_msgtx[3] = PINB;    	        // 
+    559            uca_msgtx[4] = PIND;    	        // ..
+    560            if( SEQ_AddEvent( E_SendRequest) != UCC_OK )
+    561            {
+    562              vss_seq_error();
+    563            }
+    564          }
+    565          
+    566          VS_VOID A_Periodic (VS_VOID)
+    567          {
+    568          // This function is indicative of concurrent state activity.
+    569          // A_Periodic is called upon E_Periodic due to timer TM_Status 
+    570          // tick value = 10, i.e. every 5msec
+    571          
+    572            __watchdog_reset();
+    573            
+    574            if( uc_settlepower)
+    575            {
+    576              uc_settlepower--;
+    577            }
+    578            
+    579            // V1.7 16JAN06: add 'move-count' feature:
+    580            if( uc_done_move)
+    581            {
+    582              uc_done_move = 0;
+    583              uc_num_moveslo++;
+    584              if( uc_num_moveslo == 0)
+    585              {
+    586                uc_num_moveshi++;
+    587                if( uc_num_moveshi == 0)
+    588                {
+    589                  uc_num_moves24++;
+    590                }
+    591              }
+    592              wal_eetbl_write( WAL_EE_MOVELO, uc_num_moveslo);
+    593              wal_eetbl_write( WAL_EE_MOVEHI, uc_num_moveshi);
+    594              wal_eetbl_write( WAL_EE_MOVE24, uc_num_moves24);
+    595            }
+    596          
+    597            // Indicate current status using LED1
+    598            if( uc_led_scale == 0)
+    599            {
+    600              uc_led_scale = WAL_LED_SCALE;		// Scale factor to LED timebase
+    601              uc_led_count++;				// use uc_led_count wrt value to set flash rate
+    602          
+    603              // LED1 'status' usage:
+    604              // Solid on = moving
+    605              // Solid off = Home or Limit active
+    606              // Normal flash = idle, Fast flash = error, Slow flash = comms
+    607          
+    608              if( (val_ip_hom == 1) || (val_ip_lim == 1) )
+    609              {
+    610                WAL_OP_LED = 1;
+    611              }
+    612              else
+    613              {
+    614                if( uc_axis_vss != 0)
+    615                {
+    616                  WAL_OP_LED = 0;
+    617                }
+    618                else
+    619                {
+    620                  if( uc_led_count >= uc_led_value)
+    621                  {
+    622                    // Toggle LED1 (PB.0)
+    623                    PORTB = PINB ^ 0x01;
+    624                    uc_led_count = 0;
+    625                  }
+    626                }
+    627              }
+    628            }
+    629            else
+    630            {
+    631              uc_led_scale--;
+    632              // V1.7 16JAN06: ensure LED flashes even if limits active
+    633              if( uc_led_scale == 0)
+    634              {
+    635                if( (val_ip_hom == 1) || (val_ip_lim == 1))
+    636                {
+    637                  WAL_OP_LED = 0;
+    638                }
+    639              }
+    640            }
+    641          }
+    642          
+    643          
+    644          VS_VOID A_RxDoComms (VS_VOID)
+    645          {
+    646          	// E_RxMsg, valid message received:
+    647          	// if valid address (i.e. match or global process message)
+    648          	// process according to hi or lo-speed comms:
+    649              if( (uca_msgrx[0] == WAL_COMMS_GLOBAL) || (uca_msgrx[0] == uc_comm_adid) )
+    650              {
+    651                  // assume response (echo) always (unless no-echo specifically set)
+    652                  uc_comm_noecho = 0;
+    653          
+    654                  // response to message (transition to Sending state)
+    655                  wal_do_command();
+    656          
+    657                  // NB. reply may be suppressed:
+    658                  if( uc_comm_noecho == 0)
+    659                  {
+    660                      if( SEQ_AddEvent( E_SendRequest) != UCC_OK )
+    661                      {
+    662                          vss_seq_error();
+    663                      }
+    664                  }
+    665              }
+    666          
+    667              // usually response required: E_SendRequest
+    668              // in any case, reset receive buffer & flags:
+    669              uc_comm_flag &= ~WAL_COMM_DERR;
+    670              uc_comm_flag &= ~WAL_COMM_DRDY;
+    671              uc_msgrxptr = 0;
+    672              uc_rx_chksum = 0;
+    673          }
+    674          
+    675          VS_VOID A_RxProcess (VS_VOID)
+    676          {
+    677          // structure uc_rxbuff( charin & status) loaded into uc_rx_chrecv & uc_comm_9set
+    678          
+    679            uc_rx_process = 0;				// reset rx processed flag (semaphore)
+    680          
+    681            // if error detected then reset any message (in) in-progress
+    682            if( (uc_comm_flag & WAL_COMM_DERR) == WAL_COMM_DERR)
+    683            {
+    684              // reset error, but clear any existing in-progress:
+    685              uc_comm_flag &= ~WAL_COMM_DERR;
+    686              uc_comm_flag &= ~WAL_COMM_DRDY;
+    687              uc_msgrxptr = 0;
+    688              uc_rx_chksum = 0;
+    689          
+    690              // uc_rx_process = 0;	// reset rx processed flag (semaphore)
+    691              return;
+    692            }
+    693          
+    694            // process according to hi or lo-speed comms:
+    695            // Hi-speed 9-bit comms
+    696            // Check if 9th bit set: NB UCSRB bit.1 has RXB8 if so = start of message
+    697            if( uc_comm_9set)
+    698            {
+    699              uca_msgrx[0] = uc_rx_chksum = uc_rx_chrecv;
+    700              uc_msgrxptr = 1;
+    701              uc_comm_flag |= WAL_COMM_DRDY;
+    702              return;
+    703            }
+    704            
+    705            // check that address byte has been received:
+    706            if( (uc_comm_flag & WAL_COMM_DRDY) != WAL_COMM_DRDY)
+    707            {
+    708              // ignore: byte received but not valid 'start of message'.
+    709              return;
+    710            }
+    711            
+    712            // at this point buffer (uc_rxrdptr != uc_rxwrptr)
+    713            // may contain complete message received
+    714            if( uc_msgrxptr < 5)
+    715            {
+    716              uc_rx_chksum += uc_rx_chrecv;
+    717              uca_msgrx[uc_msgrxptr] = uc_rx_chrecv;
+    718              uc_msgrxptr++;
+    719          
+    720              // maybe use conditional flag to break while loop:
+    721              while( uc_rxrdptr != uc_rxwrptr )
+    722              {
+    723                uc_rx_chrecv = uc_rxbuff[uc_rxrdptr].charin;
+    724                uc_comm_9set = (uc_rxbuff[uc_rxrdptr].status & 0x02) ? 1 : 0;
+    725                uc_rxrdptr++;
+    726                uc_rxrdptr &= (WAL_MAX_RXBUFF-1);
+    727                if( uc_comm_9set)
+    728                {
+    729                  uca_msgrx[0] = uc_rx_chksum = uc_rx_chrecv;
+    730                  uc_msgrxptr = 1;
+    731                  uc_comm_flag |= WAL_COMM_DRDY;
+    732                  // break while loop
+    733                  break;
+    734                }
+    735                else
+    736                {
+    737                  if( uc_msgrxptr < 5)
+    738                  {
+    739                    uc_rx_chksum += uc_rx_chrecv;
+    740                    uca_msgrx[uc_msgrxptr] = uc_rx_chrecv;
+    741                    uc_msgrxptr++;
+    742                  }
+    743                  else
+    744                  {
+    745                    // break while loop
+    746                    uc_comm_flag &= ~WAL_COMM_DRDY;
+    747                    // if checksum matches then this is a valid message:
+    748                    if( uc_rx_chksum == uc_rx_chrecv)
+    749                    {
+    750                      if( SEQ_AddEvent( E_RxMsg) != UCC_OK )
+    751                      {
+    752                        vss_seq_error();
+    753                      }
+    754                    }
+    755                    break;
+    756                  }
+    757                }
+    758              }		// while RX buffer loaded
+    759            }
+    760            else
+    761            {
+    762              // should have received last byte of message, so clear DRDY
+    763              uc_comm_flag &= ~WAL_COMM_DRDY;
+    764              // if checksum matches then this is a valid message:
+    765              if( uc_rx_chksum == uc_rx_chrecv)
+    766              {
+    767                if( SEQ_AddEvent( E_RxMsg) != UCC_OK )
+    768                {
+    769                  vss_seq_error();
+    770                }
+    771              }
+    772            }
+    773          
+    774            // uc_rx_process = 0;				// reset rx processed flag (semaphore)
+    775          }
+    776          
+    777          VS_VOID A_TxChar (VS_VOID)
+    778          {
+    779          // TxChar state (initial entry & TxMoreMsg)
+    780          
+    781            uc_tx_chout = uca_msgtx[uc_msgtxprt];
+    782          
+    783            if( uc_comm_hilo == 0)
+    784            {
+    785              if( uc_msgtxprt < 5)
+    786              {
+    787                // checksum generation:
+    788                uca_msgtx[5] += uc_tx_chout;
+    789                uc_msgtxprt++;
+    790              }
+    791            }
+    792            else
+    793            {
+    794              if( uc_msgtxprt < 4)
+    795              {
+    796                // checksum generation:
+    797                uca_msgtx[4] ^= uc_tx_chout;
+    798                uc_msgtxprt++;
+    799              }
+    800            }
+    801          
+    802            uc_comm_flag &= ~WAL_COMM_MISM;
+    803          
+    804            UDR = uc_tx_chout;
+    805            // reset 9th bit once character TXC
+    806          }
+    807          
+    808          VS_VOID A_TxEnableOff (VS_VOID)
+    809          {
+    810            // end of Tx Message
+    811            PORTB = (PINB & ~0x10);		// Switch off line driver
+    812            UCSRB |= (1<<RXCIE);    	        // enable RX interrupt
+    813          
+    814            uc_comm_flag &= ~WAL_COMM_SMSG;	// Flag data sent (msgtx complete)
+    815            
+    816            // force re-do of RX char event if uc_rx_process set
+    817            if( uc_rx_process != 0)
+    818            {
+    819              if( SEQ_AddEvent( E_RxChar) != UCC_OK )
+    820              {
+    821                vss_seq_error();
+    822              }
+    823            }
+    824          }
+    825          
+    826          VS_VOID A_TxEnableOn (VS_VOID)
+    827          {
+    828          
+    829              // uc_tx_chout = uca_msgtx[0];
+    830          
+    831              // disable rx interrupt & setup TX_En 
+    832              
+    833              UCSRB &= ~(1<<RXCIE);		// disable rx interrupt
+    834              PORTB = (PINB | 0x10);  		// Switch line driver on
+    835              // ? set address bit ?
+    836              uc_comm_flag |= WAL_COMM_SMSG;	// Transmission in progress
+    837          
+    838              // start of Tx Message
+    839              uc_msgtxprt = 0;
+    840          
+    841              if( uc_comm_hilo == 0)
+    842              {
+    843                uca_msgtx[5]= 0;	// clear checksum
+    844                // if hi-speed then set 9bit (= start of message)
+    845                UCSRB |= (1<<TXB8);
+    846              }
+    847              else
+    848              {
+    849                uca_msgtx[4]= 0;	// clear checksum
+    850              }
+    851          
+    852          }
+    853          
+    854          VS_VOID A_TxProcessMsg (VS_VOID)
+    855          {
+    856          // response to E_TxComplete i.e. TXC event
+    857          
+    858          	// test if error condition exists, if so then return to wait state (retry send)
+    859          	if( (uc_comm_flag & WAL_COMM_MISM) == WAL_COMM_MISM)
+    860          	{
+    861          		// i.e. abort send message
+    862          		// but must also end transmission:
+    863          		// so either quit 'sending' state completely
+    864          		// (let master resend original message...)
+    865          		// using E_SendComplete
+    866          		
+    867          		// or remain in 'sending' state, & retry
+    868          		// using E_TxBusIdle ??
+    869          		
+    870          		if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+    871          		{
+    872          			vss_seq_error();
+    873          		}
+    874          		return;
+    875          	}
+    876          
+    877          	// if last character of message tx'd then end Tx Msg using E_SendComplete
+    878          	// otherwise push next character of message to transmit
+    879          	// uc_tx_chout = uca_msgtx[uc_msgtxprt]
+    880          
+    881          	if( uc_comm_hilo == 0)
+    882          	{
+    883          		if( uc_msgtxprt >= 5)
+    884          		{
+    885          			SEQ_AddEvent(E_SendComplete);
+    886          		}
+    887          		else
+    888          		{
+    889          			if( SEQ_AddEvent( E_TxMoreMsg) != UCC_OK )
+    890          			{
+    891          				vss_seq_error();
+    892          			}
+    893          		}
+    894          	}
+    895          	else
+    896          	{
+    897          		if( uc_msgtxprt >= 4)
+    898          		{
+    899          			if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+    900          			{
+    901          				vss_seq_error();
+    902          			}
+    903          		}
+    904          		else
+    905          		{
+    906          			if( SEQ_AddEvent( E_TxMoreMsg) != UCC_OK )
+    907          			{
+    908          				vss_seq_error();
+    909          			}
+    910          		}
+    911          	}
+    912          }
+    913          
+    914          VS_VOID A_TxTestBusIdle (VS_VOID)
+    915          {
+    916          // Test if RS485 bus idle using 'uc_line_idle':
+    917          // NB. as uc_comm_idle may be written during RX interrupt disable
+    918          	__disable_interrupt();
+    919          	if( uc_comm_idle >= 3)
+    920          	{
+    921          		// E_TxBusIdle will cause State 'Transmit' to begin
+    922          		uc_comm_flag |= WAL_COMM_IDLE;
+    923          
+    924          		if( uc_comm_hilo == 0)
+    925          		{
+    926          			// different transition required if hi-speed comms:
+    927          			if( SEQ_AddEvent( E_TxHiSpeed) != UCC_OK )
+    928          			{
+    929          				vss_seq_error();
+    930          			}
+    931          		}
+    932          		else
+    933          		{
+    934          			if( SEQ_AddEvent( E_TxBusIdle) != UCC_OK )
+    935          			{
+    936          				vss_seq_error();
+    937          			}
+    938          		}
+    939          	}
+    940          	else
+    941          	{
+    942          		uc_comm_idle++;
+    943          	}
+    944          	__enable_interrupt(); 
+    945          }
+    946          
+    947          VS_VOID TM_Stall (VS_UINT event, VS_UINT ticks)
+    948          {
+    949          // Seed E_AxisStall
+    950          // NB. this routine called with VS_UINT vsstick_stall as tick parameter
+    951          	wvt_stall.event = event;
+    952          	wvt_stall.ticks = ticks;
+    953          	// V1.6 13JAN06: disable this method of stall detection
+    954          	wvt_stall.active = 0; // 1->0
+    955          }
+    956          VS_VOID TM_Status (VS_UINT event, VS_UINT ticks)
+    957          {
+    958          // Seed E_Periodic
+    959          	wvt_period.event = event;
+    960          	wvt_period.ticks = ticks;
+    961          	wvt_period.active = 1;
+    962          }
+    963          VS_VOID TM_TimerTxWait (VS_UINT event, VS_UINT ticks)
+    964          {
+    965          // Seed E_TimerTxWait
+    966          // NB. this routine called with VS_UINT vsstick_txwait as tick parameter
+    967          	wvt_txwait.event = event;
+    968          	wvt_txwait.ticks = ticks;
+    969          	wvt_txwait.active = 1;
+    970          }
+    971          
+    972          // VS_VOID TM_Timer0 (VS_UINT event, VS_UINT ticks){  TIMER0_SW_start( event, ticks );}
+    973          
+    974          
+    975          
+
+   Maximum stack usage in bytes:
+
+     Function                  CSTACK RSTACK
+     --------                  ------ ------
+     A_AxisCalcProfile             0      2
+       -> wal_pos_similar          0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_AxisPosUpdate               0      2
+       -> wal_stop_pos_similar     0      2
+       -> wal_motor_stop           0      2
+       -> wal_position_store       0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> wal_motor_stop           0      2
+       -> wal_record_axis_err      0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_ForceStop                   0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_Initialise                  0      2
+       -> InitData                 0      2
+       -> LoadNVData               0      2
+       -> USART_Init_High          0      2
+       -> USART_Init_Low           0      2
+     A_MotorError                  0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_MotorFwd                    0      2
+       -> wal_motor_stop           0      2
+       -> wal_motor_start          0      2
+     A_MotorIdle                   0      2
+     A_MotorMove                   0      2
+       -> wal_clear_position       0      2
+     A_MotorOn                     0      2
+       -> wal_motor_start          0      2
+     A_MotorReRef                  0      2
+       -> wal_clear_position       0      2
+       -> A_MotorRev               0      2
+       -> A_MotorFwd               0      2
+     A_MotorRev                    0      2
+       -> wal_motor_start          0      2
+     A_MotorStop                   0      2
+       -> wal_motor_stop           0      2
+     A_MotorTest                   0      2
+       -> wal_motor_stop           0      2
+       -> wal_record_axis_err      0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_Periodic                    0      2
+       -> wal_eetbl_write          0      2
+       -> wal_eetbl_write          0      2
+       -> wal_eetbl_write          0      2
+     A_RxDoComms                   0      2
+       -> wal_do_command           0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_RxProcess                   0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_TxChar                      0      2
+     A_TxEnableOff                 0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_TxEnableOn                  0      2
+     A_TxProcessMsg                0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     A_TxTestBusIdle               0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+     TM_Stall                      0      2
+     TM_Status                     0      2
+     TM_TimerTxWait                0      2
+     wal_setup_vss_timer           0      2
+     wal_vss_timer_function        0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+
+
+   Segment part sizes:
+
+     Function/Label         Bytes
+     --------------         -----
+     wvt_period                6
+     wvt_stall                 6
+     wvt_txwait                6
+     wal_setup_vss_timer     110
+     wal_vss_timer_function  206
+     A_AxisCalcProfile       196
+     A_AxisPosUpdate          94
+     A_ForceStop              16
+     A_Initialise             38
+     A_MotorError             16
+     A_MotorFwd               22
+     A_MotorIdle              64
+     A_MotorMove              12
+     A_MotorOn                32
+     A_MotorReRef             34
+     A_MotorRev               18
+     A_MotorStop              18
+     A_MotorTest             148
+     A_Periodic              232
+     A_RxDoComms              86
+     A_RxProcess             406
+     A_TxChar                110
+     A_TxEnableOff            42
+     A_TxEnableOn             50
+     A_TxProcessMsg          106
+     A_TxTestBusIdle          74
+     TM_Stall                 24
+     TM_Status                24
+     TM_TimerTxWait           24
+     _A_UCSRB                  1
+     _A_UDR                    1
+     _A_PIND                   1
+     _A_PINB                   1
+     _A_PORTB                  1
+     _A_OCR2                   1
+      Others                   6
+
+ 
+     6 bytes in segment ABSOLUTE
+ 2 202 bytes in segment CODE
+     6 bytes in segment INITTAB
+    18 bytes in segment NEAR_Z
+ 
+ 2 202 bytes of CODE memory (+ 6 bytes shared)
+    18 bytes of DATA memory (+ 6 bytes shared)
+
+Errors: none
+Warnings: 6

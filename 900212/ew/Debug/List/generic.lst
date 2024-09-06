@@ -1,0 +1,140 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:32:58 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\generic.c         #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \generic.c                                              #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\generic.ls #
+#                    t                                                       #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\generic.r90 #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\generic.c
+      1          /*
+      2          *
+      3          * The following function routines are 'common' to various application
+      4          * i.e. not application specific
+      5          *
+      6          */
+      7          
+      8          #include <iom16.h>		 	// Atmel up definitions
+      9          #include <inavr.h>			// AVR intrinsic functions
+     10          #include "VSMain.h"			// VisualState definitions (further includes)
+     11          
+     12          
+     13          // NB. pre-defined macros 'inavr.h'
+     14          // #define __EEPUT(ADR,VAL)  {while (EECR & 0x02); EEAR = (ADR); EEDR = (VAL); EECR = 0x04; EECR = 0x02;}
+     15          // #define __EEGET(VAR, ADR) {while (EECR & 0x02); EEAR = (ADR); EECR = 0x01; (VAR) = EEDR;}
+     16          
+     17          // NB. these functions only access the lowest 256 bytes of EEPROM
+     18          
+     19          // NB. wal_program_ee superceeded by wal_eetbl_write(...)
+
+   \                                 In segment CODE, align 2, keep-with-next
+     20          void wal_program_ee( char s_address, char s_value)
+   \                     wal_program_ee:
+   \                     ??wal_program_ee_0:
+     21          {
+     22          	while (EECR & 0x02); 
+   \   00000000   99E1                       SBIC    0x1C,0x01
+   \   00000002   CFFE                       RJMP    ??wal_program_ee_0
+     23          	EEARH = 0;
+   \   00000004   E020                       LDI     R18,0
+   \   00000006   BB2F                       OUT     0x1F,R18
+     24          	EEARL = s_address; 
+   \   00000008   BB0E                       OUT     0x1E,R16
+     25          	EEDR = s_value;
+   \   0000000A   BB1D                       OUT     0x1D,R17
+     26          	EECR = 0x04; 
+   \   0000000C   E024                       LDI     R18,4
+   \   0000000E   BB2C                       OUT     0x1C,R18
+     27          	EECR = 0x02;
+   \   00000010   E022                       LDI     R18,2
+   \   00000012   BB2C                       OUT     0x1C,R18
+     28          }
+   \   00000014   9508                       RET
+     29          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     30          unsigned char wal_bsf_eeget( unsigned char s_address)
+   \                     wal_bsf_eeget:
+     31          {
+   \   00000000   2F10                       MOV     R17,R16
+     32          while (EECR & 0x02);    // 1<<EEWE
+   \                     ??wal_bsf_eeget_0:
+   \   00000002   99E1                       SBIC    0x1C,0x01
+   \   00000004   CFFE                       RJMP    ??wal_bsf_eeget_0
+     33                                  // NB: EEARH always 0 !
+     34          EEARH = 0;
+   \   00000006   E000                       LDI     R16,0
+   \   00000008   BB0F                       OUT     0x1F,R16
+     35          EEARL = (s_address); 
+   \   0000000A   BB1E                       OUT     0x1E,R17
+     36          EECR = 0x01;            // 1<<EERE
+   \   0000000C   E001                       LDI     R16,1
+   \   0000000E   BB0C                       OUT     0x1C,R16
+     37                                  // ? dummy op required ?
+     38          return EEDR;
+   \   00000010   B30D                       IN      R16,0x1D
+   \   00000012   9508                       RET
+     39          }
+
+   \                                 In segment ABSOLUTE, at 0x3c
+   \   union <unnamed> volatile __io _A_EECR
+   \                     _A_EECR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3d
+   \   union <unnamed> volatile __io _A_EEDR
+   \                     _A_EEDR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3e
+   \   union <unnamed> volatile __io _A_EEAR
+   \                     _A_EEAR:
+   \   00000000                              DS 2
+     40          
+
+   Maximum stack usage in bytes:
+
+     Function       CSTACK RSTACK
+     --------       ------ ------
+     wal_bsf_eeget      0      2
+     wal_program_ee     0      2
+
+
+   Segment part sizes:
+
+     Function/Label     Bytes
+     --------------     -----
+     ??wal_program_ee_0   22
+     wal_bsf_eeget        20
+     _A_EECR               1
+     _A_EEDR               1
+     _A_EEAR               2
+
+ 
+  4 bytes in segment ABSOLUTE
+ 42 bytes in segment CODE
+ 
+ 42 bytes of CODE memory
+  0 bytes of DATA memory (+ 4 bytes shared)
+
+Errors: none
+Warnings: none

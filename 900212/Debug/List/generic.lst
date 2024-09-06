@@ -1,0 +1,91 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  28/Sep/2012  11:33:28 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\generic.c                          #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\generic.c                          #
+#    List file    =  C:\hmhome\900212\Debug\List\generic.lst                 #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\generic.r90                  #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\generic.c
+      1          /*
+      2          *
+      3          * The following function routines are 'common' to various application
+      4          * i.e. not application specific
+      5          *
+      6          */
+      7          
+      8          #include <iom16.h>		 	// Atmel up definitions
+      9          #include <inavr.h>			// AVR intrinsic functions
+     10          #include "VSMain.h"			// VisualState definitions (further includes)
+     11          
+     12          
+     13          // NB. pre-defined macros 'inavr.h'
+     14          // #define __EEPUT(ADR,VAL)  {while (EECR & 0x02); EEAR = (ADR); EEDR = (VAL); EECR = 0x04; EECR = 0x02;}
+     15          // #define __EEGET(VAR, ADR) {while (EECR & 0x02); EEAR = (ADR); EECR = 0x01; (VAR) = EEDR;}
+     16          
+     17          // NB. these functions only access the lowest 256 bytes of EEPROM
+     18          
+     19          // NB. wal_program_ee superceeded by wal_eetbl_write(...)
+     20          void wal_program_ee( char s_address, char s_value)
+     21          {
+     22          	while (EECR & 0x02); 
+     23          	EEARH = 0;
+     24          	EEARL = s_address; 
+     25          	EEDR = s_value;
+     26          	EECR = 0x04; 
+     27          	EECR = 0x02;
+     28          }
+     29          
+     30          unsigned char wal_bsf_eeget( unsigned char s_address)
+     31          {
+     32          while (EECR & 0x02);    // 1<<EEWE
+     33                                  // NB: EEARH always 0 !
+     34          EEARH = 0;
+     35          EEARL = (s_address); 
+     36          EECR = 0x01;            // 1<<EERE
+     37                                  // ? dummy op required ?
+     38          return EEDR;
+     39          }
+     40          
+
+   Maximum stack usage in bytes:
+
+     Function       CSTACK RSTACK
+     --------       ------ ------
+     wal_bsf_eeget      0      2
+     wal_program_ee     0      2
+
+
+   Segment part sizes:
+
+     Function/Label     Bytes
+     --------------     -----
+     ??wal_program_ee_0   22
+     wal_bsf_eeget        20
+     _A_EECR               1
+     _A_EEDR               1
+     _A_EEAR               2
+
+ 
+  4 bytes in segment ABSOLUTE
+ 42 bytes in segment CODE
+ 
+ 42 bytes of CODE memory
+  0 bytes of DATA memory (+ 4 bytes shared)
+
+Errors: none
+Warnings: none

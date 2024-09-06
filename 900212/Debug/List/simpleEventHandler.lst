@@ -1,0 +1,193 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  28/Sep/2012  11:33:32 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\simpleEventHandler.c               #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\simpleEventHandler.c               #
+#    List file    =  C:\hmhome\900212\Debug\List\simpleEventHandler.lst      #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\simpleEventHandler.r90       #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\simpleEventHandler.c
+      1          /*****************************************************************************
+      2          * IAR visualSTATE Static Event Handler Source File (sample code)
+      3          *
+      4          * The file implements an event queue with a static size, specified by the
+      5          * value of the macro EVENT_QUEUE_SIZE.
+      6          *
+      7          * Whenever the queue runs full (by a call to SEQ_AddEvent), the event is ig-
+      8          * nored and an error is returned.
+      9          *
+     10          * A function is provided for initializing the queue, as well as functions for
+     11          * adding and retrieving events from the queue. See the associated header file
+     12          * for descriptions and use of those functions.
+     13          *
+     14          * The queue is a static variable in this file. If multiple queues are to be
+     15          * used, the static variable must be removed and the queue handling functions
+     16          * must be modified to take a parameter identifying a particular queue, for
+     17          * example a pointer to a queue.
+     18          *****************************************************************************/
+     19          
+     20          
+     21          
+     22          /* *** include directives *** */
+     23          
+     24          #include "simpleEventHandler.h"
+     25          
+     26          
+     27          
+     28          /* *** macro definitions *** */
+     29          
+     30          /** Event queue size. Defines the size of the event queue. */
+     31          #ifndef EVENT_QUEUE_SIZE
+     32          #define EVENT_QUEUE_SIZE 20
+     33          #endif
+     34          
+     35          
+     36          
+     37          /* *** type definitions *** */
+     38          
+     39          /** Event queue size type. Defines the type for indexes into the event queue.
+     40              The type must be an unsigned ordinal type, capable of holding values in
+     41              the range [0;EVENT_QUEUE_SIZE[. */
+     42          #if (EVENT_QUEUE_SIZE <= 0x0100)
+     43          typedef VS_UINT8 SEQ_SIZE_TYPE;
+     44          #elif (EVENT_QUEUE_SIZE <= 0x010000)
+     45          typedef VS_UINT16 SEQ_SIZE_TYPE;
+     46          #elif (EVENT_QUEUE_SIZE <= 0x01000000)
+     47          typedef VS_UINT32 SEQ_SIZE_TYPE;
+     48          #else
+     49          #error Cannot determine type of SEQ_SIZE_TYPE
+     50          #endif
+     51          
+     52          
+     53          
+     54          /** Event queue type. Defines the internal structure of the event queue. */
+     55          struct StaticEventQueue
+     56          {
+     57            /** Event queue. The array stores events in the queue. */
+     58            SEM_EVENT_TYPE queue[EVENT_QUEUE_SIZE];
+     59          
+     60            /** Front index into the queue. The front index specifies the index into the
+     61                array, where the next event will be retrieved from. */
+     62            SEQ_SIZE_TYPE front;
+     63          
+     64            /** Back index into the queue. The back index specifies the index into the
+     65                array, where the next event will be stored. */
+     66            SEQ_SIZE_TYPE back;
+     67          };
+     68          typedef struct StaticEventQueue StaticEventQueue;
+     69          
+     70          
+     71          
+     72          /* *** variable definitions *** */
+     73          
+     74          /** The event queue. If more than one event queue is needed (for example when
+     75              a visualSTATE project contains more than one system), the event queue must
+     76              be a parameter for all event queue handling functions instead of being a
+     77              static variable. */
+     78          static StaticEventQueue eventQueue;
+     79          
+     80          
+     81          
+     82          /* *** function definitions *** */
+     83          
+     84          void SEQ_Initialize(void)
+     85          {
+     86            SEQ_Clear();
+     87          }
+     88          
+     89          
+     90          
+     91          UCC_TYPE SEQ_AddEvent(SEM_EVENT_TYPE event)
+     92          {
+     93            /* Test whether the queue is full. */
+     94            if (eventQueue.front == eventQueue.back + 1)
+     95              return UCC_QUEUE_FULL;
+     96          
+     97            /* Store the event in the queue. */
+     98            eventQueue.queue[eventQueue.back] = event;
+     99          
+    100            /* Increment the back queue index. */
+    101            eventQueue.back = (SEQ_SIZE_TYPE) ((eventQueue.back + 1) % EVENT_QUEUE_SIZE);
+    102          
+    103            return UCC_OK;
+    104          }
+    105          
+    106          
+    107          
+    108          UCC_TYPE SEQ_RetrieveEvent(SEM_EVENT_TYPE* pEvent)
+    109          {
+    110            /* Test whether the queue is empty. */
+    111            if (eventQueue.front == eventQueue.back)
+    112              return UCC_QUEUE_EMPTY;
+    113          
+    114            /* Retrieve event from queue. */
+    115            *pEvent = eventQueue.queue[eventQueue.front];
+    116           
+    117            /* Increment the front queue index. */
+    118            eventQueue.front = (SEQ_SIZE_TYPE) ((eventQueue.front + 1) % EVENT_QUEUE_SIZE);
+    119          
+    120            return UCC_OK;
+    121          }
+    122          
+    123          
+    124          
+    125          void SEQ_Clear(void)
+    126          {
+    127            eventQueue.front = eventQueue.back = 0;
+    128          }
+    129          
+    130          
+    131          
+    132          VS_BOOL SEQ_EventPendingP(void)
+    133          {
+    134            return (VS_BOOL) (eventQueue.front != eventQueue.back);
+    135          }
+
+   Maximum stack usage in bytes:
+
+     Function          CSTACK RSTACK
+     --------          ------ ------
+     SEQ_AddEvent          1      4
+     SEQ_Clear             0      2
+     SEQ_EventPendingP     0      2
+     SEQ_Initialize        0      2
+       -> SEQ_Clear        0      2
+     SEQ_RetrieveEvent     2      4
+
+
+   Segment part sizes:
+
+     Function/Label    Bytes
+     --------------    -----
+     eventQueue          22
+     SEQ_Initialize       4
+     SEQ_AddEvent        72
+     SEQ_RetrieveEvent   70
+     SEQ_Clear           12
+     SEQ_EventPendingP   20
+      Others              6
+
+ 
+ 178 bytes in segment CODE
+   6 bytes in segment INITTAB
+  22 bytes in segment NEAR_Z
+ 
+ 178 bytes of CODE memory (+ 6 bytes shared)
+  22 bytes of DATA memory
+
+Errors: none
+Warnings: none

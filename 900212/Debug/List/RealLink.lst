@@ -1,0 +1,642 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  28/Sep/2012  11:33:18 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\vsapi\RealLink.c                       #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\vsapi\RealLink.c                       #
+#    List file    =  C:\hmhome\900212\Debug\List\RealLink.lst                #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\RealLink.r90                 #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\vsapi\RealLink.c
+      1          /*
+      2           * Type:        Source Code File
+      3           *
+      4           * Id:          RealLink.c
+      5           *
+      6           * Function:    Contains the functions for the RealLink SEM API version 4
+      7           *
+      8           * Portability: ANSI-C Compiler.
+      9           *
+     10           * Copyright (c) 2000 IAR Systems. All rights reserved.
+     11           */
+     12          
+     13          #include "RealLink.h"
+     14          
+     15          #if (VS_REALLINKMODE)
+     16          
+     17          #if (VS_IS_EXPERT)
+     18          extern SEM_CONTEXT * vsrl_aVspContextPointer[VS_NOF_SYSTEMS];
+     19          extern VS_VOID volatile const VS_RL_TQ_CONST_DATA * const VS_RL_TQ_CONST_DATA vsrl_aVspInfo[SIZEOF_VSPINFO];
+     20          #else /* BASIC API */
+     21          extern VS_VOID volatile const VS_RL_TQ_CONST_DATA * const VS_RL_TQ_CONST_DATA vsrl_aVspInfo[SIZEOF_VSPINFO];
+     22          extern VS_VOID const VS_RL_TQ_CONST_DATA * const VS_RL_TQ_CONST_DATA vsrl_aVssInfo_0[SIZEOF_VSSINFO];
+     23          #endif
+     24          
+     25          
+     26          static VS_UINT8                 GetNextByte(void);
+     27          #if (VS_RL_USE_EXTKWS)
+     28          static VS_VOIDPTR_TYPE volatile VS_RL_TQ_PROTOCOL_DATA memoryAddressConst;
+     29          #endif
+     30          static VS_VOIDPTR_TYPE volatile VS_RL_TQ_PROTOCOL_DATA memoryAddress;    
+     31          static VS_VOIDPTR_TYPE volatile VS_RL_TQ_PROTOCOL_DATA parameter[4];
+     32          static VS_VOIDPTR_TYPE volatile VS_RL_TQ_PROTOCOL_DATA receiveAccumulator;
+     33          static VS_UINT16 volatile       VS_RL_TQ_PROTOCOL_DATA byteCount;
+     34          static VS_UINT8 volatile        VS_RL_TQ_PROTOCOL_DATA flagRegister; 
+     35          static VS_UINT8 volatile        VS_RL_TQ_PROTOCOL_DATA checksum;
+     36          static SEM_EVENT_TYPE volatile  VS_RL_TQ_PROTOCOL_DATA storedEvent;
+     37          volatile VS_UINT8               VS_RL_TQ_PROTOCOL_DATA latestTransmission; 
+     38          volatile VS_UINT8               VS_RL_TQ_PROTOCOL_DATA modeRegister; 
+     39          #if (VS_IS_EXPERT)
+     40          VS_UINT8                        VS_RL_TQ_PROTOCOL_DATA storedSystem;
+     41          #endif
+     42          
+     43          /*
+     44           *
+     45           */
+     46          static void PrepareChecksum( void )
+     47          {
+     48            VS_UINT8 temp1, temp;
+     49            temp1 = checksum + 4;
+     50            temp = (temp1 & 0x80);
+     51            temp1 <<= 1;
+     52            checksum = temp1 + (temp ? 1 : 0);
+     53            return;
+     54          }
+     55          
+     56          /*
+     57           *
+     58           */
+     59          void VS_RealLinkTransmit(VS_INT16 value) 
+     60          {
+     61          #if (VS_RL_USE_EXTKWS)
+     62            if((modeRegister & Mode_MEMORY_READ) != Mode_MEMORY_READ && (modeRegister & Mode_MEMORY_READ_CONST) != Mode_MEMORY_READ_CONST)
+     63          #else
+     64            if((modeRegister & Mode_MEMORY_READ) != Mode_MEMORY_READ)
+     65          #endif
+     66            {
+     67              if((VS_UINT8)value > Resp_END)
+     68              {
+     69                checksum = 0;
+     70                receiveAccumulator = 0;
+     71                modeRegister |= Mode_SENT_INDICATION;
+     72              }
+     73            }
+     74          
+     75          #if (VS_IS_EXPERT)
+     76            if((value & Flag_REPEAT_SYSTEM) != Flag_REPEAT_SYSTEM)
+     77          #endif
+     78              latestTransmission = (VS_UINT8)value;
+     79            (VS_RL_TRANSMIT)((VS_UINT8)value);
+     80          
+     81          #if (VS_IS_EXPERT)
+     82            if((value & Flag_REPEAT_SYSTEM) == Flag_REPEAT_SYSTEM)
+     83              (VS_RL_TRANSMIT)(systemNo);
+     84          #endif
+     85          
+     86          #if (VS_RL_USE_EXTKWS)
+     87            if((modeRegister & Mode_MEMORY_READ) == Mode_MEMORY_READ || (modeRegister & Mode_MEMORY_READ_CONST) == Mode_MEMORY_READ_CONST)
+     88          #else
+     89            if((modeRegister & Mode_MEMORY_READ) == Mode_MEMORY_READ)
+     90          #endif
+     91            {
+     92              unsigned char nRes;
+     93              while(( nRes = GetNextByte() ) != Resp_END)
+     94                (VS_RL_TRANSMIT)(nRes);
+     95          
+     96          #if (VS_RL_USE_EXTKWS)
+     97              (modeRegister & Mode_MEMORY_READ) == Mode_MEMORY_READ ? (modeRegister &= ~Mode_MEMORY_READ) : (modeRegister &= ~Mode_MEMORY_READ_CONST);
+     98          #else
+     99              modeRegister &= ~Mode_MEMORY_READ;
+    100          #endif
+    101              latestTransmission = nRes;
+    102              (VS_RL_TRANSMIT)(nRes);
+    103            }
+    104          
+    105            VS_RL_TRANSMIT_FLUSH();
+    106          }
+    107          
+    108          /*
+    109           *
+    110           */
+    111          #if (VS_IS_EXPERT)
+    112          typedef unsigned char (* DEDUCT_FUNC_TYPE)(SEM_CONTEXT*, SEM_EVENT_TYPE);
+    113          #else
+    114          typedef unsigned char (* DEDUCT_FUNC_TYPE)(SEM_EVENT_TYPE);
+    115          typedef void (* ACTION_FUNC_TYPE)(void);
+    116          #endif
+    117          
+    118          void VS_RealLinkDeductEvent(void)
+    119          {
+    120            if(storedEvent == EVENT_TERMINATION_ID)
+    121              return;
+    122            else
+    123            {
+    124              SEM_ACTION_EXPRESSION_TYPE ActionExpress;
+    125              VS_UINT8 localFlag = Resp_DEDUCT_ACK;
+    126              unsigned char CC;
+    127          #if (VS_IS_EXPERT)
+    128              SEM_CONTEXT* pContext = vsrl_aVspContextPointer[storedSystem];
+    129              DEDUCT_FUNC_TYPE pDeduct;
+    130              pDeduct = **(DEDUCT_FUNC_TYPE VS_RL_TQ_CONST_DATA * VS_RL_TQ_CONST_DATA *)((VS_VOID * VS_RL_TQ_CONST_DATA * VS_RL_TQ_CONST_DATA *)vsrl_aVspInfo[VS_SYSTEM_INDEX + storedSystem] + VS_DEDUCT_INDEX);
+    131          #else
+    132              DEDUCT_FUNC_TYPE pDeduct = *((DEDUCT_FUNC_TYPE VS_RL_TQ_CONST_DATA *) vsrl_aVssInfo_0[VS_DEDUCT_INDEX]);
+    133          #endif
+    134              
+    135          #if (VS_IS_EXPERT)
+    136              if((CC=pDeduct(pContext, storedEvent)) != SES_OKAY)
+    137                localFlag = Ind_COMMAND_FAILED;
+    138          
+    139              while ((CC = SMP_GetOutput (pContext, &ActionExpress)) == SES_FOUND)
+    140                SMP_TableAction (pContext, ((VS_VOID (* VS_RL_TQ_CONST_DATA *)(SEM_CONTEXT VS_RL_TQ_DATA *))*((VS_VOID VS_RL_TQ_CONST_DATA * VS_RL_TQ_CONST_DATA *)vsrl_aVspInfo[VS_SYSTEM_INDEX + storedSystem] + VS_ACTION_INDEX)), ActionExpress);
+    141              
+    142              if(CC != SES_OKAY)
+    143                localFlag = Ind_COMMAND_FAILED;
+    144              
+    145              if((CC = SMP_NextState(pContext)) != SES_OKAY)
+    146                localFlag = Ind_COMMAND_FAILED;
+    147          #else /* BASIC API */
+    148              if((CC=pDeduct(storedEvent)) != SES_OKAY)
+    149                localFlag = Ind_COMMAND_FAILED;
+    150              
+    151              while ((CC = SEM_GetOutput (&ActionExpress)) == SES_FOUND)
+    152                SEM_TableAction((ACTION_FUNC_TYPE VS_RL_TQ_CONST_DATA *)vsrl_aVssInfo_0[VS_ACTION_INDEX], ActionExpress);
+    153                
+    154              if(CC != SES_OKAY)
+    155                localFlag = Ind_COMMAND_FAILED;
+    156              
+    157              if((CC = SEM_NextState()) != SES_OKAY)
+    158                localFlag = Ind_COMMAND_FAILED;
+    159          #endif /* VS_EXPERT_MODE */
+    160              
+    161              VS_RealLinkTransmit(localFlag);
+    162              
+    163          #if (VS_IS_EXPERT)
+    164              (VS_RL_TRANSMIT)(storedSystem);
+    165              pContext->pTask->RLConfig |= VS_ENABLE_BREAKED;
+    166          #else
+    167              SEM.pTask->RLConfig |= VS_ENABLE_BREAKED;
+    168          #endif
+    169              
+    170              storedEvent = EVENT_TERMINATION_ID;
+    171            }
+    172          }
+    173          
+    174          /*
+    175           *
+    176           */
+    177          void VS_RealLinkReceive(VS_UINT8 value)
+    178          {
+    179            VS_UINT16 localFlag  = 0;
+    180          
+    181            VS_RL_ENTER_CRITICALSECTION;
+    182          
+    183            if( Host_ESCAPE_CODE == value )
+    184            {
+    185              if( Mode_ESC_RECEIVED & modeRegister )
+    186                localFlag = Ind_COMMAND_FAILED;
+    187              else
+    188                modeRegister |= Mode_ESC_RECEIVED;
+    189          
+    190              if((VS_UINT8)localFlag != 0)
+    191                VS_RealLinkTransmit( (VS_UINT8) localFlag );
+    192          
+    193              VS_RL_LEAVE_CRITICALSECTION;
+    194              return;
+    195            }
+    196          
+    197            if( Mode_ESC_RECEIVED & modeRegister )
+    198            {
+    199              modeRegister &= ~Mode_ESC_RECEIVED;
+    200          
+    201              if( Host_ESC_BYTE_OK != (value & 0xF0))
+    202              {
+    203                VS_RealLinkTransmit( Ind_COMMAND_FAILED );
+    204                VS_RL_LEAVE_CRITICALSECTION;
+    205                return;
+    206              }
+    207              else
+    208              {
+    209                value += Common_ESC_OFFSET;
+    210                localFlag |= 0x0100;
+    211              }
+    212            }
+    213          
+    214            PrepareChecksum();
+    215            checksum ^= value;
+    216          
+    217            if( (Host_COMMAND_NIBBLE == (value & 0xF0) ) && !(localFlag & 0x0100) )
+    218            {
+    219              if( Cmnd_EXTENDED_CMND == value )
+    220              {
+    221                if( Mode_EXT_RECEIVED & modeRegister )
+    222                  localFlag |=  Ind_COMMAND_FAILED;
+    223                else
+    224                  modeRegister |= Mode_EXT_RECEIVED;
+    225              }
+    226              
+    227              else if ( Cmnd_INIT == value )
+    228              {
+    229                flagRegister          = 0; 
+    230                checksum              = 0; 
+    231                receiveAccumulator    = 0; 
+    232                modeRegister          = 0; 
+    233                memoryAddress         = 0;    
+    234                byteCount             = 0;
+    235                latestTransmission    = 0;
+    236                storedEvent           = EVENT_TERMINATION_ID;    
+    237          #if (VS_IS_EXPERT)
+    238                storedSystem          = 0;
+    239          #endif      
+    240                localFlag             = Resp_ACK;
+    241              }
+    242              
+    243              else
+    244              {
+    245                VS_UINT8 parameterNo = 0;
+    246          
+    247                if( Mode_SENT_INDICATION & modeRegister )
+    248                {
+    249                  if( Cmnd_IND_ACK == value ) 
+    250                  {
+    251                    if( (VS_UINT8) receiveAccumulator == (VS_UINT8) ~latestTransmission )
+    252                    {            
+    253                      modeRegister      &= ~Mode_SENT_INDICATION;
+    254                      checksum           = 0;
+    255                      receiveAccumulator = 0;
+    256                      localFlag         |= Resp_ACK;
+    257                      latestTransmission = Resp_ACK;
+    258                    }
+    259                    else
+    260                    {
+    261                      localFlag |= latestTransmission;
+    262          #if (VS_IS_EXPERT)
+    263                      localFlag |= Flag_REPEAT_SYSTEM;
+    264          #endif
+    265                    }
+    266                  }
+    267                  else
+    268                  {
+    269                    localFlag |= latestTransmission;
+    270          #if (VS_IS_EXPERT)
+    271                    localFlag |= Flag_REPEAT_SYSTEM;
+    272          #endif
+    273                  }
+    274                }
+    275                
+    276                else if( (modeRegister & Mode_MEMORY_WRITE ) && (Cmnd_WRITE_STOP != value) )
+    277                {
+    278                  localFlag |= Ind_COMMAND_FAILED;
+    279                }
+    280                else
+    281                {
+    282                  if( !(0x08 & value) && checksum )
+    283                    localFlag |= Ind_CHECKSUM_ERROR;
+    284                  else
+    285                  {
+    286                    switch( value )
+    287                    {
+    288                    case Cmnd_EXECUTE:
+    289                      localFlag    |= Resp_ACK;
+    290                      
+    291                      if(Flag_DEDUCT_EVENT & receiveAccumulator)
+    292                      {
+    293          #if (VS_IS_EXPERT)
+    294                        SEM_CONTEXT* pContext = vsrl_aVspContextPointer[(VS_UINT8)parameter[0]];
+    295                        storedEvent  = *((SEM_EVENT_TYPE*)pContext->pTask->RLBuffer);
+    296                        storedSystem = (VS_UINT8)parameter[0];
+    297          #else /* BASIC API */
+    298                        storedEvent = *((SEM_EVENT_TYPE*)SEM.pTask->RLBuffer);
+    299          #endif
+    300                      }
+    301          
+    302                      if(Flag_GETINPUT & receiveAccumulator)
+    303                      {
+    304          #if (VS_IS_EXPERT)
+    305                        SEM_EVENT_TYPE EventNo = EVENT_UNDEFINED;
+    306                        SEM_EVENT_TYPE KeyTable[2];
+    307                        SEM_CONTEXT* pContext = vsrl_aVspContextPointer[(VS_UINT8)parameter[1]];
+    308                        KeyTable[0] = (SEM_EVENT_TYPE)parameter[0];
+    309                        KeyTable[1] = EVENT_TERMINATION_ID;
+    310                        localFlag = Ind_EVENT_NOT_ACTIVE;
+    311                        if(SMP_Inquiry(pContext) == SES_OKAY)
+    312                        {
+    313                          if(SMP_GetInput(pContext, &EventNo, KeyTable) == SES_FOUND)
+    314                            localFlag = Ind_EVENT_ACTIVE;
+    315                          pContext->InqAct = VS_FALSE;
+    316                        }
+    317          #else /* BASIC API */
+    318          #if (SEM_INQUIRY == 1)
+    319                        SEM_EVENT_TYPE EventNo = EVENT_UNDEFINED;
+    320                        SEM_EVENT_TYPE KeyTable[2];
+    321                        KeyTable[0] = (SEM_EVENT_TYPE)parameter[0];
+    322                        KeyTable[1] = EVENT_TERMINATION_ID;
+    323                        
+    324                        localFlag = Ind_EVENT_NOT_ACTIVE; 
+    325                        if(SEM_Inquiry() == SES_OKAY)
+    326                        {
+    327                          if(SEM_GetInput(&EventNo, KeyTable) == SES_FOUND)
+    328                            localFlag = Ind_EVENT_ACTIVE;
+    329                          SEM.InqAct = VS_FALSE;
+    330                        }
+    331          #else
+    332                        localFlag = Ind_EVENT_ACTIVE; 
+    333          #endif /* SEM_INQUIRY */
+    334          #endif /* VS_EXPERT_MODE */
+    335                      }
+    336          
+    337                      if(Flag_GETENDIAN_CONFIG & receiveAccumulator )
+    338                      {
+    339                        static VS_RL_TQ_DATA VS_INT16 nIndian = 0x01;
+    340                        memoryAddress = (VS_VOIDPTR_TYPE)&nIndian;
+    341                        byteCount = (VS_UINT16)sizeof(VS_INT16);              
+    342                        modeRegister |= Mode_MEMORY_READ;
+    343                        receiveAccumulator = 0;
+    344                        localFlag |= Resp_ACK;
+    345                      }
+    346                      
+    347                      if(Flag_GETARRAY_ADDR & receiveAccumulator )
+    348                      {
+    349                        static VS_RL_TQ_DATA VS_VOID const VS_RL_TQ_CONST_DATA * pTbl = &vsrl_aVspInfo;
+    350                        memoryAddress = (VS_VOIDPTR_TYPE)&pTbl;
+    351                        byteCount = (VS_UINT16)sizeof(void VS_RL_TQ_CONST_DATA *);
+    352                        modeRegister |= Mode_MEMORY_READ;
+    353                        receiveAccumulator = 0;
+    354                        localFlag |= Resp_ACK;
+    355                        
+    356                      }
+    357                      
+    358                      if( Flag_RESET & receiveAccumulator )
+    359                      {
+    360                        (VS_RL_RESET)();
+    361                      }
+    362                      
+    363                      receiveAccumulator = 0;
+    364                      break;
+    365                      
+    366          
+    367                    case Cmnd_READ_CONST:
+    368          #if (VS_RL_USE_EXTKWS)
+    369                      memoryAddressConst = (VS_VOIDPTR_TYPE)(parameter[0] + ((signed short) ((signed char)((receiveAccumulator >> 8) & 0x00FF))));
+    370                      byteCount = (VS_UINT16)parameter[2];
+    371                      parameter[0] += parameter[2];
+    372                      modeRegister |= Mode_MEMORY_READ_CONST;
+    373                      receiveAccumulator = 0;
+    374                      localFlag |= Resp_ACK;
+    375                      break;
+    376          #endif
+    377                    case Cmnd_READ:
+    378                      memoryAddress = (VS_VOIDPTR_TYPE)(parameter[0] + ((signed short) ((signed char)((receiveAccumulator >> 8) & 0x00FF))));
+    379                      byteCount = (VS_UINT16)parameter[2];
+    380                      parameter[0] += parameter[2];
+    381                      modeRegister |= Mode_MEMORY_READ;
+    382                      receiveAccumulator = 0;
+    383                      localFlag |= Resp_ACK;
+    384                      break;
+    385                      
+    386                    case Cmnd_WRITE:
+    387                      if( modeRegister & Mode_MEMORY_WRITE )
+    388                        localFlag |= Ind_COMMAND_FAILED; 
+    389                      else
+    390                      {
+    391                        memoryAddress =  (VS_VOIDPTR_TYPE)(parameter[0] + ((signed short) ((signed char)((receiveAccumulator >> 8) & 0x00FF))));
+    392                        modeRegister |= (Mode_MEMORY_WRITE | Mode_MEMORY_WRITE_PROGRESS);
+    393                        receiveAccumulator = 0;
+    394                      }
+    395                      break;
+    396                      
+    397                    case Cmnd_WRITE_END:
+    398                      modeRegister &= ~Mode_MEMORY_WRITE_PROGRESS; 
+    399                      localFlag |= Resp_ACK;
+    400                      receiveAccumulator = 0;
+    401                      break;
+    402                    
+    403                    case Cmnd_SET_PARAM4:
+    404                      ++parameterNo;
+    405                    case Cmnd_SET_PARAM3:
+    406                      ++parameterNo;
+    407                    case Cmnd_SET_PARAM2:
+    408                      ++parameterNo;
+    409                    case Cmnd_SET_PARAM1:
+    410                      parameter[parameterNo] = receiveAccumulator;
+    411                      receiveAccumulator = 0;
+    412                      break;
+    413                    
+    414                    case Cmnd_WRITE_STOP:
+    415                      if( modeRegister & Mode_MEMORY_WRITE )
+    416                      {
+    417                        modeRegister &= ~Mode_MEMORY_WRITE;
+    418                        parameter[0] = memoryAddress; 
+    419                      }
+    420                      else
+    421                        localFlag |= Ind_COMMAND_FAILED; 
+    422                      break;
+    423                    
+    424                    case Cmnd_IND_ACK:
+    425                      receiveAccumulator = 0;
+    426                      checksum           = 0;
+    427                      localFlag         |= Resp_ACK; 
+    428                      break;
+    429                    
+    430                    default:
+    431                      break;
+    432                    }
+    433                  }
+    434                }
+    435              }
+    436            }  
+    437            
+    438            else
+    439            {
+    440              if( Mode_MEMORY_WRITE & modeRegister )
+    441              {
+    442                *(volatile unsigned char VS_RL_TQ_DATA *) memoryAddress = value;
+    443                ++memoryAddress;
+    444              }
+    445              
+    446              else
+    447              {
+    448                receiveAccumulator <<= 8;
+    449                receiveAccumulator += value;
+    450              }
+    451            }
+    452          
+    453            if(((VS_UINT8)localFlag != 0) && ((localFlag & Flag_REPEAT_SYSTEM) != Flag_REPEAT_SYSTEM))
+    454              VS_RealLinkTransmit(localFlag);
+    455          
+    456            VS_RL_LEAVE_CRITICALSECTION;
+    457          }
+    458          
+    459          
+    460          /*
+    461           *
+    462           */
+    463          static VS_UINT8 GetNextByte( void )
+    464          {
+    465            VS_UINT8 value;
+    466            if(0 == byteCount)
+    467            {
+    468              if( Flag_SEND_DATA_END & flagRegister )
+    469              {
+    470                flagRegister &= ~Flag_SEND_DATA_END;
+    471                checksum = 0;
+    472                value    = Resp_END;
+    473              }
+    474              else if( Flag_SENT_ESC_CODE & flagRegister )
+    475              {
+    476                flagRegister &= ~Flag_SENT_ESC_CODE;
+    477                flagRegister |= Flag_SEND_DATA_END;
+    478                value = checksum - Common_ESC_OFFSET;
+    479              }
+    480              else
+    481              {
+    482                PrepareChecksum();
+    483                checksum ^= 0x65;
+    484          
+    485                if((checksum >= Resp_ACK) || (checksum == Target_ESCAPE_CODE))
+    486                {
+    487                  flagRegister |= Flag_SENT_ESC_CODE;
+    488                  value         = Target_ESCAPE_CODE;
+    489                }
+    490                else
+    491                {
+    492                  flagRegister |= Flag_SEND_DATA_END;
+    493                  value         = checksum;
+    494                }
+    495              }
+    496            }
+    497            else
+    498            {
+    499          #if (VS_RL_USE_EXTKWS)
+    500              if((modeRegister & Mode_MEMORY_READ_CONST) == Mode_MEMORY_READ_CONST)
+    501                value = * (volatile unsigned char VS_RL_TQ_CONST_DATA *) memoryAddressConst;
+    502              else
+    503                value = * (volatile unsigned char VS_RL_TQ_DATA *) memoryAddress;
+    504          #else
+    505              value = * (volatile unsigned char VS_RL_TQ_DATA *) memoryAddress;
+    506          #endif
+    507              if( flagRegister & Flag_SENT_ESC_CODE )
+    508              {
+    509                flagRegister &= ~Flag_SENT_ESC_CODE;
+    510                value        -= Common_ESC_OFFSET;
+    511              }
+    512              else
+    513              {
+    514                PrepareChecksum();
+    515                checksum ^= value;
+    516                if(value >= Target_ESCAPE_CODE)
+    517                {
+    518                  flagRegister |= Flag_SENT_ESC_CODE;
+    519                  return Target_ESCAPE_CODE;
+    520                }
+    521              }
+    522          #if (VS_RL_USE_EXTKWS)
+    523              if((modeRegister & Mode_MEMORY_READ_CONST) == Mode_MEMORY_READ_CONST)
+    524                ++memoryAddressConst;
+    525              else
+    526                ++memoryAddress;
+    527          #else
+    528              ++memoryAddress;
+    529          #endif
+    530              --byteCount;
+    531            }
+    532          
+    533            return value;
+    534          }
+    535          
+    536          void MemCopy(unsigned char VS_RL_TQ_DATA * pDest, const unsigned char * pSrc, unsigned char size) 
+    537          {
+    538            unsigned char i = 0;
+    539            for(; i < size; i++)
+    540              *(pDest + i) = *(pSrc + i);
+    541          }
+    542          
+    543          /*
+    544           *
+    545           */
+    546          #if (VS_IS_EXPERT)
+    547          
+    548          #if (VS_USE_HEAP == 1)
+    549          unsigned char VS_RealLinkInit(VS_RLTASK** ppTask)
+    550          #else
+    551          unsigned char VS_RealLinkInit(VS_RLTASK* pTask)
+    552          #endif
+    553          {
+    554          #if (VS_USE_HEAP == 1)  
+    555            VS_RLTASK* pTask;
+    556            if ((pTask = (VS_RLTASK*)malloc (sizeof (VS_RLTASK))) == NULL)
+    557              return (SES_MEM_ERR);
+    558          
+    559            *ppTask = pTask;
+    560          #endif
+    561            
+    562            pTask->RLConfig = 0;
+    563          
+    564            flagRegister          = 0; 
+    565            checksum              = 0; 
+    566            receiveAccumulator    = 0; 
+    567            modeRegister          = 0; 
+    568            memoryAddress         = 0;    
+    569            byteCount             = 0;
+    570            latestTransmission    = 0;
+    571            storedSystem          = 0;
+    572            storedEvent           = EVENT_TERMINATION_ID;
+    573            VS_RealLinkTransmit(Ind_HARDWARE_RESET); 
+    574          
+    575            return (SES_OKAY);
+    576          }
+    577          
+    578          #if (VS_USE_HEAP == 1)
+    579          void VS_RealLinkFree(VS_RLTASK* pTask)
+    580          {
+    581            if(pTask != NULL)
+    582            {
+    583              free(pTask);
+    584              pTask = NULL;
+    585            }
+    586          }
+    587          #endif
+    588          
+    589          #else /* BASIC API */
+    590          void VS_RealLinkInit(void)
+    591          {
+    592            flagRegister          = 0; 
+    593            checksum              = 0; 
+    594            receiveAccumulator    = 0; 
+    595            modeRegister          = 0; 
+    596            memoryAddress         = 0;    
+    597            byteCount             = 0;
+    598            latestTransmission    = 0;
+    599            storedEvent           = EVENT_TERMINATION_ID;
+    600          
+    601            SEM.pTask->RLConfig   = 0;
+    602            VS_RealLinkTransmit(Ind_HARDWARE_RESET); 
+    603          }
+    604          #endif 
+    605          
+    606          #endif
+
+
+   Segment part sizes:
+
+     Function/Label Bytes
+     -------------- -----
+
+ 
+ 
+ 0 bytes of memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,1624 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+// IAR Atmel AVR C Compiler V3.10C/W32                 31/Jan/2006  09:33:10 /
+// Copyright 1996-2004 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\usart2.c         /
+//    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Deb /
+//                    ug\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\Li /
+//                    st\ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\  /
+//                    -z2 --no_cse --no_inline --no_code_motion              /
+//                    --no_cross_call --no_clustering --debug                /
+//                    -DENABLE_BIT_DEFINITIONS -e -I                         /
+//                    M:\VisualState\ProjectM16Motor\ew\src\ -I              /
+//                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I            /
+//                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I            /
+//                    "C:\Program Files\IAR Systems\Embedded Workbench       /
+//                    3.2\avr\INC\" -I "C:\Program Files\IAR                 /
+//                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"          /
+//                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\sr /
+//                    c\usart2.c                                             /
+//    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\usart2.s9 /
+//                    0                                                      /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME usart2
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?CV_SWITCH_L06
+        EXTERN ?S_EC_MUL_L02
+
+        PUBLIC USART_Init_High
+        PUBLIC USART_Init_Low
+        PUBWEAK _A_PINA
+        PUBWEAK _A_PINB
+        PUBWEAK _A_PINC
+        PUBWEAK _A_PIND
+        PUBWEAK _A_PORTA
+        PUBWEAK _A_PORTB
+        PUBWEAK _A_PORTC
+        PUBWEAK _A_PORTD
+        PUBWEAK _A_UBRRH
+        PUBWEAK _A_UBRRL
+        PUBWEAK _A_UCSRB
+        PUBWEAK _A_UDR
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC wal_do_command
+        PUBLIC wal_end_tx
+        PUBLIC wal_picnet_checkdata
+        PUBLIC wal_picnet_motor
+        PUBLIC wal_send485_char
+        PUBLIC wal_start_tx
+        PUBLIC wal_tx_nrq
+
+        EXTERN wal_eetbl_write
+        EXTERN wal_motor_start
+        EXTERN wal_bsf_eeget
+        EXTERN SEQ_AddEvent
+        EXTERN vss_seq_error
+        EXTERN wal_motor_stop
+        EXTERN wal_pos_similar
+        EXTERN uc_axis_chi
+        EXTERN uc_axis_clo
+        EXTERN uc_axis_dir
+        EXTERN uc_axis_err
+        EXTERN uc_axis_pwm
+        EXTERN uc_axis_vss
+        EXTERN uc_comm_adid
+        EXTERN uc_comm_flag
+        EXTERN uc_comm_hilo
+        EXTERN uc_comm_noecho
+        EXTERN uc_motoron
+        EXTERN uc_tx_chout
+        EXTERN uc_unitravel
+        EXTERN uca_msgrx
+        EXTERN uca_msgtx
+        EXTERN ui_axis_diff
+        EXTERN ui_axis_maxallow
+        EXTERN ui_axis_pos
+        EXTERN ui_axis_set
+        EXTERN ui_axis_setrx
+        EXTERN ui_axis_tmm
+        EXTERN ui_axis_uni
+        EXTERN val_ip_lim
+        EXTERN val_ip_sw1
+        EXTERN val_ip_trg
+
+// M:\VisualState\ProjectM16Motor\ew\src\usart2.c
+//    1 // AVR306: Using the AVR UART in C
+//    2 // Routines for interrupt controlled USART
+//    3 
+//    4 #include <iom16.h>			// Atmel definitions Mega16
+//    5 #include <inavr.h>			// Atmel register definitions
+//    6 #include "VSMain.h"			// Visual State definitions
+//    7 
+//    8 #include "defs.h"			// Application (GENERAL) defs
+//    9 #include "globals.h"		// Application global data/variables
+//   10 
+//   11 #include "usart2.h"			// Function declarations for this file
+//   12 
+//   13 void vss_seq_error( void);
+//   14 void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+//   15 unsigned char wal_bsf_eeget( unsigned char s_address);
+//   16 void wal_motor_start( void);
+//   17 void wal_motor_stop( void);
+//   18 unsigned char wal_pos_similar( void);
+//   19 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   20 void USART_Init_High( unsigned int baudrate )
+USART_Init_High:
+//   21 {
+//   22 // Initialize USART High speed comms 9 bit 2 stop
+//   23 
+//   24 	/* Set the baud rate */
+//   25 	UBRRH = (unsigned char) (baudrate>>8);                    
+	MOVW	R19 : R18,R17 : R16
+	MOV	R18,R19
+	OUT	0x20,R18
+//   26 	UBRRL = (unsigned char) baudrate;
+	MOV	R18,R16
+	OUT	0x09,R18
+//   27 	
+//   28 	/* Enable UART RX interupt and enable RX and TX and 9 bit data */
+//   29 	//UCSRB = ( ( 1 << RXCIE ) | ( 1 << RXEN ) | ( 1 << TXEN ) | ( 1 << UCSZ2 ) ); 
+//   30 	UCSRB = 0xDC; 
+	LDI	R18,220
+	OUT	0x0A,R18
+//   31 
+//   32 	// Hi-speed frame format: 9 data 2stop no parity
+//   33 	// For devices with Extended IO 
+//   34 	// UCSRC == 0x86 or 0x8E if 2 stop bits
+//   35 	UCSRC = 0x8E;              
+	LDI	R18,142
+	OUT	0x20,R18
+//   36 }
+	RET
+//   37 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   38 void USART_Init_Low( unsigned int baudrate )
+USART_Init_Low:
+//   39 {
+//   40 // Initialize USART low speed comms 8bit
+//   41 
+//   42 	/* Set the baud rate */
+//   43 	UBRRH = (unsigned char) (baudrate>>8);                  
+	MOVW	R19 : R18,R17 : R16
+	MOV	R18,R19
+	OUT	0x20,R18
+//   44 	UBRRL = (unsigned char) baudrate;
+	MOV	R18,R16
+	OUT	0x09,R18
+//   45 	
+//   46 	/* Enable UART RX interupt and enable RX and TX and 9 bit data */
+//   47 	UCSRB = ( ( 1 << RXCIE ) | ( 1 << RXEN ) | ( 1 << TXEN ) | (1 << TXCIE) ); 
+	LDI	R18,216
+	OUT	0x0A,R18
+//   48 
+//   49 	// Lo-speed frame format: 8 data 1stop ( UCSRC defaults OK)
+//   50 	// UCSRC = (1<<UCSZ1)|(1<<UCSZ0);
+//   51 }
+	RET
+//   52 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   53 void wal_start_tx( void)
+wal_start_tx:
+//   54 {
+//   55 // disable rx interrupt & setup TX_En 
+//   56     
+//   57     UCSRB &= ~(1<<RXCIE);			// disable rx interrupt
+	CBI	0x0A,0x07
+//   58     PORTB = (PINB | 0x10);  		// Switch line driver on
+	IN	R16,0x16
+	ORI	R16,0x10
+	OUT	0x18,R16
+//   59 	// ? set address bit ?
+//   60     uc_comm_flag |= WAL_COMM_SMSG;	// Transmission in progress
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ORI	R16,0x08
+	ST	Z,R16
+//   61 
+//   62 	// if hi-speed then set 9bit (= start of message)
+//   63 	if( uc_comm_hilo == 0)
+	LDS	R16,uc_comm_hilo
+	TST	R16
+	BRNE	??wal_start_tx_0
+//   64 	{
+//   65     	UCSRB |= (1<<TXB8);
+	SBI	0x0A,0x00
+//   66 	}
+//   67 }
+??wal_start_tx_0:
+	RET
+//   68     
+//   69 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   70 void wal_end_tx(void)
+wal_end_tx:
+//   71 {
+//   72   PORTB = (PINB & ~0x10);			// Switch off line driver
+	IN	R16,0x16
+	ANDI	R16,0xEF
+	OUT	0x18,R16
+//   73   UCSRB |= (1<<RXCIE);    		// enable RX interrupt
+	SBI	0x0A,0x07
+//   74   
+//   75   uc_comm_flag &= ~WAL_COMM_SMSG;	// Flag data sent (msgtx complete)
+	LDI	R30,LOW(uc_comm_flag)
+	LDI	R31,(uc_comm_flag) >> 8
+	LD	R16,Z
+	ANDI	R16,0xF7
+	ST	Z,R16
+//   76 }
+	RET
+//   77 
+//   78 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   79 void wal_send485_char( void)
+wal_send485_char:
+//   80 {
+//   81   UDR = uc_tx_chout;
+	LDS	R16,uc_tx_chout
+	OUT	0x0C,R16
+//   82   UCSRB &= ~(1<<TXB8);	// reset 9th bit
+	CBI	0x0A,0x00
+//   83 }
+	RET
+//   84 
+//   85 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   86 void wal_tx_nrq(void )
+wal_tx_nrq:
+//   87 {
+//   88 // Fixed attention request message format CMD:21, Data[4]:14
+//   89   uca_msgtx[0] = 0;
+	LDI	R16,0
+	STS	uca_msgtx,R16
+//   90   uca_msgtx[1] = uc_comm_adid;
+	LDS	R16,uc_comm_adid
+	STS	(uca_msgtx + 1),R16
+//   91   uca_msgtx[2] = 21;
+	LDI	R16,21
+	STS	(uca_msgtx + 2),R16
+//   92   uca_msgtx[3] = 0;
+	LDI	R16,0
+	STS	(uca_msgtx + 3),R16
+//   93   uca_msgtx[4] = 14;
+	LDI	R16,14
+	STS	(uca_msgtx + 4),R16
+//   94 }
+	RET
+//   95 
+//   96 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   97 unsigned char wal_picnet_checkdata( void)
+wal_picnet_checkdata:
+//   98 {
+//   99   if( (uca_msgrx[2] != 0x26) || ( uca_msgrx[3] != 0x26))
+	LDS	R16,(uca_msgrx + 2)
+	CPI	R16,38
+	BRNE	??wal_picnet_checkdata_0
+	LDS	R16,(uca_msgrx + 3)
+	CPI	R16,38
+	BREQ	??wal_picnet_checkdata_1
+//  100   {
+//  101     uca_msgtx[1] = '*';
+??wal_picnet_checkdata_0:
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  102     uca_msgtx[2] = 'I';
+	LDI	R16,73
+	STS	(uca_msgtx + 2),R16
+//  103     return 1;
+	LDI	R16,1
+	RET
+//  104   }
+//  105   return 0;
+??wal_picnet_checkdata_1:
+	LDI	R16,0
+	RET
+//  106 }
+//  107 
+//  108 
+//  109 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  110 void wal_picnet_motor( void)
+wal_picnet_motor:
+//  111 {
+	ST	-Y,R27
+	ST	-Y,R26
+//  112 
+//  113 uca_msgtx[0] = (uc_comm_adid + 0x30);	// from me...
+	LDS	R16,uc_comm_adid
+	SUBI	R16,208
+	STS	uca_msgtx,R16
+//  114 uca_msgtx[1] = (uca_msgrx[1] & 0xDF);   // echo,but CAPS masking 0x20
+	LDS	R16,(uca_msgrx + 1)
+	ANDI	R16,0xDF
+	STS	(uca_msgtx + 1),R16
+//  115 uca_msgtx[2] = uca_msgrx[2];    		// if in doubt echo data..
+	LDS	R16,(uca_msgrx + 2)
+	STS	(uca_msgtx + 2),R16
+//  116 uca_msgtx[3] = uca_msgrx[3];    		// ..
+	LDS	R16,(uca_msgrx + 3)
+	STS	(uca_msgtx + 3),R16
+//  117 
+//  118 // response == ID, *, I, <x> if invalid
+//  119 // NB. confirm RXDHI == uca_msgtx[3]
+//  120 
+//  121 	switch( uca_msgrx[1])
+	LDS	R16,(uca_msgrx + 1)
+	SUBI	R16,65
+	BREQ	??wal_picnet_motor_0
+	DEC	R16
+	BREQ	??wal_picnet_motor_1
+	SUBI	R16,2
+	BRNE	$+2+2
+	RJMP	??wal_picnet_motor_2
+	SUBI	R16,2
+	BRNE	$+2+2
+	RJMP	??wal_picnet_motor_3
+	DEC	R16
+	BRNE	$+2+2
+	RJMP	??wal_picnet_motor_4
+	SUBI	R16,9
+	BRNE	$+2+2
+	RJMP	??wal_picnet_motor_5
+	SUBI	R16,3
+	BRNE	$+2+2
+	RJMP	??wal_picnet_motor_6
+	SUBI	R16,3
+	BRNE	$+2+2
+	RJMP	??wal_picnet_motor_7
+	RJMP	??wal_picnet_motor_8
+//  122 	{
+//  123 	case 'A':
+//  124 		// assign address: NB. only reply if trigger in
+//  125 		if( val_ip_trg == 0)
+??wal_picnet_motor_0:
+	LDS	R16,val_ip_trg
+	TST	R16
+	BRNE	??wal_picnet_motor_9
+//  126 		{
+//  127 			if( uca_msgrx[3] == 0x1f)
+	LDS	R16,(uca_msgrx + 3)
+	CPI	R16,31
+	BRNE	??wal_picnet_motor_10
+//  128 			{
+//  129 				uc_comm_adid = uca_msgrx[2] & 0x0F;
+	LDS	R16,(uca_msgrx + 2)
+	ANDI	R16,0x0F
+	STS	uc_comm_adid,R16
+//  130 				wal_eetbl_write( WAL_EE_COMMID, uc_comm_adid);
+	LDS	R17,uc_comm_adid
+	LDI	R16,1
+	CALL	wal_eetbl_write
+//  131 				uca_msgtx[0] = (uc_comm_adid + 0x30);	// from me...
+	LDS	R16,uc_comm_adid
+	SUBI	R16,208
+	STS	uca_msgtx,R16
+	RJMP	??wal_picnet_motor_11
+//  132 			}
+//  133 			else
+//  134 			{
+//  135 				uca_msgtx[1] = '*';
+??wal_picnet_motor_10:
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  136 				uca_msgtx[2] = 'I';
+	LDI	R16,73
+	STS	(uca_msgtx + 2),R16
+	RJMP	??wal_picnet_motor_11
+//  137 			}
+//  138 		}
+//  139 		else
+//  140 		{
+//  141 			// ignore, no reply
+//  142 			uc_comm_noecho = 1;
+??wal_picnet_motor_9:
+	LDI	R16,1
+	STS	uc_comm_noecho,R16
+	RJMP	??wal_picnet_motor_11
+//  143 		}
+//  144 		break;
+//  145 	case 'B':
+//  146 		// backward move (datahi-lo = 0x26)
+//  147 		if( wal_picnet_checkdata() == 0)
+??wal_picnet_motor_1:
+	RCALL	wal_picnet_checkdata
+	TST	R16
+	BREQ	$+2+2
+	RJMP	??wal_picnet_motor_11
+//  148 		{
+//  149 			// set motor
+//  150 			uc_axis_dir = 0;
+	LDI	R16,0
+	STS	uc_axis_dir,R16
+//  151 			uc_axis_pwm = WAL_PWM_TEST;
+	LDI	R16,192
+	STS	uc_axis_pwm,R16
+//  152 			wal_motor_start();
+	CALL	wal_motor_start
+	RJMP	??wal_picnet_motor_11
+//  153 		}
+//  154 		break;
+//  155 	case 'D':
+//  156 		// define trigger in-out
+//  157 		// NB. has to force pattern as per porta into RXDLO
+//  158 		// assign address: NB. only reply if trigger in
+//  159 		if( val_ip_trg == 0)
+??wal_picnet_motor_2:
+	LDS	R16,val_ip_trg
+	TST	R16
+	BRNE	??wal_picnet_motor_12
+//  160 		{
+//  161 			if( uca_msgrx[3] == 0x1f)
+	LDS	R16,(uca_msgrx + 3)
+	CPI	R16,31
+	BRNE	??wal_picnet_motor_13
+//  162 			{
+//  163 				if( uca_msgrx[2] == 1)
+	LDS	R16,(uca_msgrx + 2)
+	CPI	R16,1
+	BRNE	??wal_picnet_motor_14
+//  164 				{
+//  165 					// set trigger out (active low)
+//  166 					WAL_OP_TRO = 0;
+	CBI	0x18,0x03
+	RJMP	??wal_picnet_motor_11
+//  167 				}
+//  168 				else
+//  169 				{
+//  170 					WAL_OP_TRO = 1;
+??wal_picnet_motor_14:
+	SBI	0x18,0x03
+	RJMP	??wal_picnet_motor_11
+//  171 				}
+//  172 			}
+//  173 			else
+//  174 			{
+//  175 				uca_msgtx[1] = '*';
+??wal_picnet_motor_13:
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  176 				uca_msgtx[2] = 'I';
+	LDI	R16,73
+	STS	(uca_msgtx + 2),R16
+	RJMP	??wal_picnet_motor_11
+//  177 			}
+//  178 		}
+//  179 		else
+//  180 		{
+//  181 			// ignore, no reply
+//  182 			uc_comm_noecho = 1;
+??wal_picnet_motor_12:
+	LDI	R16,1
+	STS	uc_comm_noecho,R16
+	RJMP	??wal_picnet_motor_11
+//  183 		}
+//  184 		break;
+//  185 	case 'F':
+//  186 		// forward move (datahi-lo = 0x26)
+//  187 		if( wal_picnet_checkdata() == 0)
+??wal_picnet_motor_3:
+	RCALL	wal_picnet_checkdata
+	TST	R16
+	BREQ	$+2+2
+	RJMP	??wal_picnet_motor_11
+//  188 		{
+//  189 			// set motor
+//  190 			uc_axis_dir = 1;
+	LDI	R16,1
+	STS	uc_axis_dir,R16
+//  191 			uc_axis_pwm = WAL_PWM_TEST;
+	LDI	R16,192
+	STS	uc_axis_pwm,R16
+//  192 			wal_motor_start();
+	CALL	wal_motor_start
+	RJMP	??wal_picnet_motor_11
+//  193 		}
+//  194 		break;
+//  195 	case 'G':
+//  196 		// goto position
+//  197 		// respond with '*','U' if error condition:
+//  198 		// NB. error condition should include limit or home switch
+//  199 		if( wal_bsf_eeget( WAL_EE_ERROR) != 0)
+??wal_picnet_motor_4:
+	LDI	R16,5
+	CALL	wal_bsf_eeget
+	TST	R16
+	BREQ	??wal_picnet_motor_15
+//  200 		{
+//  201 			uca_msgtx[1] = '*';
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  202 			uca_msgtx[2] = 'U';
+	LDI	R16,85
+	STS	(uca_msgtx + 2),R16
+//  203 			uca_msgtx[3] = wal_bsf_eeget( WAL_EE_ERROR);
+	LDI	R16,5
+	CALL	wal_bsf_eeget
+	STS	(uca_msgtx + 3),R16
+	RJMP	??wal_picnet_motor_11
+//  204 		}
+//  205 		else
+//  206 		{
+//  207 			// return '*','Q' if within +/- 3 units
+//  208 			// NB. convert from comms units (1/10th mm)	Lo-value + Hi-value
+//  209 			// to 'GEARR' units pulses WAL_GEAR_RATIO
+//  210 			// comms (Hi+Lo) * WAL_GEAR_RATIO == SET POINT
+//  211 			// difference == COUNTER (Hi+Lo) - SET POINT (Hi+Lo)
+//  212 			ui_axis_tmm = (uca_msgtx[3] << 8) + uca_msgtx[2];
+??wal_picnet_motor_15:
+	LDS	R19,(uca_msgtx + 3)
+	LDI	R18,0
+	LDS	R16,(uca_msgtx + 2)
+	LDI	R17,0
+	ADD	R16,R18
+	ADC	R17,R19
+	LDI	R30,LOW(ui_axis_tmm)
+	LDI	R31,(ui_axis_tmm) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  213 			ui_axis_set = ui_axis_tmm * 3;	// << 1 + 1
+	LDI	R30,LOW(ui_axis_tmm)
+	LDI	R31,(ui_axis_tmm) >> 8
+	LD	R20,Z
+	LDD	R21,Z+1
+	LDI	R16,3
+	LDI	R17,0
+	CALL	?S_EC_MUL_L02
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  214 			// set point (unsigned) if > 420mm then ignore (*U) 
+//  215 			if( ui_axis_set > WAL_MAX_SET_VALUE)
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	CPI	R16,253
+	LDI	R18,78
+	CPC	R17,R18
+	BRCS	??wal_picnet_motor_16
+//  216 			{
+//  217 				uca_msgtx[1] = '*';
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  218 				uca_msgtx[2] = 'U';
+	LDI	R16,85
+	STS	(uca_msgtx + 2),R16
+//  219 				uca_msgtx[3] = 0xFE;
+	LDI	R16,254
+	STS	(uca_msgtx + 3),R16
+	RJMP	??wal_picnet_motor_11
+//  220 			}
+//  221 			else
+//  222 			{
+//  223 				if( ui_axis_pos > ui_axis_set)
+??wal_picnet_motor_16:
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	CP	R16,R18
+	CPC	R17,R19
+	BRCC	??wal_picnet_motor_17
+//  224 				{
+//  225 					ui_axis_diff = ui_axis_pos - ui_axis_set;
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	SUB	R16,R18
+	SBC	R17,R19
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  226 					// +'ve difference if < 4 then ignore
+//  227 					// also *U if difference too large (or causing -'ve value)
+//  228 					if( ui_axis_diff < 4)
+	LDI	R26,LOW(ui_axis_diff)
+	LDI	R27,(ui_axis_diff) >> 8
+	LD	R30,X+
+	LD	R31,X
+	SBIW	R31 : R30,4
+	BRCC	??wal_picnet_motor_18
+//  229 					{
+//  230 						// ignore small difference
+//  231 						uca_msgtx[1] = '*';
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  232 						uca_msgtx[2] = 'Q';
+	LDI	R16,81
+	STS	(uca_msgtx + 2),R16
+	RJMP	??wal_picnet_motor_11
+//  233 					}
+//  234 					else
+//  235 					{
+//  236 						// move forward (use sequence E_AxisMove)
+//  237 						// reply with difference in data lo-hi
+//  238 
+//  239 						if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+??wal_picnet_motor_18:
+	LDI	R16,6
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??wal_picnet_motor_19
+//  240 						{
+//  241 							vss_seq_error();
+	CALL	vss_seq_error
+//  242 						}
+//  243 
+//  244 						// uc_axis_dir = 1;
+//  245 						// uc_axis_pwm = WAL_PWM_STEPA;	// begin ramp up
+//  246 						// wal_motor_start();
+//  247 						uca_msgtx[2] = (unsigned char) (ui_axis_diff & 0x00FF);
+??wal_picnet_motor_19:
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 2),R16
+//  248 						uca_msgtx[3] = (unsigned char) (ui_axis_diff >> 8);
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+	RJMP	??wal_picnet_motor_11
+//  249 					}
+//  250 				}
+//  251 				else
+//  252 				{
+//  253 					ui_axis_diff = ui_axis_set - ui_axis_pos;
+??wal_picnet_motor_17:
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	SUB	R16,R18
+	SBC	R17,R19
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  254 					// also *U if difference too large (or causing -'ve value)
+//  255 					if( ui_axis_diff < 4)
+	LDI	R26,LOW(ui_axis_diff)
+	LDI	R27,(ui_axis_diff) >> 8
+	LD	R30,X+
+	LD	R31,X
+	SBIW	R31 : R30,4
+	BRCC	??wal_picnet_motor_20
+//  256 					{
+//  257 						// negative difference so move in reverse
+//  258 						// decrease 'set point' for uni-directional motion,
+//  259 						// and set unidirection flag:
+//  260 
+//  261 						if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+	LDI	R16,6
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??wal_picnet_motor_21
+//  262 						{
+//  263 							vss_seq_error();
+	CALL	vss_seq_error
+//  264 						}
+//  265 
+//  266 						// uc_axis_dir = 0;
+//  267 						// uc_axis_pwm = WAL_PWM_STEPA;	// begin ramp up
+//  268 						// wal_motor_start();
+//  269 						uca_msgtx[2] = (unsigned char) (ui_axis_diff & 0x00FF);
+??wal_picnet_motor_21:
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 2),R16
+//  270 						uca_msgtx[3] = (unsigned char) (ui_axis_diff >> 8);
+	LDI	R30,LOW(ui_axis_diff)
+	LDI	R31,(ui_axis_diff) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+	RJMP	??wal_picnet_motor_11
+//  271 					}
+//  272 					else
+//  273 					{
+//  274 						// ignore small difference
+//  275 						uca_msgtx[1] = '*';
+??wal_picnet_motor_20:
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  276 						uca_msgtx[2] = 'Q';
+	LDI	R16,81
+	STS	(uca_msgtx + 2),R16
+	RJMP	??wal_picnet_motor_11
+//  277 					}
+//  278 				}
+//  279 			}
+//  280 		}
+//  281 		break;
+//  282 	case 'P':
+//  283 		// position: reply 'C'+ count if moving; 'P' + position if stationery
+//  284 		// NB. check order of data-hi, data-lo
+//  285 		if( uc_axis_vss == 0)
+??wal_picnet_motor_5:
+	LDS	R16,uc_axis_vss
+	TST	R16
+	BRNE	??wal_picnet_motor_22
+//  286 		{
+//  287 			// idle, reply 'P' (set point ui_axis_set)
+//  288 			uca_msgtx[1] = 'P';
+	LDI	R16,80
+	STS	(uca_msgtx + 1),R16
+//  289 			uca_msgtx[2] = (unsigned char) (ui_axis_set & 0x00FF);
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 2),R16
+//  290 			uca_msgtx[3] = (unsigned char) (ui_axis_set >> 8);
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+	RJMP	??wal_picnet_motor_11
+//  291 		}
+//  292 		else
+//  293 		{
+//  294 			// axis active, reply 'C' (current position ui_axis_pos)
+//  295 			uca_msgtx[1] = 'C';
+??wal_picnet_motor_22:
+	LDI	R16,67
+	STS	(uca_msgtx + 1),R16
+//  296 			uca_msgtx[2] = (unsigned char) (ui_axis_pos & 0x00FF);
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 2),R16
+//  297 			uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+	RJMP	??wal_picnet_motor_11
+//  298 		}
+//  299 		break;
+//  300 	case 'S':
+//  301 		// stop
+//  302 		wal_motor_stop();
+??wal_picnet_motor_6:
+	CALL	wal_motor_stop
+	RJMP	??wal_picnet_motor_11
+//  303 		break;
+//  304 	case 'V':
+//  305 		// version (datahi-lo = 0x26)
+//  306 		if( wal_picnet_checkdata() == 0)
+??wal_picnet_motor_7:
+	RCALL	wal_picnet_checkdata
+	TST	R16
+	BRNE	??wal_picnet_motor_11
+//  307 		{
+//  308 			// respond with version	WAL_PIC_VERSION
+//  309 			uca_msgtx[1] = 'I';
+	LDI	R16,73
+	STS	(uca_msgtx + 1),R16
+//  310 			uca_msgtx[2] = 'V';
+	LDI	R16,86
+	STS	(uca_msgtx + 2),R16
+//  311 			uca_msgtx[3] = WAL_PIC_VERSION;
+	LDI	R16,15
+	STS	(uca_msgtx + 3),R16
+	RJMP	??wal_picnet_motor_11
+//  312 		}
+//  313 		break;
+//  314 	default:
+//  315 		// send '*','I' response + 'command' in data[3]
+//  316 		uca_msgtx[1] = '*';
+??wal_picnet_motor_8:
+	LDI	R16,42
+	STS	(uca_msgtx + 1),R16
+//  317 		uca_msgtx[2] = 'I';
+	LDI	R16,73
+	STS	(uca_msgtx + 2),R16
+//  318 		uca_msgtx[3] = uca_msgrx[1];
+	LDS	R16,(uca_msgrx + 1)
+	STS	(uca_msgtx + 3),R16
+//  319 	}
+//  320 
+//  321 }
+??wal_picnet_motor_11:
+	LD	R26,Y+
+	LD	R27,Y+
+	RET
+//  322 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  323 void wal_do_command( void)
+wal_do_command:
+//  324 {
+//  325 //rx3rx4 = (unsigned int) ((rx[3] << 8) + rx[4]);
+//  326 
+//  327 uca_msgtx[0] = uca_msgrx[1];    	// back to originator (0)
+	LDS	R16,(uca_msgrx + 1)
+	STS	uca_msgtx,R16
+//  328 uca_msgtx[1] = uc_comm_adid; 		// from me...
+	LDS	R16,uc_comm_adid
+	STS	(uca_msgtx + 1),R16
+//  329 uca_msgtx[2] = uca_msgrx[2];    	// cmd always echo'd
+	LDS	R16,(uca_msgrx + 2)
+	STS	(uca_msgtx + 2),R16
+//  330 uca_msgtx[3] = uca_msgrx[3];    	// if in doubt echo data..
+	LDS	R16,(uca_msgrx + 3)
+	STS	(uca_msgtx + 3),R16
+//  331 uca_msgtx[4] = uca_msgrx[4];    	// ..
+	LDS	R16,(uca_msgrx + 4)
+	STS	(uca_msgtx + 4),R16
+//  332 
+//  333 switch( uca_msgrx[2])
+	LDS	R16,(uca_msgrx + 2)
+	LDI	R30,LOW(`?<Jumptable for wal_do_command>_0`)
+	LDI	R31,(`?<Jumptable for wal_do_command>_0`) >> 8
+	JMP	?CV_SWITCH_L06
+//  334     {
+//  335     case 0:    // get mode
+//  336         uca_msgtx[4] = 0x04;
+??wal_do_command_0:
+	LDI	R16,4
+	STS	(uca_msgtx + 4),R16
+	RET
+//  337         break;
+//  338     case 1: 
+//  339     	// set variable (directly)
+//  340         switch( uca_msgrx[3])
+??wal_do_command_1:
+	LDS	R16,(uca_msgrx + 3)
+	SUBI	R16,0
+	BREQ	??wal_do_command_2
+	DEC	R16
+	BREQ	??wal_do_command_3
+	DEC	R16
+	BREQ	??wal_do_command_4
+	DEC	R16
+	BREQ	??wal_do_command_5
+	RET
+//  341         {
+//  342         case 0:
+//  343                 // direct set of PORTA
+//  344                 PORTA = uca_msgrx[4];
+??wal_do_command_2:
+	LDS	R16,(uca_msgrx + 4)
+	OUT	0x1B,R16
+	RET
+//  345                 break;
+//  346         case 1:
+//  347                 // direct set of PORTB
+//  348                 PORTB = uca_msgrx[4];
+??wal_do_command_3:
+	LDS	R16,(uca_msgrx + 4)
+	OUT	0x18,R16
+	RET
+//  349                 break;
+//  350         case 2:
+//  351                 // direct set of PORTC
+//  352                 PORTC = uca_msgrx[4];
+??wal_do_command_4:
+	LDS	R16,(uca_msgrx + 4)
+	OUT	0x15,R16
+	RET
+//  353                 break;
+//  354         case 3:
+//  355                 // direct set of PORTD
+//  356                 PORTD = uca_msgrx[4];
+??wal_do_command_5:
+	LDS	R16,(uca_msgrx + 4)
+	OUT	0x12,R16
+	RET
+//  357                 break;
+//  358         }
+//  359         break;
+//  360     case 2: 
+//  361     	// or register
+//  362         switch( uca_msgrx[3])
+??wal_do_command_6:
+	LDS	R16,(uca_msgrx + 3)
+	SUBI	R16,0
+	BREQ	??wal_do_command_7
+	DEC	R16
+	BREQ	??wal_do_command_8
+	DEC	R16
+	BREQ	??wal_do_command_9
+	DEC	R16
+	BREQ	??wal_do_command_10
+	RET
+//  363         {
+//  364         case 0:
+//  365                 // direct OR of PORTA
+//  366                 PORTA = PINA | uca_msgrx[4];
+??wal_do_command_7:
+	IN	R16,0x19
+	LDS	R17,(uca_msgrx + 4)
+	OR	R17,R16
+	OUT	0x1B,R17
+	RET
+//  367                 break;
+//  368         case 1:
+//  369                 // direct OR of PORTB
+//  370                 PORTB = PINB | uca_msgrx[4];
+??wal_do_command_8:
+	IN	R16,0x16
+	LDS	R17,(uca_msgrx + 4)
+	OR	R17,R16
+	OUT	0x18,R17
+	RET
+//  371                 break;
+//  372         case 2:
+//  373                 // direct OR of PORTC
+//  374                 PORTC = PINC | uca_msgrx[4];
+??wal_do_command_9:
+	IN	R16,0x13
+	LDS	R17,(uca_msgrx + 4)
+	OR	R17,R16
+	OUT	0x15,R17
+	RET
+//  375                 break;
+//  376         case 3:
+//  377                 // direct OR of PORTD
+//  378                 PORTD = PIND | uca_msgrx[4];
+??wal_do_command_10:
+	IN	R16,0x10
+	LDS	R17,(uca_msgrx + 4)
+	OR	R17,R16
+	OUT	0x12,R17
+	RET
+//  379                 break;
+//  380         }
+//  381 		break;
+//  382     case 3: 
+//  383     	// and register
+//  384         switch( uca_msgrx[3])
+??wal_do_command_11:
+	LDS	R16,(uca_msgrx + 3)
+	SUBI	R16,0
+	BREQ	??wal_do_command_12
+	DEC	R16
+	BREQ	??wal_do_command_13
+	DEC	R16
+	BREQ	??wal_do_command_14
+	DEC	R16
+	BREQ	??wal_do_command_15
+	RET
+//  385         {
+//  386         case 0:
+//  387                 // direct AND of PORTA
+//  388                 PORTA = PINA & uca_msgrx[4];
+??wal_do_command_12:
+	IN	R16,0x19
+	LDS	R17,(uca_msgrx + 4)
+	AND	R17,R16
+	OUT	0x1B,R17
+	RET
+//  389                 break;
+//  390         case 1:
+//  391                 // direct AND of PORTB
+//  392                 PORTB = PINB & uca_msgrx[4];
+??wal_do_command_13:
+	IN	R16,0x16
+	LDS	R17,(uca_msgrx + 4)
+	AND	R17,R16
+	OUT	0x18,R17
+	RET
+//  393                 break;
+//  394         case 2:
+//  395                 // direct AND of PORTC
+//  396                 PORTC = PINC & uca_msgrx[4];
+??wal_do_command_14:
+	IN	R16,0x13
+	LDS	R17,(uca_msgrx + 4)
+	AND	R17,R16
+	OUT	0x15,R17
+	RET
+//  397                 break;
+//  398         case 3:
+//  399                 // direct AND of PORTD
+//  400                 PORTD = PIND & uca_msgrx[4];
+??wal_do_command_15:
+	IN	R16,0x10
+	LDS	R17,(uca_msgrx + 4)
+	AND	R17,R16
+	OUT	0x12,R17
+	RET
+//  401                 break;
+//  402         }
+//  403         break;
+//  404     case 5: // get register..
+//  405         // 01NOV00 the only register directly accessed:
+//  406         // should be $A3 (detector ref value)
+//  407         switch( uca_msgrx[3])
+??wal_do_command_16:
+	LDS	R16,(uca_msgrx + 3)
+	SUBI	R16,128
+	BREQ	??wal_do_command_17
+	SUBI	R16,128
+	BREQ	??wal_do_command_18
+	DEC	R16
+	BREQ	??wal_do_command_19
+	DEC	R16
+	BREQ	??wal_do_command_20
+	DEC	R16
+	BREQ	??wal_do_command_21
+	RET
+//  408         {
+//  409         case 0:
+//  410             // direct read of PORTA
+//  411             uca_msgtx[4] = PINA;
+??wal_do_command_18:
+	IN	R16,0x19
+	STS	(uca_msgtx + 4),R16
+	RET
+//  412             break;
+//  413         case 1:
+//  414             // direct read of PORTB
+//  415             uca_msgtx[4] = PINB;
+??wal_do_command_19:
+	IN	R16,0x16
+	STS	(uca_msgtx + 4),R16
+	RET
+//  416             break;
+//  417         case 2:
+//  418             // direct read of PORTC
+//  419             uca_msgtx[4] = PINC;
+??wal_do_command_20:
+	IN	R16,0x13
+	STS	(uca_msgtx + 4),R16
+	RET
+//  420             break;
+//  421         case 3:
+//  422             // direct read of PORTD
+//  423             uca_msgtx[4] = PIND;
+??wal_do_command_21:
+	IN	R16,0x10
+	STS	(uca_msgtx + 4),R16
+	RET
+//  424             break;
+//  425         case 0x80:
+//  426             //read from eeprom address rx4
+//  427 			__disable_interrupt();
+??wal_do_command_17:
+	CLI
+//  428             uca_msgtx[3] = wal_bsf_eeget(uca_msgrx[4]);
+	LDS	R16,(uca_msgrx + 4)
+	CALL	wal_bsf_eeget
+	STS	(uca_msgtx + 3),R16
+//  429 			__enable_interrupt();
+	SEI
+	RET
+//  430             break;
+//  431         }
+//  432         break;
+//  433     case 14: // Status request:
+//  434         uca_msgtx[3] = uc_axis_err;
+??wal_do_command_22:
+	LDS	R16,uc_axis_err
+	STS	(uca_msgtx + 3),R16
+//  435         uca_msgtx[4] = uc_axis_vss;
+	LDS	R16,uc_axis_vss
+	STS	(uca_msgtx + 4),R16
+	RET
+//  436         break; 
+//  437     case 15: // VERSION No REQUEST 
+//  438         uca_msgtx[3] = def_major_ver;            // get_ee[x]...
+??wal_do_command_23:
+	LDI	R16,1
+	STS	(uca_msgtx + 3),R16
+//  439         uca_msgtx[4] = def_minor_ver;
+	LDI	R16,8
+	STS	(uca_msgtx + 4),R16
+	RET
+//  440         break; 
+//  441     case 20:
+//  442         // clear errors:
+//  443         break;
+//  444     case 88:
+//  445         // Get Max. allowable tacho limit: ui_axis_maxallow
+//  446         uca_msgtx[3] = (unsigned char) (ui_axis_maxallow >> 8);
+??wal_do_command_24:
+	LDI	R30,LOW(ui_axis_maxallow)
+	LDI	R31,(ui_axis_maxallow) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+//  447         uca_msgtx[4] = (unsigned char) (ui_axis_maxallow & 0x00FF);
+	LDI	R30,LOW(ui_axis_maxallow)
+	LDI	R31,(ui_axis_maxallow) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 4),R16
+	RET
+//  448         break;
+//  449     case 89:
+//  450         // Set Max. allowable tacho limit: ui_axis_maxallow WAL_EE_MAXTHI, WAL_EE_MAXTLO
+//  451         ui_axis_maxallow = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
+??wal_do_command_25:
+	LDS	R19,(uca_msgrx + 3)
+	LDI	R18,0
+	LDS	R16,(uca_msgrx + 4)
+	LDI	R17,0
+	ADD	R16,R18
+	ADC	R17,R19
+	LDI	R30,LOW(ui_axis_maxallow)
+	LDI	R31,(ui_axis_maxallow) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  452         uc_axis_chi = uca_msgrx[3];
+	LDS	R16,(uca_msgrx + 3)
+	STS	uc_axis_chi,R16
+//  453         uc_axis_clo = uca_msgrx[4];
+	LDS	R16,(uca_msgrx + 4)
+	STS	uc_axis_clo,R16
+//  454         wal_eetbl_write( WAL_EE_MAXTHI, uc_axis_chi);
+	LDS	R17,uc_axis_chi
+	LDI	R16,6
+	CALL	wal_eetbl_write
+//  455         wal_eetbl_write( WAL_EE_MAXTLO, uc_axis_clo);
+	LDS	R17,uc_axis_clo
+	LDI	R16,7
+	CALL	wal_eetbl_write
+	RET
+//  456         break;
+//  457     case 90: // stop
+//  458         // E_AxisStop()
+//  459         wal_motor_stop();
+??wal_do_command_26:
+	CALL	wal_motor_stop
+	RET
+//  460         break;
+//  461     case 91: // re-reference AddEvent
+//  462         // V1.3 27JUN05: allow 'home' sequence if home switch active:
+//  463         // if( val_ip_hom == 0){}
+//  464         
+//  465         uc_axis_vss = 4;
+??wal_do_command_27:
+	LDI	R16,4
+	STS	uc_axis_vss,R16
+//  466         
+//  467         if( SEQ_AddEvent( E_AxisInvalid) != UCC_OK )
+	LDI	R16,4
+	CALL	SEQ_AddEvent
+	TST	R16
+	BRNE	$+2+2
+	RJMP	??wal_do_command_28
+//  468         {
+//  469                 vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  470         }
+//  471         break;
+//  472     case 92: // forwards or backward depending upon rx[3],rx[4]
+//  473         if( val_ip_lim == 0) 
+??wal_do_command_29:
+	LDS	R16,val_ip_lim
+	TST	R16
+	BREQ	$+2+2
+	RJMP	??wal_do_command_28
+//  474         {
+//  475           uc_axis_dir = (uca_msgtx[3] == 1) ? 1: 0;
+	LDS	R16,(uca_msgtx + 3)
+	CPI	R16,1
+	BRNE	??wal_do_command_30
+	LDI	R16,1
+	RJMP	??wal_do_command_31
+??wal_do_command_30:
+	LDI	R16,0
+??wal_do_command_31:
+	STS	uc_axis_dir,R16
+//  476           if( uca_msgtx[4] == 0)
+	LDS	R16,(uca_msgtx + 4)
+	TST	R16
+	BRNE	??wal_do_command_32
+//  477               uc_axis_pwm = WAL_PWM_TEST;
+	LDI	R16,192
+	STS	uc_axis_pwm,R16
+	RJMP	??wal_do_command_33
+//  478           else
+//  479               uc_axis_pwm = uca_msgtx[4];
+??wal_do_command_32:
+	LDS	R16,(uca_msgtx + 4)
+	STS	uc_axis_pwm,R16
+//  480           wal_motor_start();
+??wal_do_command_33:
+	CALL	wal_motor_start
+	RET
+//  481         }
+//  482         break;
+//  483     case 93: // position
+//  484         // position: reply 'C'+ count if moving; 'P' + position if stationery
+//  485         // command must match in high speed comms (NB. data hi-lo swapped )
+//  486         // therefore no differentiation of ui_axis_set or ui_axis_pos
+//  487         // if( uc_axis_vss == 0) 
+//  488         // need to convert ui_axis_pos -> 0.1mm units using conversion *5 /4
+//  489         // ui_axis_postx = ui_axis_pos * 5/4 (ui_axis_conv, ui_axis_tacho)
+//  490         
+//  491         // ui_axis_tacho = ui_axis_pos >> 1;      // divide by 2
+//  492         // store 'carry' flag
+//  493         // uc_carrybit = WAL_CARRY_BIT ? 3: 0;
+//  494         // ui_axis_mult = ui_axis_tacho * 5;     // mult. by 5
+//  495         // if( uc_carrybit)
+//  496         // {
+//  497         //  ui_axis_mult += 3;
+//  498         // }
+//  499         // ui_axis_conv = ui_axis_mult >> 1;
+//  500         // uca_msgtx[3] = (unsigned char) (ui_axis_conv >> 8);
+//  501         // uca_msgtx[4] = (unsigned char) (ui_axis_conv & 0x00FF);
+//  502         
+//  503         // V1.8 27JAN06: give set point if moving...
+//  504         if( uc_motoron)
+??wal_do_command_34:
+	LDS	R16,uc_motoron
+	TST	R16
+	BREQ	??wal_do_command_35
+//  505         {
+//  506           uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+//  507           uca_msgtx[4] = (unsigned char) (ui_axis_pos & 0x00FF);
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 4),R16
+	RET
+//  508         }
+//  509         else
+//  510         {
+//  511         
+//  512           // V1.3 work in tacho units only
+//  513           uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
+??wal_do_command_35:
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+//  514           uca_msgtx[4] = (unsigned char) (ui_axis_pos & 0x00FF);
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 4),R16
+//  515           
+//  516           // V1.7 16JAN06: if uni-directional movement in progress
+//  517           // report 'set-point' to prevent 'goto'
+//  518           if( uc_unitravel)
+	LDS	R16,uc_unitravel
+	TST	R16
+	BRNE	$+2+2
+	RJMP	??wal_do_command_28
+//  519           {
+//  520             uca_msgtx[3] = (unsigned char) (ui_axis_uni >> 8);
+	LDI	R30,LOW(ui_axis_uni)
+	LDI	R31,(ui_axis_uni) >> 8
+	LDD	R17,Z+1
+	MOV	R16,R17
+	STS	(uca_msgtx + 3),R16
+//  521             uca_msgtx[4] = (unsigned char) (ui_axis_uni & 0x00FF);
+	LDI	R30,LOW(ui_axis_uni)
+	LDI	R31,(ui_axis_uni) >> 8
+	LD	R16,Z
+	STS	(uca_msgtx + 4),R16
+	RET
+//  522           }
+//  523         }
+//  524         
+//  525         break;
+//  526     case 94: // goto
+//  527         // i.e. set position, ui_axis_set = rx[3][4]
+//  528         // value set in 0.1mm units: conversion to tachos (0.125mm) = 4/5
+//  529         // method *2; +3; divide by 5; *2 = 0.125 (i.e. tacho units)
+//  530         // use WAL_MAX_SET_HIBYTE to protect max. parameter
+//  531         
+//  532         // V1.3 27JUN05: ignore 'goto' if axis error flag set: (must reref)
+//  533         // uc_axis_err = 0;
+//  534                 
+//  535         // V1.8 27JAN06: ignore 'goto' if moving...
+//  536         if( (uca_msgrx[3] <= WAL_MAX_SET_HIBYTE) && (uc_axis_err == 0) && (uc_motoron == 0))
+??wal_do_command_36:
+	LDS	R16,(uca_msgrx + 3)
+	CPI	R16,79
+	BRCS	$+2+2
+	RJMP	??wal_do_command_28
+	LDS	R16,uc_axis_err
+	TST	R16
+	BREQ	$+2+2
+	RJMP	??wal_do_command_28
+	LDS	R16,uc_motoron
+	TST	R16
+	BREQ	$+2+2
+	RJMP	??wal_do_command_28
+//  537         {
+//  538           // i.e. position < MAX
+//  539           if( (uca_msgrx[3] == 0) && (uca_msgrx[4] < WAL_MIN_SET_LOBYTE) )
+	LDS	R16,(uca_msgrx + 3)
+	TST	R16
+	BRNE	??wal_do_command_37
+	LDS	R16,(uca_msgrx + 4)
+	CPI	R16,4
+	BRCC	$+2+2
+	RJMP	??wal_do_command_28
+//  540           {
+//  541             // i.e. position < 0.5mm therefore invalid
+//  542           }
+//  543           else
+//  544           {
+//  545             // V1.3 work in tacho units only
+//  546             ui_axis_setrx = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
+??wal_do_command_37:
+	LDS	R19,(uca_msgrx + 3)
+	LDI	R18,0
+	LDS	R16,(uca_msgrx + 4)
+	LDI	R17,0
+	ADD	R16,R18
+	ADC	R17,R19
+	LDI	R30,LOW(ui_axis_setrx)
+	LDI	R31,(ui_axis_setrx) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  547             if( ui_axis_setrx < ui_axis_maxallow)
+	LDI	R30,LOW(ui_axis_setrx)
+	LDI	R31,(ui_axis_setrx) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_maxallow)
+	LDI	R31,(ui_axis_maxallow) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	CP	R16,R18
+	CPC	R17,R19
+	BRCC	??wal_do_command_38
+//  548             {
+//  549               ui_axis_set = ui_axis_setrx;
+	LDI	R30,LOW(ui_axis_setrx)
+	LDI	R31,(ui_axis_setrx) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	LDI	R30,LOW(ui_axis_set)
+	LDI	R31,(ui_axis_set) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//  550             }
+//  551             
+//  552             // new (valid) set point
+//  553             // ui_axis_setrx = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
+//  554             // need to convert to tacho units :: 4/5
+//  555             // ui_axis_tacho = ui_axis_setrx << 1;
+//  556             // ui_axis_tacho += 3;
+//  557             // ui_axis_mult = ui_axis_tacho / 5;     // divide by 5
+//  558             // ui_axis_conv = ui_axis_mult << 1;
+//  559             // ui_axis_set = ui_axis_conv;
+//  560             
+//  561             // E_AxisMove (MoveToPosition); Entry = A_AxisCalcProfile, A_MotorMove
+//  562             // if( ui_axis_set != ui_axis_pos)
+//  563             
+//  564             
+//  565             if( !wal_pos_similar())
+??wal_do_command_38:
+	CALL	wal_pos_similar
+	TST	R16
+	BRNE	??wal_do_command_28
+//  566             {
+//  567               if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+	LDI	R16,6
+	CALL	SEQ_AddEvent
+	TST	R16
+	BREQ	??wal_do_command_28
+//  568               {
+//  569                 vss_seq_error();
+	CALL	vss_seq_error
+	RET
+//  570               }
+//  571             }     // set != pos
+//  572           }       // else  set pt > LOBYTE
+//  573         }         // rx[3] < HIBYTE
+//  574         break;
+//  575     case 95: // address
+//  576         if( val_ip_sw1 == 1)
+??wal_do_command_39:
+	LDS	R16,val_ip_sw1
+	CPI	R16,1
+	BRNE	??wal_do_command_40
+//  577         {
+//  578             uc_comm_adid = uca_msgrx[4] & 0x3F;
+	LDS	R16,(uca_msgrx + 4)
+	ANDI	R16,0x3F
+	STS	uc_comm_adid,R16
+//  579             wal_eetbl_write( WAL_EE_COMMID, uc_comm_adid);
+	LDS	R17,uc_comm_adid
+	LDI	R16,1
+	CALL	wal_eetbl_write
+//  580             uca_msgtx[1] = uc_comm_adid;
+	LDS	R16,uc_comm_adid
+	STS	(uca_msgtx + 1),R16
+//  581             uc_axis_err = 1;
+	LDI	R16,1
+	STS	uc_axis_err,R16
+//  582             wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+	LDS	R17,uc_axis_err
+	LDI	R16,5
+	CALL	wal_eetbl_write
+	RET
+//  583         }
+//  584         else
+//  585         {
+//  586             // ignore, no reply
+//  587             uc_comm_noecho = 1;
+??wal_do_command_40:
+	LDI	R16,1
+	STS	uc_comm_noecho,R16
+	RET
+//  588         }
+//  589         break;
+//  590     case 96: // trigger (respond input) + button status
+//  591         break;
+//  592     case 97: // trigger (set output)
+//  593         break;
+//  594     case 98: // status (moving, error)
+//  595         break;
+//  596     case 99: // speed
+//  597         uc_axis_pwm = uca_msgrx[4];
+??wal_do_command_41:
+	LDS	R16,(uca_msgrx + 4)
+	STS	uc_axis_pwm,R16
+	RET
+//  598         break;
+//  599     case 100:
+//  600         // write to eeprom:
+//  601         __disable_interrupt();
+??wal_do_command_42:
+	CLI
+//  602         wal_eetbl_write( uca_msgrx[3], uca_msgrx[4]);
+	LDS	R17,(uca_msgrx + 4)
+	LDS	R16,(uca_msgrx + 3)
+	CALL	wal_eetbl_write
+//  603         __enable_interrupt();
+	SEI
+	RET
+//  604         break;
+//  605     default:
+//  606         uca_msgtx[3] = uca_msgtx[4] = 0;
+??wal_do_command_43:
+	LDI	R16,0
+	STS	(uca_msgtx + 4),R16
+	STS	(uca_msgtx + 3),R16
+//  607     }  
+//  608 } 
+??wal_do_command_28:
+	RET
+
+        RSEG SWITCH:CODE:NOROOT(1)
+`?<Jumptable for wal_do_command>_0`:
+	DB	0
+	DB	1
+	DW	(??wal_do_command_43) /2
+	DW	(??wal_do_command_0) /2
+	DB	0x1
+	DW	(??wal_do_command_1) /2
+	DB	0x1
+	DW	(??wal_do_command_6) /2
+	DB	0x1
+	DW	(??wal_do_command_11) /2
+	DB	0x2
+	DW	(??wal_do_command_16) /2
+	DB	0x9
+	DW	(??wal_do_command_22) /2
+	DB	0x1
+	DW	(??wal_do_command_23) /2
+	DB	0x5
+	DW	(??wal_do_command_28) /2
+	DB	0x44
+	DW	(??wal_do_command_24) /2
+	DB	0x1
+	DW	(??wal_do_command_25) /2
+	DB	0x1
+	DW	(??wal_do_command_26) /2
+	DB	0x1
+	DW	(??wal_do_command_27) /2
+	DB	0x1
+	DW	(??wal_do_command_29) /2
+	DB	0x1
+	DW	(??wal_do_command_34) /2
+	DB	0x1
+	DW	(??wal_do_command_36) /2
+	DB	0x1
+	DW	(??wal_do_command_39) /2
+	DB	0x1
+	DW	(??wal_do_command_28) /2
+	DB	0x1
+	DW	(??wal_do_command_28) /2
+	DB	0x1
+	DW	(??wal_do_command_28) /2
+	DB	0x1
+	DW	(??wal_do_command_41) /2
+	DB	0x1
+	DW	(??wal_do_command_42) /2
+	DB	251
+	DB	0
+
+        ASEGN ABSOLUTE:DATA:NOROOT,029H
+// union <unnamed> volatile __io _A_UBRRL
+_A_UBRRL:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02aH
+// union <unnamed> volatile __io _A_UCSRB
+_A_UCSRB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,02cH
+// union <unnamed> volatile __io _A_UDR
+_A_UDR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,030H
+// union <unnamed> volatile __io _A_PIND
+_A_PIND:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,032H
+// union <unnamed> volatile __io _A_PORTD
+_A_PORTD:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,033H
+// union <unnamed> volatile __io _A_PINC
+_A_PINC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,035H
+// union <unnamed> volatile __io _A_PORTC
+_A_PORTC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,036H
+// union <unnamed> volatile __io _A_PINB
+_A_PINB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,038H
+// union <unnamed> volatile __io _A_PORTB
+_A_PORTB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,039H
+// union <unnamed> volatile __io _A_PINA
+_A_PINA:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03bH
+// union <unnamed> volatile __io _A_PORTA
+_A_PORTA:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,040H
+// union <unnamed> volatile __io _A_UBRRH
+_A_UBRRH:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01cH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01dH
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01eH
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EEARH:
+
+        END
+//  609 
+//  610 
+//  611 
+//  612 
+//  613 
+// 
+//    12 bytes in segment ABSOLUTE
+// 1 742 bytes in segment CODE
+//    68 bytes in segment SWITCH
+// 
+// 1 810 bytes of CODE memory
+//     0 bytes of DATA memory (+ 12 bytes shared)
+//
+//Errors: none
+//Warnings: 3

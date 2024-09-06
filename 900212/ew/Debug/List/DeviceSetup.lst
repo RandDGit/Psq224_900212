@@ -1,0 +1,541 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:32:41 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\DeviceSetup.c     #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \DeviceSetup.c                                          #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\DeviceSetu #
+#                    p.lst                                                   #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\DeviceSetup #
+#                    .r90                                                    #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\DeviceSetup.c
+      1          /*****************************************************************************
+      2          * IAR visualSTATE Device Setup File. Specific to Atmel ATmega16 processor
+      3          * Provide handle for each of the processor interrupt function;
+      4          * with corresponding event trigger as appropriate.
+      5          *****************************************************************************/
+      6          
+      7          /* *** include directives *** */
+      8          
+      9          #include <iom16.h>
+     10          #include <inavr.h>
+     11          #include "VSMain.h"
+     12          
+     13          #include "defs.h"			// Application (GENERAL) defs
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",122  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",131  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",137  Warning[Pe375]: 
+          declaration requires a typedef name
+     14          #include "globals.h"		// Application global data/variables
+     15          
+     16          
+     17          /* ATMEGA16 Interrupts */
+     18          /*
+     19          #define    INT0_vect            (0x04)
+     20          #define    INT1_vect            (0x08)
+     21          #define    TIMER2_COMP_vect     (0x0C)
+     22          #define    TIMER2_OVF_vect      (0x10)
+     23          #define    TIMER1_CAPT_vect     (0x14)
+     24          #define    TIMER1_COMPA_vect    (0x18)
+     25          #define    TIMER1_COMPB_vect    (0x1C)
+     26          #define    TIMER1_OVF_vect      (0x20)
+     27          #define    TIMER0_OVF_vect      (0x24)
+     28          #define    SPI_STC_vect         (0x28)
+     29          #define    USART_RXC_vect       (0x2C)
+     30          #define    USART_UDRE_vect      (0x30)
+     31          #define    USART_TXC_vect       (0x34)
+     32          #define    ADC_vect             (0x38)
+     33          #define    EE_RDY_vect          (0x3C)
+     34          #define    ANA_COMP_vect        (0x40)
+     35          #define    TWI_vect             (0x44)
+     36          #define    INT2_vect            (0x48)
+     37          #define    TIMER0_COMP_vect     (0x4C)
+     38          #define    SPM_RDY_vect         (0x50)
+     39          */
+     40          
+     41          #pragma vector=INT0_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     42          __interrupt void INT0_interrupt( void ) 
+   \                     INT0_interrupt:
+     43          {
+     44          }
+   \   00000000   9518                       RETI
+     45          #pragma vector=INT1_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     46          __interrupt void INT1_interrupt( void ) 
+   \                     INT1_interrupt:
+     47          {
+     48          }
+   \   00000000   9518                       RETI
+     49          #pragma vector=TIMER2_COMP_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     50          __interrupt void TIMER2_COMP_interrupt( void ) 
+   \                     TIMER2_COMP_interrupt:
+     51          {
+     52          }
+   \   00000000   9518                       RETI
+     53          #pragma vector=TIMER2_OVF_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     54          __interrupt void TIMER2_OVF_interrupt( void ) 
+   \                     TIMER2_OVF_interrupt:
+     55          {
+     56          }
+   \   00000000   9518                       RETI
+     57          #pragma vector=TIMER1_CAPT_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     58          __interrupt void TIMER1_CAPT_interrupt( void ) 
+   \                     TIMER1_CAPT_interrupt:
+     59          {
+     60          }
+   \   00000000   9518                       RETI
+     61          #pragma vector=TIMER1_COMPA_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     62          __interrupt void TIMER1_COMPA_interrupt( void ) 
+   \                     TIMER1_COMPA_interrupt:
+     63          {
+     64          }
+   \   00000000   9518                       RETI
+     65          #pragma vector=TIMER1_COMPB_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     66          __interrupt void TIMER1_COMPB_interrupt( void ) 
+   \                     TIMER1_COMPB_interrupt:
+     67          {
+     68          }
+   \   00000000   9518                       RETI
+     69          #pragma vector=TIMER1_OVF_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     70          __interrupt void TIMER1_OVF_interrupt( void ) 
+   \                     TIMER1_OVF_interrupt:
+     71          {
+     72          }
+   \   00000000   9518                       RETI
+     73          #pragma vector=TIMER0_OVF_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     74          __interrupt void TIMER0_OVF_interrupt( void ) 
+   \                     TIMER0_OVF_interrupt:
+     75          {
+   \   00000000   93FA                       ST      -Y,R31
+   \   00000002   93EA                       ST      -Y,R30
+   \   00000004   931A                       ST      -Y,R17
+   \   00000006   930A                       ST      -Y,R16
+   \   00000008   B71F                       IN      R17,0x3F
+     76            // reload overflow preset to determine overflow period: TCNT0 = mTCNT;
+     77            TCNT0 = uc_tm0preset;
+   \   0000000A   9100....                   LDS     R16,uc_tm0preset
+   \   0000000E   BF02                       OUT     0x32,R16
+     78            uc_tprim++;
+   \   00000010   ....                       LDI     R30,LOW(uc_tprim)
+   \   00000012   ....                       LDI     R31,(uc_tprim) >> 8
+   \   00000014   8100                       LD      R16,Z
+   \   00000016   9503                       INC     R16
+   \   00000018   8300                       ST      Z,R16
+     79          }
+   \   0000001A   BF1F                       OUT     0x3F,R17
+   \   0000001C   9109                       LD      R16,Y+
+   \   0000001E   9119                       LD      R17,Y+
+   \   00000020   91E9                       LD      R30,Y+
+   \   00000022   91F9                       LD      R31,Y+
+   \   00000024   9518                       RETI
+     80          #pragma vector=SPI_STC_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     81          __interrupt void SPI_STC_interrupt( void ) 
+   \                     SPI_STC_interrupt:
+     82          {
+     83          }
+   \   00000000   9518                       RETI
+     84          #pragma vector=USART_RXC_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+     85          __interrupt void USART_RXC_interrupt( void ) 
+   \                     USART_RXC_interrupt:
+     86          {
+   \   00000000   93FA                       ST      -Y,R31
+   \   00000002   93EA                       ST      -Y,R30
+   \   00000004   933A                       ST      -Y,R19
+   \   00000006   932A                       ST      -Y,R18
+   \   00000008   931A                       ST      -Y,R17
+   \   0000000A   930A                       ST      -Y,R16
+   \   0000000C   B73F                       IN      R19,0x3F
+     87            // following status & character in sequence must be used for UART Rx operation:
+     88            uc_rx_stata = UCSRA;
+   \   0000000E   B10B                       IN      R16,0x0B
+   \   00000010   9300....                   STS     uc_rx_stata,R16
+     89            uc_rx_statb = UCSRB;
+   \   00000014   B10A                       IN      R16,0x0A
+   \   00000016   9300....                   STS     uc_rx_statb,R16
+     90            uc_rx_chbyte = UDR;		// Read UART data register
+   \   0000001A   B10C                       IN      R16,0x0C
+   \   0000001C   9300....                   STS     uc_rx_chbyte,R16
+     91          
+     92            // Clear line_idle monitor (i.e. block transmit)
+     93            uc_comm_idle = 0;
+   \   00000020   E000                       LDI     R16,0
+   \   00000022   9300....                   STS     uc_comm_idle,R16
+     94            uc_comm_flag &= ~WAL_COMM_IDLE;
+   \   00000026   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000028   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000002A   8100                       LD      R16,Z
+   \   0000002C   7F0B                       ANDI    R16,0xFB
+   \   0000002E   8300                       ST      Z,R16
+     95            
+     96            // ATMEL Framing error 0x10 or Overrun 0x08
+     97            if( uc_rx_stata & 0x18)
+   \   00000030   9100....                   LDS     R16,uc_rx_stata
+   \   00000034   7108                       ANDI    R16,0x18
+   \   00000036   2300                       TST     R16
+   \   00000038   F031                       BREQ    ??USART_RXC_interrupt_0
+     98            {
+     99              // ignore character (noise)
+    100              uc_comm_flag |= WAL_COMM_DERR;
+   \   0000003A   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000003C   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000003E   8100                       LD      R16,Z
+   \   00000040   6002                       ORI     R16,0x02
+   \   00000042   8300                       ST      Z,R16
+   \   00000044   C021                       RJMP    ??USART_RXC_interrupt_1
+    101            }
+    102            else
+    103            {
+    104              uc_rxbuff[uc_rxwrptr].status = uc_rx_statb;	/* uc_comm_9set = */
+   \                     ??USART_RXC_interrupt_0:
+   \   00000046   9120....                   LDS     R18,uc_rx_statb
+   \   0000004A   ....                       LDI     R30,LOW(uc_rxbuff)
+   \   0000004C   ....                       LDI     R31,(uc_rxbuff) >> 8
+   \   0000004E   9100....                   LDS     R16,uc_rxwrptr
+   \   00000052   E010                       LDI     R17,0
+   \   00000054   0F00                       LSL     R16
+   \   00000056   1F11                       ROL     R17
+   \   00000058   0FE0                       ADD     R30,R16
+   \   0000005A   1FF1                       ADC     R31,R17
+   \   0000005C   8321                       STD     Z+1,R18
+    105              uc_rxbuff[uc_rxwrptr].charin = uc_rx_chbyte;/* uc_rx_chrecv = */
+   \   0000005E   9120....                   LDS     R18,uc_rx_chbyte
+   \   00000062   9100....                   LDS     R16,uc_rxwrptr
+   \   00000066   E010                       LDI     R17,0
+   \   00000068   0F00                       LSL     R16
+   \   0000006A   1F11                       ROL     R17
+   \   0000006C   01F8                       MOVW    R31 : R30,R17 : R16
+   \   0000006E   ....                       SUBI    R30,LOW((-(uc_rxbuff) & 0xFFFF))
+   \   00000070   ....                       SBCI    R31,(-(uc_rxbuff) & 0xFFFF) >> 8
+   \   00000072   8320                       ST      Z,R18
+    106              uc_rxwrptr++;
+   \   00000074   ....                       LDI     R30,LOW(uc_rxwrptr)
+   \   00000076   ....                       LDI     R31,(uc_rxwrptr) >> 8
+   \   00000078   8100                       LD      R16,Z
+   \   0000007A   9503                       INC     R16
+   \   0000007C   8300                       ST      Z,R16
+    107              uc_rxwrptr &= (WAL_MAX_RXBUFF-1);
+   \   0000007E   ....                       LDI     R30,LOW(uc_rxwrptr)
+   \   00000080   ....                       LDI     R31,(uc_rxwrptr) >> 8
+   \   00000082   8100                       LD      R16,Z
+   \   00000084   710F                       ANDI    R16,0x1F
+   \   00000086   8300                       ST      Z,R16
+    108            }
+    109          }
+   \                     ??USART_RXC_interrupt_1:
+   \   00000088   BF3F                       OUT     0x3F,R19
+   \   0000008A   9109                       LD      R16,Y+
+   \   0000008C   9119                       LD      R17,Y+
+   \   0000008E   9129                       LD      R18,Y+
+   \   00000090   9139                       LD      R19,Y+
+   \   00000092   91E9                       LD      R30,Y+
+   \   00000094   91F9                       LD      R31,Y+
+   \   00000096   9518                       RETI
+    110          #pragma vector=USART_UDRE_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    111          __interrupt void USART_UDRE_interrupt( void ) 
+   \                     USART_UDRE_interrupt:
+    112          {
+    113          }
+   \   00000000   9518                       RETI
+    114          #pragma vector=USART_TXC_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    115          __interrupt void USART_TXC_interrupt( void ) 
+   \                     USART_TXC_interrupt:
+    116          {
+   \   00000000   930A                       ST      -Y,R16
+    117            uc_tx_chsent = 1;	// used rather than Add_Event directly to minimize overhead
+   \   00000002   E001                       LDI     R16,1
+   \   00000004   9300....                   STS     uc_tx_chsent,R16
+    118          }
+   \   00000008   9109                       LD      R16,Y+
+   \   0000000A   9518                       RETI
+    119          
+    120          #pragma vector=ADC_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    121          __interrupt void ADC_interrupt( void ) 
+   \                     ADC_interrupt:
+    122          {
+    123          }
+   \   00000000   9518                       RETI
+    124          #pragma vector=EE_RDY_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    125          __interrupt void EE_RDY_interrupt( void ) 
+   \                     EE_RDY_interrupt:
+    126          {
+    127          }
+   \   00000000   9518                       RETI
+    128          #pragma vector=ANA_COMP_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    129          __interrupt void ANA_COMP_interrupt( void ) 
+   \                     ANA_COMP_interrupt:
+    130          {
+    131          }
+   \   00000000   9518                       RETI
+    132          #pragma vector=TWI_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    133          __interrupt void TWI_interrupt( void ) 
+   \                     TWI_interrupt:
+    134          {
+    135          }
+   \   00000000   9518                       RETI
+    136          #pragma vector=INT2_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    137          __interrupt void INT2_interrupt( void ) 
+   \                     INT2_interrupt:
+    138          {
+    139          }
+   \   00000000   9518                       RETI
+    140          #pragma vector=TIMER0_COMP_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    141          __interrupt void TIMER0_COMP_interrupt( void ) 
+   \                     TIMER0_COMP_interrupt:
+    142          {
+    143          }
+   \   00000000   9518                       RETI
+    144          #pragma vector=SPM_RDY_vect
+
+   \                                 In segment CODE, align 2, keep-with-next
+    145          __interrupt void SPM_RDY_interrupt( void ) 
+   \                     SPM_RDY_interrupt:
+    146          {
+    147          }
+   \   00000000   9518                       RETI
+
+   \                                 In segment INTVEC, offset 0x4, root
+   \   00000000   ........                   JMP     INT0_interrupt
+
+   \                                 In segment INTVEC, offset 0x8, root
+   \   00000000   ........                   JMP     INT1_interrupt
+
+   \                                 In segment INTVEC, offset 0xc, root
+   \   00000000   ........                   JMP     TIMER2_COMP_interrupt
+
+   \                                 In segment INTVEC, offset 0x10, root
+   \   00000000   ........                   JMP     TIMER2_OVF_interrupt
+
+   \                                 In segment INTVEC, offset 0x14, root
+   \   00000000   ........                   JMP     TIMER1_CAPT_interrupt
+
+   \                                 In segment INTVEC, offset 0x18, root
+   \   00000000   ........                   JMP     TIMER1_COMPA_interrupt
+
+   \                                 In segment INTVEC, offset 0x1c, root
+   \   00000000   ........                   JMP     TIMER1_COMPB_interrupt
+
+   \                                 In segment INTVEC, offset 0x20, root
+   \   00000000   ........                   JMP     TIMER1_OVF_interrupt
+
+   \                                 In segment INTVEC, offset 0x24, root
+   \   00000000   ........                   JMP     TIMER0_OVF_interrupt
+
+   \                                 In segment INTVEC, offset 0x28, root
+   \   00000000   ........                   JMP     SPI_STC_interrupt
+
+   \                                 In segment INTVEC, offset 0x2c, root
+   \   00000000   ........                   JMP     USART_RXC_interrupt
+
+   \                                 In segment INTVEC, offset 0x30, root
+   \   00000000   ........                   JMP     USART_UDRE_interrupt
+
+   \                                 In segment INTVEC, offset 0x34, root
+   \   00000000   ........                   JMP     USART_TXC_interrupt
+
+   \                                 In segment INTVEC, offset 0x38, root
+   \   00000000   ........                   JMP     ADC_interrupt
+
+   \                                 In segment INTVEC, offset 0x3c, root
+   \   00000000   ........                   JMP     EE_RDY_interrupt
+
+   \                                 In segment INTVEC, offset 0x40, root
+   \   00000000   ........                   JMP     ANA_COMP_interrupt
+
+   \                                 In segment INTVEC, offset 0x44, root
+   \   00000000   ........                   JMP     TWI_interrupt
+
+   \                                 In segment INTVEC, offset 0x48, root
+   \   00000000   ........                   JMP     INT2_interrupt
+
+   \                                 In segment INTVEC, offset 0x4c, root
+   \   00000000   ........                   JMP     TIMER0_COMP_interrupt
+
+   \                                 In segment INTVEC, offset 0x50, root
+   \   00000000   ........                   JMP     SPM_RDY_interrupt
+
+   \                                 In segment ABSOLUTE, at 0x2a
+   \   union <unnamed> volatile __io _A_UCSRB
+   \                     _A_UCSRB:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x2b
+   \   union <unnamed> volatile __io _A_UCSRA
+   \                     _A_UCSRA:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x2c
+   \   union <unnamed> volatile __io _A_UDR
+   \                     _A_UDR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x52
+   \   union <unnamed> volatile __io _A_TCNT0
+   \                     _A_TCNT0:
+   \   00000000                              DS 1
+    148          
+    149          
+    150          
+    151          #if (VS_REALLINKMODE == 1)
+    152          /* Interrupt Service Routine (ISR) for UART Receive. */
+    153          #pragma vector=UART_RX_vect
+    154          __interrupt void UART_RX_interrupt(void) 
+    155          {
+    156            while (USR & (1 << RXC)) 
+    157              VS_RealLinkReceive((unsigned char)UDR);
+    158          }
+    159          
+    160          void RealLinkCommInit(void)
+    161          {
+    162            /* If using a 4MHz crystal, set UBBR to 12. */
+    163            /* Set the baudrate to 19,200 bps using a 3.69MHz clock. */
+    164            UBRR = 11; 	
+    165          
+    166            /* Enable UART receiver and transmitter, and receive interrupt */
+    167            UCR = ((1<<RXCIE) | (1<<RXEN) | (1<<TXEN));
+    168          }
+    169          
+    170          void RealLinkReset( void ) 
+    171          {
+    172          }
+    173          
+    174          void RealLinkTransmit(unsigned char data)
+    175          {
+    176            /* Start transmittion */
+    177            UDR = data; 			        
+    178            /* Wait for empty transmit buffer */
+    179            while (!(USR & (1<<UDRE)));
+    180          }
+    181          #endif
+
+   Maximum stack usage in bytes:
+
+     Function               CSTACK RSTACK
+     --------               ------ ------
+     ADC_interrupt              1      2
+     ANA_COMP_interrupt         1      2
+     EE_RDY_interrupt           1      2
+     INT0_interrupt             1      2
+     INT1_interrupt             1      2
+     INT2_interrupt             1      2
+     SPI_STC_interrupt          1      2
+     SPM_RDY_interrupt          1      2
+     TIMER0_COMP_interrupt      1      2
+     TIMER0_OVF_interrupt       4      2
+     TIMER1_CAPT_interrupt      1      2
+     TIMER1_COMPA_interrupt     1      2
+     TIMER1_COMPB_interrupt     1      2
+     TIMER1_OVF_interrupt       1      2
+     TIMER2_COMP_interrupt      1      2
+     TIMER2_OVF_interrupt       1      2
+     TWI_interrupt              1      2
+     USART_RXC_interrupt        6      2
+     USART_TXC_interrupt        2      2
+     USART_UDRE_interrupt       1      2
+
+
+   Segment part sizes:
+
+     Function/Label         Bytes
+     --------------         -----
+     INT0_interrupt            2
+     INT1_interrupt            2
+     TIMER2_COMP_interrupt     2
+     TIMER2_OVF_interrupt      2
+     TIMER1_CAPT_interrupt     2
+     TIMER1_COMPA_interrupt    2
+     TIMER1_COMPB_interrupt    2
+     TIMER1_OVF_interrupt      2
+     TIMER0_OVF_interrupt     38
+     SPI_STC_interrupt         2
+     USART_RXC_interrupt     152
+     USART_UDRE_interrupt      2
+     USART_TXC_interrupt      12
+     ADC_interrupt             2
+     EE_RDY_interrupt          2
+     ANA_COMP_interrupt        2
+     TWI_interrupt             2
+     INT2_interrupt            2
+     TIMER0_COMP_interrupt     2
+     SPM_RDY_interrupt         2
+     _A_UCSRB                  1
+     _A_UCSRA                  1
+     _A_UDR                    1
+     _A_TCNT0                  1
+      Others                  80
+
+ 
+   4 bytes in segment ABSOLUTE
+ 236 bytes in segment CODE
+  80 bytes in segment INTVEC
+ 
+ 316 bytes of CODE memory
+   0 bytes of DATA memory (+ 4 bytes shared)
+
+Errors: none
+Warnings: 3

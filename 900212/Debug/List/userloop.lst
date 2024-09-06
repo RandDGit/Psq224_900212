@@ -1,0 +1,1076 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  01/Oct/2012  09:23:02 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\userloop.c                         #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\userloop.c                         #
+#    List file    =  C:\hmhome\900212\Debug\List\userloop.lst                #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\userloop.r90                 #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\userloop.c
+      1          /* UserLoop = Application, excluding State Machine */
+      2          
+      3          #include <iom16.h>		 		// Atmel up definitions
+      4          #include <inavr.h>				// AVR intrinsic functions
+      5          #include "VSMain.h"				// VisualState definitions (further includes)
+      6          
+      7          #include "defs.h"				// Application (GENERAL) defs
+      8          
+      9          // following (global) application data variables declared in "globals.h"
+     10          
+     11          const char wstr_build_date[] = __DATE__;
+     12          const char wstr_build_time[] = __TIME__;
+     13          
+     14          unsigned int ui_axis_set;	// Axis Set Point
+     15          unsigned int ui_axis_pos;	// Axis Position
+     16          unsigned int ui_axis_setrx;     // Axis set pt. rx'd (0.1mm units)
+     17          unsigned int ui_axis_postx;     // Axis pos tx'd (normalised 0.1mm)
+     18          unsigned int ui_axis_conv;      // Axis ui value for conversion
+     19          unsigned int ui_axis_mult;      // 4/5 -> 5/4 conversion
+     20          unsigned int ui_axis_tacho;     // NB. tacho unit 0.125mm
+     21          unsigned int ui_axis_diff;      // Axis set pt - actual pos difference
+     22          unsigned int ui_axis_rup;	// Axis Ramp-up end point
+     23          unsigned int ui_axis_rdn;	// Axis Ramp-dn end point
+     24          unsigned int ui_axis_tmm;	// Axis Set Value in 1/10th mm units
+     25          unsigned int ui_axis_maxallow;  // Axis Max. Allowable travel (soft)
+     26          
+     27          unsigned int ui_axis_uni;       // Axis unidirectional temp. pos
+     28          
+     29          int si_axis_dif;		// Axis Set vs. Actual difference
+     30          
+     31          unsigned char uc_readdr_timer;
+     32          
+     33          unsigned char uc_carrybit;      // used for 0.1mm <--> 0.125mm conversions
+     34          unsigned char uc_tprim;	        // Primary timer base (TMR0 ovf)
+     35          unsigned char uc_tprev;	        // Prev. value
+     36          unsigned char uc_tm0preset;	// Timer 0 preset (controls base period)
+     37          
+     38          unsigned char uc_num_moveslo;   // Record number of axis moves
+     39          unsigned char uc_num_moveshi;   // Record number of axis moves
+     40          unsigned char uc_num_moves24;   // Record number of axis moves
+     41          unsigned char uc_done_move;     // Record move
+     42          unsigned char uc_powerup_once;  // Action only once after power-on
+     43          unsigned char uc_settlepower;   // Prevent i-o until power-up
+     44          
+     45          unsigned char uc_axis_vss;	// Motor State
+     46          unsigned char uc_axis_dir;	// Motor Direction
+     47          unsigned char uc_axis_pwm;	// Motor PWM output
+     48          unsigned char uc_axis_rud;	// Motor Ramp Up,Down state
+     49          
+     50          unsigned char uc_axis_chi;	// Axis power on count (hi)
+     51          unsigned char uc_axis_clo;	// Axis power on count (lo) = ui_axis_pos
+     52          unsigned char uc_axis_err;	// Axis error state
+     53          
+     54          unsigned char uc_led_value;	// Status LED (reload value = frequency)
+     55          unsigned char uc_led_count;	// Status LED (counter)
+     56          unsigned char uc_led_scale;	// Scale factor to LED timebase
+     57          
+     58          unsigned char uc_rx_stata;	// comms rx status (a) used by USART_RXC_interrupt
+     59          unsigned char uc_rx_statb;	// comms rx status (b) used by USART_RXC_interrupt
+     60          unsigned char uc_rx_chbyte;	// comms rx byte       used by USART_RXC_interrupt
+     61          
+     62          struct wdef_rxbuff uc_rxbuff[WAL_MAX_RXBUFF];
+     63          unsigned char uc_rxrdptr;	// read pointer (rxbuff)
+     64          unsigned char uc_rxwrptr;	// write pointer (rxbuff)
+     65          unsigned char uc_rx_chrecv;	// comms rx received, read from buffer to function
+     66          unsigned char uc_rx_chksum;	// comms rx check sum
+     67          unsigned char uc_rx_process;	// comms rx byte processed
+     68          
+     69          unsigned char uc_tx_chout;	// character to be TX'd out
+     70          unsigned char uc_tx_chksum;	// comms tx check sum
+     71          unsigned char uc_tx_chsent;	// TX char out complete
+     72          
+     73          unsigned char uc_comm_adid;	// comm address id
+     74          unsigned char uc_comm_idle;	// comm RS485 bus idle test
+     75          unsigned char uc_comm_flag;	// comms bit flags
+     76          
+     77          unsigned char uc_comm_9set;	// 9th bit set (derived from statb)
+     78          unsigned char uc_comm_hilo;	// Comms hi-speed (9bit) or lo-speed (8bit)
+     79          unsigned char uc_comm_comp;	// Comms compare Tx out with Rx in (TX integrity)
+     80          
+     81          unsigned char uc_comm_noecho;	// do not respond to comms
+     82          
+     83          unsigned char uca_msgrx[6];     // rx buffer dst:src:cmd:dhi:dlo:cks
+     84          unsigned char uca_msgtx[6];     // tx buffer
+     85          unsigned char uc_msgrxptr;	// index to rx message = 6 if hi-speed = 5 if lo-speed
+     86          unsigned char uc_msgtxprt;	// index to tx message
+     87          
+     88          unsigned char dblead_ip_enc;	// Debounce Lead edge encoder
+     89          unsigned char dbtail_ip_enc;
+     90          unsigned char val_ip_enc;
+     91          
+     92          unsigned char dblead_ip_trg;	// Debounce Lead edge trigger input
+     93          unsigned char dbtail_ip_trg;
+     94          unsigned char val_ip_trg;
+     95          
+     96          unsigned char dblead_ip_hom;	// Debounce Lead edge home input
+     97          unsigned char dbtail_ip_hom;
+     98          
+     99          unsigned char dblead_ip_lim;	// Debounce Lead edge limit input
+    100          unsigned char dbtail_ip_lim;
+    101          
+    102          unsigned char dblead_ip_sw1;	// Debounce Lead edge button input
+    103          unsigned char dbtail_ip_sw1;
+    104          unsigned char val_ip_sw1;
+    105          unsigned char pin_ip_sw1;
+    106          
+    107          unsigned char uc_braketimer;
+    108          unsigned char uc_motoron;       // use motor-on status for home switch 'zero'
+    109          unsigned char uc_unitravel;     // flag overshoot
+    110          unsigned char por_reset;         // capture POR
+    111          
+    112          unsigned char uc_read_portd;    // PIND
+    113          unsigned char uc_read_portb;    // PINB
+    114          
+    115          unsigned char uc_stall_active;  // i.e. motor moving
+    116          unsigned char uc_stall_error;   // stall condition detected
+    117          unsigned char uc_stall_tacin;   // num. of tachos received
+    118          unsigned char uc_stall_mslo;    // msec
+    119          unsigned char uc_stall_mshi;    // hi msec
+    120          
+    121          unsigned char uc_mstimer_lo;    // lo-count 0.5msec timer
+    122          unsigned char uc_mstimer_hi;    // hi-count = 100msec count
+    123          unsigned char uc_delay_uni;     // flag to delay direction change
+    124          
+    125          unsigned char uc_tenmstimer;    // counter for 10msec
+    126          unsigned char uc_joggle_fsm;
+    127          unsigned char uc_joggle_tachs;
+    128          unsigned char uc_joggle_dist;
+    129          unsigned char uc_joggle_on;
+    130          unsigned char uc_joggle_dwell;
+    131          unsigned char uc_joggle_wait;
+    132          unsigned char uc_joggle_pause;
+    133          unsigned char uc_joggle_trap;
+    134          
+    135          unsigned char uc_atbl_err;    // WAL_EE_ERRTBLA
+    136          unsigned char uc_atbl_phi;
+    137          unsigned char uc_atbl_plo;
+    138          
+    139          unsigned char uc_btbl_err;    // WAL_EE_ERRTBLB
+    140          unsigned char uc_btbl_phi;
+    141          unsigned char uc_btbl_plo;
+    142          
+    143          unsigned char uc_ctbl_err;    // WAL_EE_ERRTBLC
+    144          unsigned char uc_ctbl_phi;
+    145          unsigned char uc_ctbl_plo;
+    146          
+    147          unsigned char uc_por_fd;
+    148          unsigned char uc_por_lo;
+    149          unsigned char uc_por_hi;
+    150          
+    151          unsigned char uc_wr_errtbl;
+    152          unsigned char uc_eewr_adr;
+    153          unsigned char uc_eewr_val;
+    154          
+    155          unsigned char uc_ee_cpuser_hi;
+    156          unsigned char uc_ee_cpuser_lo;
+    157          
+    158          unsigned char uc_ee_calib_hi;
+    159          unsigned char uc_ee_calib_lo;
+    160          
+    161          unsigned char uc_eetbl_fsm;
+    162          unsigned char uc_eetbl_wrp;
+    163          unsigned char uc_eetbl_rdp;
+    164          
+    165          unsigned char uc_eetbl_adr[16];
+    166          unsigned char uc_eetbl_val[16];
+    167          
+    168          struct wdef_ctimer ws_ctimer[WDEF_MAX_TIMERS];	// application timer function(s)
+    169          struct wdef_ctimer *wsp_tc;			// timer counter implementation
+    170          
+    171          // external variables used by VSS model (critical)
+    172          // defined & declared within VSS <System1>Data generated files
+    173          // VS_UCHAR val_ip_hom;
+    174          // VS_UCHAR val_ip_lim;
+    175          // VS_UINT vsstick_stall;
+    176          // VS_UINT vsstick_txwait;
+    177          
+    178          void wal_calc_setpos_diff( void);
+    179          unsigned char wal_pos_similar( void);
+    180          void wal_motor_goto( void);
+    181          void wal_motor_start( void);
+    182          void wal_motor_stop( void);
+    183          void wal_timer_counter( void);
+    184          
+    185          void UserLoop( void);
+    186          
+    187          
+    188          // void wal_vss_timer_function( void);		// VSS Timer (tick) function
+    189          void wal_dbnc_inputs( void);                    // input handler level & debounce
+    190          void wal_eetbl_fsm( void);
+    191          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+    192          
+    193          
+    194          void vss_seq_error( void)
+    195          {
+    196          // UCC_QUEUE_FULL condition has occurred:
+    197            uc_led_value = WAL_LED_QERROR;	// Status LED (reload value = frequency)
+    198            uc_led_count = 0;			// Status LED (counter)
+    199          }
+    200          
+    201          void wal_eetbl_write( unsigned char s_address, unsigned char s_value)
+    202          {
+    203          // V1.6 Write to EE directly to avoid processor lock-up during write
+    204            uc_eetbl_adr[uc_eetbl_wrp] = s_address;
+    205            uc_eetbl_val[uc_eetbl_wrp] = s_value;
+    206            uc_eetbl_wrp++;
+    207            uc_eetbl_wrp &= 0x0F;
+    208            return;  
+    209          }
+    210          
+    211          void wal_joggle_fsm( void)
+    212          {
+    213            switch( uc_joggle_fsm)
+    214            {
+    215            case 0:
+    216              if( uc_joggle_on == 1)
+    217                uc_joggle_fsm++;
+    218              break;
+    219            case 1: // move out (wal_motor_start)
+    220              uc_joggle_tachs = uc_joggle_dist;
+    221              WAL_OP_DIR = 0;
+    222              WAL_OP_PWM = WAL_PWM_MAXSP;
+    223              WAL_OP_BRK = 1;
+    224              uc_motoron = 1;
+    225              uc_joggle_fsm++;
+    226              break;
+    227            case 2: // wait move out complete..
+    228              if( uc_joggle_tachs == 0)
+    229              {
+    230                WAL_OP_PWM = 0;
+    231                WAL_OP_BRK = 0;
+    232          			uc_braketimer = 200; // 100ms
+    233                uc_motoron = 0;
+    234                uc_joggle_fsm++;
+    235              }
+    236              break;
+    237            case 3: // set-up dwell
+    238              uc_joggle_dwell = WAL_JOG_DWELL;
+    239              uc_joggle_fsm++;
+    240              break;
+    241            case 4: // await dwell
+    242              uc_joggle_dwell--;
+    243              if( !uc_joggle_dwell)
+    244              {
+    245                uc_joggle_fsm++;
+    246              }
+    247              break;
+    248            case 5: // move in
+    249              WAL_OP_DIR = 1;
+    250              WAL_OP_PWM = WAL_PWM_MAXSP;
+    251              WAL_OP_BRK = 1;
+    252              uc_motoron = 1;
+    253              uc_joggle_fsm++;
+    254              break;
+    255            case 6: // await move end:
+    256              uc_joggle_trap = 0;
+    257              uc_joggle_fsm++;
+    258              break;
+    259            case 7: // await move start:
+    260              if( wal_pos_similar() || (uc_joggle_trap > (uc_joggle_dist + 16) ) )
+    261              {
+    262                WAL_OP_BRK = 0;
+    263          			uc_braketimer = 200; // 100ms
+    264                WAL_OP_PWM = 0;			// NB. Output inversion
+    265                uc_motoron = 0;
+    266                uc_joggle_fsm++;
+    267              }
+    268              break;
+    269            case 8: // set-up pause
+    270              uc_joggle_wait = uc_joggle_pause;
+    271              uc_joggle_fsm++;
+    272              break;
+    273            case 9: // await pause
+    274              if( uc_joggle_wait == 0)
+    275              {
+    276                uc_joggle_fsm++;
+    277              }
+    278              break;
+    279            case 10: // end (ok)
+    280              uc_joggle_fsm = 0;
+    281              break;
+    282            default:
+    283              uc_joggle_fsm = 0;
+    284            }
+    285          }
+    286          
+    287          void wal_eetbl_fsm( void)
+    288          {
+    289          // V1.6 13JAN06: provide FSM to prevent processor lock-up EE writes
+    290          
+    291            if( uc_eetbl_wrp != uc_eetbl_rdp)
+    292            {
+    293              // outstand EE write..
+    294              switch( uc_eetbl_fsm)
+    295              {
+    296              case 0:
+    297                // only progress if (EECR & 0x02) not active...
+    298                if( !(EECR & 0x02))
+    299                {
+    300                  uc_eetbl_fsm = 1;
+    301                }
+    302                break;
+    303              case 1:
+    304                EEARH = 0;
+    305                EEARL = uc_eetbl_adr[uc_eetbl_rdp];
+    306                EEDR = uc_eetbl_val[uc_eetbl_rdp];
+    307                EECR = 0x04;
+    308                EECR = 0x02;
+    309                uc_eetbl_fsm = 2;
+    310                break;
+    311              case 2:
+    312                // only progress if (EECR & 0x02) not active...
+    313                if( !(EECR & 0x02))
+    314                {
+    315                  uc_eetbl_fsm = 3;
+    316                }
+    317                break;
+    318              case 3:
+    319                // end of sequence, increment 'read' pointer and exit
+    320                uc_eetbl_rdp++;
+    321                uc_eetbl_rdp &= 0x0F;
+    322                uc_eetbl_fsm = 0;
+    323                break;
+    324              default: 
+    325                uc_eetbl_fsm = 0;
+    326              }
+    327            }
+    328          }
+    329          
+    330          void wal_clear_position( void)
+    331          {
+    332          // provide function to invalidate position stored value (until at pos)
+    333          
+    334            wal_eetbl_write( WAL_EE_COUNTHI, 0x32);
+    335            wal_eetbl_write( WAL_EE_COUNTLO, 0x32);
+    336            wal_eetbl_write( WAL_EE_ERROR, 1);
+    337          }
+    338          
+    339          void wal_position_store( void)
+    340          {
+    341            uc_axis_chi = (unsigned char) (ui_axis_pos >> 8);
+    342            uc_axis_clo = (unsigned char) (ui_axis_pos & 0x00FF);
+    343            uc_axis_err = 0;
+    344            
+    345            wal_eetbl_write( WAL_EE_COUNTHI, uc_axis_chi);
+    346            wal_eetbl_write( WAL_EE_COUNTLO, uc_axis_clo);
+    347            wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+    348          }
+    349          
+    350          void wal_clear_axis_err( void)
+    351          {
+    352            // use EEPROM to store last 3 axis error (& when using POR counter)
+    353            // stored in first to last order a,b,c
+    354            // therefore must push b->c, & a->b
+    355            uc_wr_errtbl = 0;
+    356            
+    357            uc_ctbl_err = uc_btbl_err = 0;
+    358            uc_ctbl_phi = uc_btbl_phi = 0;
+    359            uc_ctbl_plo = uc_btbl_plo = 0;
+    360          
+    361            uc_btbl_err = uc_atbl_err = 0;
+    362            uc_btbl_phi = uc_atbl_phi = 0;
+    363            uc_btbl_plo = uc_atbl_plo = 0;
+    364          
+    365            // uc_axis_err..
+    366            uc_atbl_err = uc_axis_err = 0;
+    367            uc_atbl_phi = uc_por_hi = 0;
+    368            uc_atbl_plo = uc_por_lo = 0;
+    369          
+    370            wal_eetbl_write( WAL_EE_ERRTBLA, uc_atbl_err);
+    371            wal_eetbl_write( WAL_EE_ERRACHI, uc_atbl_phi);
+    372            wal_eetbl_write( WAL_EE_ERRACLO, uc_atbl_plo);
+    373          
+    374            wal_eetbl_write( WAL_EE_ERRTBLB, uc_btbl_err);
+    375            wal_eetbl_write( WAL_EE_ERRBCHI, uc_btbl_phi);
+    376            wal_eetbl_write( WAL_EE_ERRBCLO, uc_btbl_plo);
+    377          
+    378            wal_eetbl_write( WAL_EE_ERRTBLC, uc_ctbl_err);
+    379            wal_eetbl_write( WAL_EE_ERRCCHI, uc_ctbl_phi);
+    380            wal_eetbl_write( WAL_EE_ERRCCLO, uc_ctbl_plo);
+    381          	
+    382          		// POR counter
+    383          	wal_eetbl_write( WAL_EE_PORCHI, uc_por_hi);
+    384          	wal_eetbl_write( WAL_EE_PORCLO, uc_por_lo);
+    385          
+    386          }
+    387          
+    388          void wal_record_axis_err( void)
+    389          {
+    390            // use EEPROM to store last 3 axis error (& when using POR counter)
+    391            // stored in first to last order a,b,c
+    392            // therefore must push b->c, & a->b
+    393            uc_wr_errtbl = 0;
+    394            
+    395            uc_ctbl_err = uc_btbl_err;
+    396            uc_ctbl_phi = uc_btbl_phi;
+    397            uc_ctbl_plo = uc_btbl_plo;
+    398          
+    399            uc_btbl_err = uc_atbl_err;
+    400            uc_btbl_phi = uc_atbl_phi;
+    401            uc_btbl_plo = uc_atbl_plo;
+    402          
+    403            // uc_axis_err..
+    404            uc_atbl_err = uc_axis_err;
+    405            uc_atbl_phi = uc_por_hi;
+    406            uc_atbl_plo = uc_por_lo;
+    407          
+    408            wal_eetbl_write( WAL_EE_ERRTBLA, uc_atbl_err);
+    409            wal_eetbl_write( WAL_EE_ERRACHI, uc_atbl_phi);
+    410            wal_eetbl_write( WAL_EE_ERRACLO, uc_atbl_plo);
+    411          
+    412            wal_eetbl_write( WAL_EE_ERRTBLB, uc_btbl_err);
+    413            wal_eetbl_write( WAL_EE_ERRBCHI, uc_btbl_phi);
+    414            wal_eetbl_write( WAL_EE_ERRBCLO, uc_btbl_plo);
+    415          
+    416            wal_eetbl_write( WAL_EE_ERRTBLC, uc_ctbl_err);
+    417            wal_eetbl_write( WAL_EE_ERRCCHI, uc_ctbl_phi);
+    418            wal_eetbl_write( WAL_EE_ERRCCLO, uc_ctbl_plo);
+    419          
+    420          }
+    421          
+    422          void wal_calc_setpos_diff( void)
+    423          {
+    424            if( ui_axis_set > ui_axis_pos)
+    425            {
+    426              ui_axis_diff = ui_axis_set - ui_axis_pos;
+    427            }
+    428            else
+    429            {
+    430              ui_axis_diff = ui_axis_pos - ui_axis_set;
+    431            }
+    432          }  
+    433          
+    434          unsigned char wal_pos_similar( void)
+    435          {
+    436          // compare ui_axis_set with ui_axis_pos; return (TRUE) if difference zero or +/- 1
+    437          // use wal_calc_setpos_diff() to determine ui_axis_diff
+    438          
+    439            wal_calc_setpos_diff();
+    440            if( ui_axis_diff < WDEF_TACHO_DEADBAND)
+    441              return 1;
+    442            return 0;
+    443          }
+    444          
+    445          unsigned char wal_stop_pos_similar( void)
+    446          {
+    447          // compare ui_axis_set with ui_axis_pos; return (TRUE) if difference zero or +/- 1
+    448          // use wal_calc_setpos_diff() to determine ui_axis_diff
+    449          
+    450          	if( ui_axis_set > ui_axis_pos)
+    451            {
+    452              ui_axis_diff = ui_axis_set - ui_axis_pos;
+    453          		if( ui_axis_diff < (WDEF_TACHO_DEADBAND + 1))
+    454          			return 1;
+    455            }
+    456            else
+    457            {
+    458              ui_axis_diff = ui_axis_pos - ui_axis_set;
+    459          		if( ui_axis_diff < WDEF_TACHO_DEADBAND)
+    460          			return 1;
+    461            }
+    462            
+    463            return 0;
+    464          }
+    465          
+    466          void wal_motor_goto( void)
+    467          {
+    468          
+    469          // mgoto
+    470          /*
+    471          				; appears to be out of range...
+    472          				; a set point of 500mm only has
+    473          				; a high byte value of 19!
+    474          				; & exclude negative numbers.
+    475          	movlw	0xF0		; -'ve & greater than 409.6mm
+    476          	andwf	RXDHI,0		; hi byte AND with 0xF0 
+    477          	btfss	_zero		; should be zero, if not
+    478          	return 			; ignore
+    479          	call	readcf		; read confidence byte
+    480          	iorlw	.0		; OR with 0
+    481          	btfss	_zero		; is zero?
+    482          	goto	mgopos		; seems ok
+    483          	movlw	.42		; *
+    484          	movwf	RXCOM		;
+    485          	movlw	.85		; U
+    486          	movwf	RXDLO		; 
+    487          	return			; do not move if no confidence
+    488          mgopos	clrf	SETLO		;
+    489          	clrf	SETHI		;
+    490          	movfw	GEARR		;
+    491          	movwf	COUNT		;
+    492          mgoadd	movfw	RXDLO		; load Data lo
+    493          	addwf	SETLO,1		; store as low set point
+    494          	btfsc	_carry		; > 256
+    495          	incf	SETHI,1		; 
+    496          	movfw	RXDHI		; load Data hi
+    497          	addwf	SETHI,1		; store as high set point
+    498          	decfsz	COUNT,1		; multiply by gear ratio
+    499          	goto	mgoadd		; keep adding
+    500          	call	subcnt		; subtract Set point - Counter = Diff
+    501          
+    502          	movfw	DIFFLO		; for debug return calculated difference
+    503          	movwf	RXDLO		; 
+    504          	movfw	DIFFHI		; 
+    505          	movwf	RXDHI		; 
+    506          
+    507          	btfss	_differr	; negative if bit 7 of DIFFHI set
+    508          	goto	gofwd		; not negative so go forward
+    509          gorev	comf	DIFFHI,0	; negate DIFFHI -> W
+    510          	btfss	_zero		; if zero test DIFFLO
+    511          	goto	mgorev		; Difference large so do reverse..
+    512          	comf	DIFFLO,0	; negate DIFFLO -> W
+    513          	andlw	0xFC		; was difference < -4?
+    514          	btfss	_zero		; if zero then do not go backward..
+    515          	goto	mgorev		; not zero so reverse
+    516          mnogo	movlw	.81		; Q
+    517          	movwf	RXCOM		; i.e. error *Q
+    518          	return			; return without starting reverse..
+    519          mgorev	movlw	OverRun		; alter SET point
+    520          	subwf	SETLO,1		; v2.6 unidirection to position
+    521          	btfss	_carry		; SETLO - OverRun -> SETLO
+    522          	decf	SETHI,1		; OverRun > SETLO, SETHI--
+    523          	bsf	_unidir		; make sure unidirection flag indicator set
+    524          	bsf	_fwdrev		; set reverse indicator
+    525          	call	mrev		; start motor backwards (goto)
+    526          	return
+    527          gofwd	nop			; Disable unidirectional control 7.11.96
+    528          ;	movlw	OverRun		; overshoot value
+    529          ;	addwf	SETLO,1		; add to target value
+    530          ;	btfsc	_carry		; was addition > 255
+    531          ;	incf	SETHI,1		; yes, so add to hi-value
+    532          	bcf	_unidir		; reset unidirection flag indicator..
+    533          	movf	DIFFHI,1	; 1st check hi-byte
+    534          	btfss	_zero		; if zero test DIFFLO
+    535          	goto	mgofwd		; Difference large so fwd ok
+    536          	movfw	DIFFLO		; test DIFFLO
+    537          	andlw	0xFC		; is diff > 3
+    538          	btfss	_zero		; if zero then do not go forward..
+    539          	goto	mgofwd		; not zero so fwd ok
+    540          	goto	mnogo		; do not move
+    541          mgofwd	bcf	_fwdrev		; reset forward indicator
+    542          	call	mfwd		; start motor forwards (GOTO)
+    543          	return
+    544          
+    545          */
+    546          }
+    547          
+    548          void wal_motor_start( void)
+    549          {
+    550            WAL_OP_DIR = (uc_axis_dir == 1) ? 1: 0;
+    551            // V1.5 15DEC05: always 100% PWM
+    552            // WAL_OP_PWM = uc_axis_pwm;
+    553            WAL_OP_PWM = WAL_PWM_MAXSP;
+    554            WAL_OP_BRK = 1;
+    555            
+    556            uc_motoron = 1;
+    557            
+    558            uc_stall_active = 1;
+    559            uc_stall_tacin = 0;
+    560            uc_stall_mshi = uc_stall_mslo = 0;
+    561          }
+    562          
+    563          void wal_motor_stop( void)
+    564          {
+    565            /*
+    566            bcf	_brake		; stop motor .. brake active low
+    567            bsf	_enable		; active low
+    568            bcf	_moving		; clear _moving flag
+    569            bsf	_lastdir	; reset _lastdir flag to reverse
+    570            btfss	_direct		; last known direction (reset is fwd)
+    571            bcf	_lastdir	; (0 = CW at hall, 1=CCW)
+    572            */
+    573          
+    574            WAL_OP_BRK = 0;
+    575          	uc_braketimer = 200; // 100ms
+    576            WAL_OP_PWM = 0;			// NB. Output inversion
+    577            
+    578            uc_motoron = 0;
+    579            
+    580            uc_stall_active = 0;
+    581          }
+    582          
+    583          void wal_stall_manage( void)
+    584          {
+    585          
+    586          
+    587            // unsigned char uc_stall_active;  // i.e. motor moving
+    588            // unsigned char uc_stall_error;   // stall condition detected
+    589            // unsigned char uc_stall_tacin;   // num. of tachos received
+    590            // unsigned char uc_stall_mslo;    // msec
+    591            // unsigned char uc_stall_mshi;    // hi msec
+    592          
+    593            uc_stall_mslo++;
+    594            if( uc_stall_mslo == 200)
+    595            {
+    596              // ~100 msec
+    597              uc_stall_mslo = 0;
+    598              uc_stall_mshi++;
+    599              
+    600              if( uc_stall_mshi > 2)
+    601              {
+    602                // V1.7 reduce 'stall detect period' to avoid 'wrap' of stall counter.
+    603                // stall if less than 5 tachos in 300msec
+    604                if( uc_stall_tacin < 5)
+    605                {
+    606                  // error condition
+    607                  wal_motor_stop();
+    608                  uc_axis_err = 3;
+    609                  // wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+    610                  // V2.4: store in table:
+    611                  wal_record_axis_err();
+    612                  // V1.6 13JAN06: Force E_AxisError to quit motion state
+    613                  // NB. Rationalise to use E_AxisStop (E_AxisStall)
+    614                  if( SEQ_AddEvent( E_AxisStall) != UCC_OK )
+    615                  {
+    616                    vss_seq_error();
+    617                  }
+    618                }
+    619                uc_stall_mshi = 0;
+    620                uc_stall_tacin = 0;
+    621              }
+    622            }
+    623          }
+    624          
+    625          void UserLoop( void)
+    626          {
+    627          
+    628            // Timer0 overflow should occur every 0.5msec
+    629            if( uc_tprim != uc_tprev)
+    630            {
+    631              uc_tprev = uc_tprim;
+    632              // Seed VisualSTATE tick:
+    633              wal_vss_timer_function();   // VSActionToOutput.c
+    634              // wal_timer_counter();
+    635              
+    636              // Also 'fast' debounce & switching on inputs:
+    637              // WAL_DEBUG_MISO = 1;
+    638              // WAL_OP_TRO = 0;
+    639              wal_dbnc_inputs();
+    640              // WAL_DEBUG_MISO = 0;
+    641              // WAL_OP_TRO = 1;
+    642              
+    643              if( uc_stall_active)
+    644              {
+    645                wal_stall_manage();
+    646              }
+    647              
+    648          		// Timer for Brake release
+    649          		if (uc_braketimer)
+    650          		{
+    651          			uc_braketimer--;
+    652          			if (uc_braketimer == 0)
+    653          			{
+    654          				WAL_OP_BRK = 1; // release brake
+    655          			}
+    656          		}
+    657          		
+    658              // V2.2 16MAR06: uc_joggle_wait (using 10msec timer)
+    659              uc_tenmstimer--;
+    660              if( !uc_tenmstimer)
+    661              {
+    662                uc_tenmstimer = 20;
+    663          			
+    664          			// 10 MS timer
+    665          			//
+    666                if( uc_joggle_wait)
+    667                {
+    668                  uc_joggle_wait--;
+    669                }
+    670          			
+    671                if( uc_wr_errtbl)
+    672                {
+    673                  wal_record_axis_err();
+    674                }
+    675          			
+    676          			if (uc_readdr_timer)
+    677          			{
+    678          				uc_readdr_timer--;
+    679          			}
+    680              }
+    681              
+    682              // V1.6 13JAN06: use FSM to structure EE writes
+    683              wal_eetbl_fsm();
+    684              
+    685              // V2.2 16MAR06: add joggle function:
+    686              wal_joggle_fsm();
+    687              
+    688              // V1.7 16JAN06: use timer function to delay uni-reverse:
+    689              if( uc_delay_uni)
+    690              {
+    691                uc_mstimer_lo++;
+    692                if( uc_mstimer_lo > 199)
+    693                {
+    694                  uc_mstimer_lo = 0;
+    695                  uc_mstimer_hi++;
+    696                  if( uc_mstimer_hi > 1)
+    697                  {
+    698                    // i.e. approx. 0.2 sec
+    699                    ui_axis_set = ui_axis_uni;
+    700                    uc_mstimer_hi = 0;
+    701                    uc_unitravel = 0;
+    702                    uc_delay_uni = 0;
+    703                    if( !wal_pos_similar())
+    704                    {
+    705                      if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+    706                      {
+    707                              vss_seq_error();
+    708                      }
+    709                    }
+    710                  }
+    711                }
+    712              }
+    713              
+    714            }
+    715          
+    716          
+    717            // If TXC interrupt flagged:
+    718            // uc_tx_chsent used rather than Add_Event directly to minimize overhead
+    719            if( uc_tx_chsent != 0)
+    720            {
+    721              
+    722              // character should now be in UDR as 485 RX always on
+    723              // therefore RXC bit should now be set, so clear by reading UDR
+    724              // and then check character in == character out 
+    725              uc_rx_stata = UCSRA;
+    726              if( uc_rx_stata & 0x80)
+    727              {
+    728                uc_rx_statb = UCSRB;
+    729                uc_rx_chbyte = UDR;		// Read UART data register
+    730          
+    731                UCSRB &= ~(1<<TXB8);	// reset 9th bit
+    732          
+    733                // character received
+    734                uc_comm_comp = uc_rx_chbyte;
+    735                if( uc_tx_chout != uc_comm_comp)
+    736                {
+    737                  uc_comm_flag |= WAL_COMM_MISM;
+    738                }
+    739              }
+    740              else
+    741              {
+    742                uc_comm_flag |= WAL_COMM_MISM;
+    743                UCSRB &= ~(1<<TXB8);	// reset 9th bit
+    744              }
+    745          
+    746              uc_tx_chsent = 0;
+    747          
+    748              // only use State Transitions if not hi-speed comms:
+    749              if( uc_comm_hilo == 0)
+    750              {
+    751                // continue (E_TxComplete) directly:
+    752                if( (uc_msgtxprt > 5) || (uc_comm_flag & WAL_COMM_MISM) )
+    753                {
+    754                  uc_comm_flag &= ~WAL_COMM_MISM;
+    755                  if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+    756                  {
+    757                    vss_seq_error();
+    758                  }
+    759                }
+    760                else
+    761                {
+    762                  // uc_msgtxprt ==> 1,2,3,4,5
+    763                  uc_tx_chout = uca_msgtx[uc_msgtxprt];
+    764          
+    765                  // checksum generation:
+    766                  if( uc_msgtxprt != 5)
+    767                  {
+    768                    uca_msgtx[5] += uc_tx_chout;
+    769                  }
+    770                  uc_msgtxprt++;
+    771          
+    772                  UDR = uc_tx_chout;
+    773                  // SEQ_AddEvent( E_TxMoreMsg)
+    774                }
+    775              }
+    776              else
+    777              {
+    778                // Low speed comms:
+    779                if( SEQ_AddEvent( E_TxComplete) != UCC_OK )
+    780                {
+    781                  vss_seq_error();
+    782                }
+    783              }
+    784            }
+    785            else
+    786            {
+    787              // If Rx char received, check if OK & set RX_Event
+    788              // (unless doing TX)
+    789              // ensure only single event until 'action' achieved:
+    790              if( (uc_rxrdptr != uc_rxwrptr) && ( uc_rx_process == 0) )
+    791              {
+    792                uc_rx_process = 1;
+    793                // valid character stored in uc_rx_chbyte
+    794          
+    795                uc_rx_chrecv = uc_rxbuff[uc_rxrdptr].charin;
+    796                uc_comm_9set = (uc_rxbuff[uc_rxrdptr].status & 0x02) ? 1 : 0;
+    797                // event E_RxChar causes action A_RxProcess
+    798                if( SEQ_AddEvent( E_RxChar) != UCC_OK )
+    799                {
+    800                  vss_seq_error();
+    801                }
+    802                uc_rxrdptr++;
+    803                uc_rxrdptr &= (WAL_MAX_RXBUFF-1);
+    804              }
+    805            }
+    806          
+    807            // NB. Most 'housekeeping' should be within 'state' periodic function.
+    808          }
+    809          
+    810          
+
+   Maximum stack usage in bytes:
+
+     Function                    CSTACK RSTACK
+     --------                    ------ ------
+     UserLoop                        0      2
+       -> wal_vss_timer_function     0      2
+       -> wal_dbnc_inputs            0      2
+       -> wal_stall_manage           0      2
+       -> wal_record_axis_err        0      2
+       -> wal_eetbl_fsm              0      2
+       -> wal_joggle_fsm             0      2
+       -> wal_pos_similar            0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+     vss_seq_error                   0      2
+     wal_calc_setpos_diff            0      2
+     wal_clear_axis_err              0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+     wal_clear_position              0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+     wal_eetbl_fsm                   0      2
+     wal_eetbl_write                 0      2
+     wal_joggle_fsm                  0      2
+       -> wal_pos_similar            0      2
+     wal_motor_goto                  0      2
+     wal_motor_start                 0      2
+     wal_motor_stop                  0      2
+     wal_pos_similar                 2      2
+       -> wal_calc_setpos_diff       2      2
+     wal_position_store              0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+     wal_record_axis_err             0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+     wal_stall_manage                0      2
+       -> wal_motor_stop             0      2
+       -> wal_record_axis_err        0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+     wal_stop_pos_similar            0      2
+
+
+   Segment part sizes:
+
+     Function/Label                 Bytes
+     --------------                 -----
+     wstr_build_date                  12
+     wstr_build_time                   9
+     ui_axis_set                       2
+     ui_axis_pos                       2
+     ui_axis_setrx                     2
+     ui_axis_postx                     2
+     ui_axis_conv                      2
+     ui_axis_mult                      2
+     ui_axis_tacho                     2
+     ui_axis_diff                      2
+     ui_axis_rup                       2
+     ui_axis_rdn                       2
+     ui_axis_tmm                       2
+     ui_axis_maxallow                  2
+     ui_axis_uni                       2
+     si_axis_dif                       2
+     uc_readdr_timer                   1
+     uc_carrybit                       1
+     uc_tprim                          1
+     uc_tprev                          1
+     uc_tm0preset                      1
+     uc_num_moveslo                    1
+     uc_num_moveshi                    1
+     uc_num_moves24                    1
+     uc_done_move                      1
+     uc_powerup_once                   1
+     uc_settlepower                    1
+     uc_axis_vss                       1
+     uc_axis_dir                       1
+     uc_axis_pwm                       1
+     uc_axis_rud                       1
+     uc_axis_chi                       1
+     uc_axis_clo                       1
+     uc_axis_err                       1
+     uc_led_value                      1
+     uc_led_count                      1
+     uc_led_scale                      1
+     uc_rx_stata                       1
+     uc_rx_statb                       1
+     uc_rx_chbyte                      1
+     uc_rxbuff                        64
+     uc_rxrdptr                        1
+     uc_rxwrptr                        1
+     uc_rx_chrecv                      1
+     uc_rx_chksum                      1
+     uc_rx_process                     1
+     uc_tx_chout                       1
+     uc_tx_chksum                      1
+     uc_tx_chsent                      1
+     uc_comm_adid                      1
+     uc_comm_idle                      1
+     uc_comm_flag                      1
+     uc_comm_9set                      1
+     uc_comm_hilo                      1
+     uc_comm_comp                      1
+     uc_comm_noecho                    1
+     uca_msgrx                         6
+     uca_msgtx                         6
+     uc_msgrxptr                       1
+     uc_msgtxprt                       1
+     dblead_ip_enc                     1
+     dbtail_ip_enc                     1
+     val_ip_enc                        1
+     dblead_ip_trg                     1
+     dbtail_ip_trg                     1
+     val_ip_trg                        1
+     dblead_ip_hom                     1
+     dbtail_ip_hom                     1
+     dblead_ip_lim                     1
+     dbtail_ip_lim                     1
+     dblead_ip_sw1                     1
+     dbtail_ip_sw1                     1
+     val_ip_sw1                        1
+     pin_ip_sw1                        1
+     uc_braketimer                     1
+     uc_motoron                        1
+     uc_unitravel                      1
+     por_reset                         1
+     uc_read_portd                     1
+     uc_read_portb                     1
+     uc_stall_active                   1
+     uc_stall_error                    1
+     uc_stall_tacin                    1
+     uc_stall_mslo                     1
+     uc_stall_mshi                     1
+     uc_mstimer_lo                     1
+     uc_mstimer_hi                     1
+     uc_delay_uni                      1
+     uc_tenmstimer                     1
+     uc_joggle_fsm                     1
+     uc_joggle_tachs                   1
+     uc_joggle_dist                    1
+     uc_joggle_on                      1
+     uc_joggle_dwell                   1
+     uc_joggle_wait                    1
+     uc_joggle_pause                   1
+     uc_joggle_trap                    1
+     uc_atbl_err                       1
+     uc_atbl_phi                       1
+     uc_atbl_plo                       1
+     uc_btbl_err                       1
+     uc_btbl_phi                       1
+     uc_btbl_plo                       1
+     uc_ctbl_err                       1
+     uc_ctbl_phi                       1
+     uc_ctbl_plo                       1
+     uc_por_fd                         1
+     uc_por_lo                         1
+     uc_por_hi                         1
+     uc_wr_errtbl                      1
+     uc_eewr_adr                       1
+     uc_eewr_val                       1
+     uc_ee_cpuser_hi                   1
+     uc_ee_cpuser_lo                   1
+     uc_ee_calib_hi                    1
+     uc_ee_calib_lo                    1
+     uc_eetbl_fsm                      1
+     uc_eetbl_wrp                      1
+     uc_eetbl_rdp                      1
+     uc_eetbl_adr                     16
+     uc_eetbl_val                     16
+     ws_ctimer                        40
+     wsp_tc                            2
+     vss_seq_error                    14
+     wal_eetbl_write                  50
+     wal_joggle_fsm                  316
+     wal_eetbl_fsm                   148
+     wal_clear_position               20
+     wal_position_store               54
+     wal_clear_axis_err              186
+     wal_record_axis_err             152
+     wal_calc_setpos_diff             82
+     wal_pos_similar                  30
+     wal_stop_pos_similar            122
+     wal_motor_goto                    2
+     wal_motor_start                  60
+     wal_motor_stop                   26
+     wal_stall_manage                 86
+     UserLoop                        574
+     ?<Initializer for wstr_build_date>
+                                      12
+     ?<Initializer for wstr_build_time>
+                                       9
+     ?<Jumptable for wal_joggle_fsm>_0
+                                      28
+     _A_UCSRB                          1
+     _A_UCSRA                          1
+     _A_UDR                            1
+     _A_PORTD                          1
+     _A_EECR                           1
+     _A_EEDR                           1
+     _A_EEAR                           2
+     _A_OCR2                           1
+      Others                          12
+
+ 
+     9 bytes in segment ABSOLUTE
+ 1 922 bytes in segment CODE
+    12 bytes in segment INITTAB
+    21 bytes in segment NEAR_I
+    21 bytes in segment NEAR_ID
+   278 bytes in segment NEAR_Z
+    28 bytes in segment SWITCH
+ 
+ 1 971 bytes of CODE memory (+ 12 bytes shared)
+   299 bytes of DATA memory (+  9 bytes shared)
+
+Errors: none
+Warnings: 4

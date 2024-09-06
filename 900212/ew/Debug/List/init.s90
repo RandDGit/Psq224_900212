@@ -1,0 +1,641 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+// IAR Atmel AVR C Compiler V3.10C/W32                 31/Jan/2006  09:33:00 /
+// Copyright 1996-2004 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\init.c           /
+//    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Deb /
+//                    ug\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\Li /
+//                    st\ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\  /
+//                    -z2 --no_cse --no_inline --no_code_motion              /
+//                    --no_cross_call --no_clustering --debug                /
+//                    -DENABLE_BIT_DEFINITIONS -e -I                         /
+//                    M:\VisualState\ProjectM16Motor\ew\src\ -I              /
+//                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I            /
+//                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I            /
+//                    "C:\Program Files\IAR Systems\Embedded Workbench       /
+//                    3.2\avr\INC\" -I "C:\Program Files\IAR                 /
+//                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"          /
+//                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\sr /
+//                    c\init.c                                               /
+//    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\init.s90  /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME init
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        PUBLIC InitData
+        PUBLIC InitDevice
+        PUBLIC InitOutputs
+        PUBLIC LoadNVData
+        PUBWEAK _A_ASSR
+        PUBWEAK _A_DDRA
+        PUBWEAK _A_DDRB
+        PUBWEAK _A_DDRC
+        PUBWEAK _A_DDRD
+        PUBWEAK _A_MCUCR
+        PUBWEAK _A_MCUCSR
+        PUBWEAK _A_OCR2
+        PUBWEAK _A_PORTB
+        PUBWEAK _A_PORTD
+        PUBWEAK _A_TCCR0
+        PUBWEAK _A_TCCR2
+        PUBWEAK _A_TCNT0
+        PUBWEAK _A_TIMSK
+        PUBWEAK _A_WDTCR
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+
+        EXTERN wal_bsf_eeget
+        EXTERN dblead_ip_enc
+        EXTERN dblead_ip_hom
+        EXTERN dblead_ip_lim
+        EXTERN dblead_ip_sw1
+        EXTERN dblead_ip_trg
+        EXTERN dbtail_ip_enc
+        EXTERN dbtail_ip_hom
+        EXTERN dbtail_ip_lim
+        EXTERN dbtail_ip_sw1
+        EXTERN dbtail_ip_trg
+        EXTERN uc_axis_chi
+        EXTERN uc_axis_clo
+        EXTERN uc_axis_dir
+        EXTERN uc_axis_err
+        EXTERN uc_comm_adid
+        EXTERN uc_comm_hilo
+        EXTERN uc_led_count
+        EXTERN uc_led_value
+        EXTERN uc_motoron
+        EXTERN uc_num_moves24
+        EXTERN uc_num_moveshi
+        EXTERN uc_num_moveslo
+        EXTERN uc_powerup_once
+        EXTERN uc_rx_process
+        EXTERN uc_rxrdptr
+        EXTERN uc_rxwrptr
+        EXTERN uc_settlepower
+        EXTERN uc_tm0preset
+        EXTERN uc_tprev
+        EXTERN uc_tprim
+        EXTERN uc_tx_chsent
+        EXTERN uc_unitravel
+        EXTERN ui_axis_maxallow
+        EXTERN ui_axis_pos
+        EXTERN val_ip_enc
+        EXTERN val_ip_hom
+        EXTERN val_ip_lim
+        EXTERN val_ip_sw1
+        EXTERN val_ip_trg
+        EXTERN vsstick_stall
+        EXTERN vsstick_txwait
+        EXTERN ws_ctimer
+
+// M:\VisualState\ProjectM16Motor\ew\src\init.c
+//    1 #include "iom16.h"			// Atmel definitions Mega16
+//    2 #include "inavr.h"			// Atmel register definitions
+//    3 #include "VSMain.h"			// Visual State definitions
+//    4 
+//    5 #include "defs.h"			// Application (GENERAL) defs
+//    6 #include "globals.h"		// Application global data/variables
+//    7 
+//    8 
+//    9 unsigned char wal_bsf_eeget( unsigned char s_address);
+//   10 
+//   11 // REFERENCE TO HARDWARE 900-152C
+//   12 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   13 void LoadNVData( void)
+LoadNVData:
+//   14 {
+//   15 	// read predefined EE locations: 
+//   16 
+//   17 	// comms ID, vital for comms, DEST & FROM
+//   18 	// comm ID limited to 0..31
+//   19 	uc_comm_adid = wal_bsf_eeget( WAL_EE_COMMID);
+	LDI	R16,1
+	CALL	wal_bsf_eeget
+	STS	uc_comm_adid,R16
+//   20 	if( uc_comm_adid > 37 || uc_comm_adid == 0xFF || uc_comm_adid == 0)
+	LDS	R16,uc_comm_adid
+	CPI	R16,38
+	BRCC	??LoadNVData_0
+	LDS	R16,uc_comm_adid
+	CPI	R16,255
+	BREQ	??LoadNVData_0
+	LDS	R16,uc_comm_adid
+	TST	R16
+	BRNE	??LoadNVData_1
+//   21 	{
+//   22 		uc_comm_adid = WAL_UNIQUE_COMMID;
+??LoadNVData_0:
+	LDI	R16,30
+	STS	uc_comm_adid,R16
+//   23 	}
+//   24 
+//   25 	// communications mode baud: 0 = Hi (125k) or 1 = Lo (9600):
+//   26 	// NB. consider baud rate mode as pre-programmed (pragma def)
+//   27 	uc_comm_hilo = wal_bsf_eeget( WAL_EE_COMMHILO);
+??LoadNVData_1:
+	LDI	R16,2
+	CALL	wal_bsf_eeget
+	STS	uc_comm_hilo,R16
+//   28 	if( (uc_comm_hilo > 1) || (uc_comm_hilo == 0xFF))
+	LDS	R16,uc_comm_hilo
+	CPI	R16,2
+	BRCC	??LoadNVData_2
+	LDS	R16,uc_comm_hilo
+	CPI	R16,255
+	BRNE	??LoadNVData_3
+//   29 	{
+//   30 		uc_comm_hilo = 0;     // 0 is hi-speed comms
+??LoadNVData_2:
+	LDI	R16,0
+	STS	uc_comm_hilo,R16
+//   31 	}
+//   32 	// V1.7 16JAN06: Hi-speed comms only:
+//   33 	uc_comm_hilo = 0;     // 0 is hi-speed comms
+??LoadNVData_3:
+	LDI	R16,0
+	STS	uc_comm_hilo,R16
+//   34 
+//   35 	uc_axis_chi = wal_bsf_eeget( WAL_EE_MAXTHI);
+	LDI	R16,6
+	CALL	wal_bsf_eeget
+	STS	uc_axis_chi,R16
+//   36 	uc_axis_clo = wal_bsf_eeget( WAL_EE_MAXTLO);
+	LDI	R16,7
+	CALL	wal_bsf_eeget
+	STS	uc_axis_clo,R16
+//   37         ui_axis_maxallow = (unsigned int) (uc_axis_chi << 8) + uc_axis_clo;
+	LDS	R19,uc_axis_chi
+	LDI	R18,0
+	LDS	R16,uc_axis_clo
+	LDI	R17,0
+	ADD	R16,R18
+	ADC	R17,R19
+	LDI	R30,LOW(ui_axis_maxallow)
+	LDI	R31,(ui_axis_maxallow) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//   38 
+//   39 	uc_axis_chi = wal_bsf_eeget( WAL_EE_COUNTHI);
+	LDI	R16,3
+	CALL	wal_bsf_eeget
+	STS	uc_axis_chi,R16
+//   40 	uc_axis_clo = wal_bsf_eeget( WAL_EE_COUNTLO);
+	LDI	R16,4
+	CALL	wal_bsf_eeget
+	STS	uc_axis_clo,R16
+//   41 	
+//   42 	uc_axis_err = wal_bsf_eeget( WAL_EE_ERROR);
+	LDI	R16,5
+	CALL	wal_bsf_eeget
+	STS	uc_axis_err,R16
+//   43 
+//   44         if( uc_axis_err == 0)
+	LDS	R16,uc_axis_err
+	TST	R16
+	BRNE	??LoadNVData_4
+//   45         {	
+//   46 	  ui_axis_pos = (unsigned int) (uc_axis_chi << 8);
+	LDS	R17,uc_axis_chi
+	LDI	R16,0
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//   47 	  ui_axis_pos += (unsigned int) (uc_axis_clo);
+	LDS	R16,uc_axis_clo
+	LDI	R17,0
+	LDI	R30,LOW(ui_axis_pos)
+	LDI	R31,(ui_axis_pos) >> 8
+	LD	R18,Z
+	LDD	R19,Z+1
+	ADD	R18,R16
+	ADC	R19,R17
+	ST	Z,R18
+	STD	Z+1,R19
+//   48 	}
+//   49 	
+//   50 	uc_num_moveslo = wal_bsf_eeget( WAL_EE_MOVELO);
+??LoadNVData_4:
+	LDI	R16,8
+	CALL	wal_bsf_eeget
+	STS	uc_num_moveslo,R16
+//   51 	uc_num_moveshi = wal_bsf_eeget( WAL_EE_MOVEHI);
+	LDI	R16,9
+	CALL	wal_bsf_eeget
+	STS	uc_num_moveshi,R16
+//   52 	uc_num_moves24 = wal_bsf_eeget( WAL_EE_MOVE24);
+	LDI	R16,10
+	CALL	wal_bsf_eeget
+	STS	uc_num_moves24,R16
+//   53 	if( uc_num_moves24 & 0xC0 )
+	LDS	R16,uc_num_moves24
+	ANDI	R16,0xC0
+	TST	R16
+	BREQ	??LoadNVData_5
+//   54 	{
+//   55 	  uc_num_moveslo = uc_num_moveshi = uc_num_moves24 = 0;
+	LDI	R16,0
+	STS	uc_num_moves24,R16
+	STS	uc_num_moveshi,R16
+	STS	uc_num_moveslo,R16
+//   56 	}
+//   57 
+//   58 }
+??LoadNVData_5:
+	RET
+//   59 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   60 void InitOutputs( void)
+InitOutputs:
+//   61 {
+//   62 // Once device had been correctly setup (Port I/O, and peripheral usage)
+//   63 // ensure all ports are correctly configured as per idle state:
+//   64 
+//   65 	WAL_OP_PWM = 0;		// PWM OC2 output (=Byte)
+	LDI	R16,0
+	OUT	0x23,R16
+//   66 	WAL_OP_TRO = 1;		// Trigger default = Hi
+	SBI	0x18,0x03
+//   67 	WAL_OP_LED = 0;		// LED1 (Lo = ON)
+	CBI	0x18,0x00
+//   68 	WAL_OP_DIR = 0;		// Direction towards Home
+	CBI	0x12,0x04
+//   69 	WAL_OP_BRK = 0;		// Brake (Motor Enable)
+	CBI	0x12,0x05
+//   70 
+//   71 }
+	RET
+//   72 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   73 void InitData( void)
+InitData:
+//   74 {
+//   75 
+//   76 	vsstick_stall = 240;
+	LDI	R16,240
+	LDI	R17,0
+	LDI	R30,LOW(vsstick_stall)
+	LDI	R31,(vsstick_stall) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//   77 	vsstick_txwait = 3;
+	LDI	R16,3
+	LDI	R17,0
+	LDI	R30,LOW(vsstick_txwait)
+	LDI	R31,(vsstick_txwait) >> 8
+	ST	Z,R16
+	STD	Z+1,R17
+//   78 
+//   79 	uc_tprim = 0;
+	LDI	R16,0
+	STS	uc_tprim,R16
+//   80 	uc_tprev = 0;
+	LDI	R16,0
+	STS	uc_tprev,R16
+//   81 
+//   82 	uc_rxrdptr = uc_rxwrptr = 0;
+	LDI	R16,0
+	STS	uc_rxwrptr,R16
+	STS	uc_rxrdptr,R16
+//   83 
+//   84 	uc_tx_chsent = 0;
+	LDI	R16,0
+	STS	uc_tx_chsent,R16
+//   85 	uc_rx_process = 0;
+	LDI	R16,0
+	STS	uc_rx_process,R16
+//   86 
+//   87 	uc_led_value = WAL_LED_DEFAULT;	// Status LED (reload value = frequency)
+	LDI	R16,5
+	STS	uc_led_value,R16
+//   88 	uc_led_count = 0;				// Status LED (counter)
+	LDI	R16,0
+	STS	uc_led_count,R16
+//   89 
+//   90 	dblead_ip_enc = WAL_DBNC_IN_ENC;
+	LDI	R16,2
+	STS	dblead_ip_enc,R16
+//   91 	dbtail_ip_enc = WAL_DBNC_IN_ENC;
+	LDI	R16,2
+	STS	dbtail_ip_enc,R16
+//   92 	val_ip_enc = 2;			// set = 2 ==> don't care
+	LDI	R16,2
+	STS	val_ip_enc,R16
+//   93 
+//   94 	dblead_ip_trg = WAL_DBNC_IN_TRG;
+	LDI	R16,10
+	STS	dblead_ip_trg,R16
+//   95 	dbtail_ip_trg = WAL_DBNC_IN_TRG;
+	LDI	R16,10
+	STS	dbtail_ip_trg,R16
+//   96 	val_ip_trg = 0;			// assume (set) trigger inactive at POR
+	LDI	R16,0
+	STS	val_ip_trg,R16
+//   97 
+//   98 	dblead_ip_hom = WAL_DBNC_IN_HOM;
+	LDI	R16,10
+	STS	dblead_ip_hom,R16
+//   99 	dbtail_ip_hom = 0;
+	LDI	R16,0
+	STS	dbtail_ip_hom,R16
+//  100 	val_ip_hom = 0;			// assume (set) home inactive at POR
+	LDI	R16,0
+	STS	val_ip_hom,R16
+//  101 
+//  102 	dblead_ip_lim = WAL_DBNC_IN_LIM;
+	LDI	R16,10
+	STS	dblead_ip_lim,R16
+//  103 	dbtail_ip_lim = 0;
+	LDI	R16,0
+	STS	dbtail_ip_lim,R16
+//  104 	val_ip_lim = 0;			// assume (set) limit inactive at POR
+	LDI	R16,0
+	STS	val_ip_lim,R16
+//  105 
+//  106 	dblead_ip_sw1 = 0;              // start with IN_SW1 set at hi
+	LDI	R16,0
+	STS	dblead_ip_sw1,R16
+//  107 	dbtail_ip_sw1 = WAL_DBNC_IN_SW1;
+	LDI	R16,60
+	STS	dbtail_ip_sw1,R16
+//  108 	val_ip_sw1 = 0;			// assume (set) button inactive at POR
+	LDI	R16,0
+	STS	val_ip_sw1,R16
+//  109 
+//  110 
+//  111         // V1.6 12JAN06: setting uc_axis_dir = 1 forces 'reverse' on first button press
+//  112         uc_powerup_once = 1;
+	LDI	R16,1
+	STS	uc_powerup_once,R16
+//  113         uc_axis_dir = 1;    
+	LDI	R16,1
+	STS	uc_axis_dir,R16
+//  114         uc_motoron = 0;
+	LDI	R16,0
+	STS	uc_motoron,R16
+//  115         uc_unitravel = 0;
+	LDI	R16,0
+	STS	uc_unitravel,R16
+//  116         
+//  117         uc_settlepower = 200;     // Prevent i-o until power-up
+	LDI	R16,200
+	STS	uc_settlepower,R16
+//  118 
+//  119         
+//  120 	// set comm_id must be unique for this hardware
+//  121 	// uc_comm_adid = WAL_UNIQUE_COMMID;
+//  122 
+//  123 	// clear counter timer and setup functions
+//  124 	ws_ctimer[0].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+3,R16
+	STD	Z+4,R17
+//  125 	ws_ctimer[1].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+8,R16
+	STD	Z+9,R17
+//  126 	ws_ctimer[2].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+13,R16
+	STD	Z+14,R17
+//  127 	ws_ctimer[3].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+18,R16
+	STD	Z+19,R17
+//  128 	ws_ctimer[4].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+23,R16
+	STD	Z+24,R17
+//  129 	ws_ctimer[5].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+28,R16
+	STD	Z+29,R17
+//  130 	ws_ctimer[6].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+33,R16
+	STD	Z+34,R17
+//  131 	ws_ctimer[7].exp_routine = NULL;
+	LDI	R16,0
+	LDI	R17,0
+	LDI	R30,LOW(ws_ctimer)
+	LDI	R31,(ws_ctimer) >> 8
+	STD	Z+38,R16
+	STD	Z+39,R17
+//  132 }
+	RET
+//  133 
+//  134 
+//  135 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  136 void InitDevice(void)
+InitDevice:
+//  137 {
+//  138 // __disable_interrupt();
+//  139 
+//  140   MCUCSR |= 0x80;
+	IN	R16,0x34
+	ORI	R16,0x80
+	OUT	0x34,R16
+//  141   /* Configure PortA..  +28V */
+//  142   DDRA = 0x00;
+	LDI	R16,0
+	OUT	0x1A,R16
+//  143   /* Port B..7..0 , rxtx_en, op_tr0, in_trg, in_enc, heart*/
+//  144   /* V1.6 13JAN06: use PB.6 as debug pin WAL_DEBUG_MISO */
+//  145   /* DDRB = 0x19; */
+//  146   DDRB = 0x59;
+	LDI	R16,89
+	OUT	0x17,R16
+//  147   /* Port C.. n/c */
+//  148   DDRC = 0x00;
+	LDI	R16,0
+	OUT	0x14,R16
+//  149   /* Port D.7..0. OP_PWM, IN_SW1, OP_BRK, OP_DIR, IN_LIM, IN_HOM, TX, RX */
+//  150   DDRD = 0xB0;
+	LDI	R16,176
+	OUT	0x11,R16
+//  151 
+//  152   WDTCR = 0x0F;
+	LDI	R16,15
+	OUT	0x21,R16
+//  153 
+//  154   // Configure Timer 0 to expire for each ~1 ms.
+//  155   // TCCR0 = 0x03;   		// Start the timer by prescale CK/64
+//  156   // mTCNT = 193;    		// Load timer to expire for each ~1ms
+//  157   TCCR0 = 0x02;   			// Start the timer by prescale CK/8 (2us/pulse)
+	LDI	R16,2
+	OUT	0x33,R16
+//  158   // uc_tm0preset = 206;    // Load timer to expire for each ~0.1ms (400 instr/int)
+//  159   uc_tm0preset = 8;    		// Load timer to expire for each ~0.5ms (2000 instr/int)
+	LDI	R16,8
+	STS	uc_tm0preset,R16
+//  160 							// 256 - 250 = 6, but allow for latency (16 instr)
+//  161 
+//  162   TCNT0 = uc_tm0preset;  	// Load the timer counter register
+	LDS	R16,uc_tm0preset
+	OUT	0x32,R16
+//  163   TIMSK |= 0x01;  		// Enable Timer0 overflow interrupt
+	IN	R16,0x39
+	ORI	R16,0x01
+	OUT	0x39,R16
+//  164 
+//  165   MCUCR |= 0X0A;    		// Falling edge int0, int1 and int2
+	IN	R16,0x35
+	ORI	R16,0x0A
+	OUT	0x35,R16
+//  166 							// However, INT0, INT1, INT2 not used
+//  167   // GICR |= (1<<INT1);  GICR |= (1<<INT0);   GICR |= (1<<INT2); 
+//  168 
+//  169   // Setup TIMER2 = PWM output on OC2
+//  170   // Phase correct PWM (WGM20), Set OC2 on compare (COM21,20), Clk/1024 = (CS22,21,20) = 0x07
+//  171   // Clk/8 | (1<<CS22)  | (1<<CS20)
+//  172   TCCR2 = (1<<WGM20) | (1<<COM21) | (1<<COM20) | (1<<CS21);
+	LDI	R16,114
+	OUT	0x25,R16
+//  173   OCR2 = 0;
+	LDI	R16,0
+	OUT	0x23,R16
+//  174 
+//  175   ASSR = 0;					// non Asynchronous operation
+	LDI	R16,0
+	OUT	0x22,R16
+//  176   
+//  177   // __enable_interrupt();
+//  178   
+//  179 }
+	RET
+
+        ASEGN ABSOLUTE:DATA:NOROOT,031H
+// union <unnamed> volatile __io _A_DDRD
+_A_DDRD:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,032H
+// union <unnamed> volatile __io _A_PORTD
+_A_PORTD:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,034H
+// union <unnamed> volatile __io _A_DDRC
+_A_DDRC:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,037H
+// union <unnamed> volatile __io _A_DDRB
+_A_DDRB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,038H
+// union <unnamed> volatile __io _A_PORTB
+_A_PORTB:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03aH
+// union <unnamed> volatile __io _A_DDRA
+_A_DDRA:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,041H
+// union <unnamed> volatile __io _A_WDTCR
+_A_WDTCR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,042H
+// union <unnamed> volatile __io _A_ASSR
+_A_ASSR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,043H
+// union <unnamed> volatile __io _A_OCR2
+_A_OCR2:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,045H
+// union <unnamed> volatile __io _A_TCCR2
+_A_TCCR2:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,052H
+// union <unnamed> volatile __io _A_TCNT0
+_A_TCNT0:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,053H
+// union <unnamed> volatile __io _A_TCCR0
+_A_TCCR0:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,054H
+// union <unnamed> volatile __io _A_MCUCSR
+_A_MCUCSR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,055H
+// union <unnamed> volatile __io _A_MCUCR
+_A_MCUCR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,059H
+// union <unnamed> volatile __io _A_TIMSK
+_A_TIMSK:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01cH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01dH
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01eH
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EEARH:
+
+        END
+//  180 
+//  181 
+//  182 
+// 
+//  15 bytes in segment ABSOLUTE
+// 622 bytes in segment CODE
+// 
+// 622 bytes of CODE memory
+//   0 bytes of DATA memory (+ 15 bytes shared)
+//
+//Errors: none
+//Warnings: 3

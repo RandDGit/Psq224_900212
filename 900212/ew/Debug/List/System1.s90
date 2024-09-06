@@ -1,0 +1,215 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+// IAR Atmel AVR C Compiler V3.10C/W32                 31/Jan/2006  09:32:46 /
+// Copyright 1996-2004 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  M:\VisualState\ProjectM16Motor\ew\vssrc\System1.c      /
+//    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Deb /
+//                    ug\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\Li /
+//                    st\ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\  /
+//                    -z2 --no_cse --no_inline --no_code_motion              /
+//                    --no_cross_call --no_clustering --debug                /
+//                    -DENABLE_BIT_DEFINITIONS -e -I                         /
+//                    M:\VisualState\ProjectM16Motor\ew\src\ -I              /
+//                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I            /
+//                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I            /
+//                    "C:\Program Files\IAR Systems\Embedded Workbench       /
+//                    3.2\avr\INC\" -I "C:\Program Files\IAR                 /
+//                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"          /
+//                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\vs /
+//                    src\System1.c                                          /
+//    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\System1.s /
+//                    90                                                     /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME System1
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        EXTERN ?need_segment_init
+
+        PUBWEAK `?<Segment init: NEAR_I>`
+        PUBWEAK `?<Segment init: NEAR_Z>`
+        PUBLIC SEM
+        PUBLIC VS
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+
+// M:\VisualState\ProjectM16Motor\ew\vssrc\System1.c
+//    1 /*
+//    2  * Id:        System1.c
+//    3  *
+//    4  * Function:  VS System Source File.
+//    5  *
+//    6  * Generated: Fri Jan 13 13:08:29 2006
+//    7  *
+//    8  * Coder 5.1.0.215 
+//    9  * 
+//   10  * This is an automatically generated file. It will be overwritten by the Coder. 
+//   11  * 
+//   12  * DO NOT EDIT THE FILE! 
+//   13  */
+//   14 
+//   15 
+//   16 /*
+//   17  * Include SEM Library Header File.
+//   18  */
+//   19 #include "SEMLibB.h"
+//   20 
+//   21 
+//   22 /*
+//   23  * Include VS System Header File.
+//   24  */
+//   25 #include "System1.h"
+//   26 
+//   27 
+//   28 /*
+//   29  * Include VS System Data Header File.
+//   30  */
+//   31 #include "System1Data.h"
+//   32 
+//   33 
+//   34 /*
+//   35  * SEM Library Data Declaration.
+//   36  */
+
+        RSEG NEAR_Z:DATA:NOROOT(0)
+	REQUIRE `?<Segment init: NEAR_Z>`
+//   37 SEMDATA SEM;
+SEM:
+        DS 28
+//   38 
+//   39 
+//   40 
+//   41 
+//   42 
+//   43 /*
+//   44  * VS System Data Declaration and Initialization.
+//   45  *
+//   46  * VS System Informations:
+//   47  * - Rule data format number:  1
+//   48  */
+
+        RSEG NEAR_I:DATA:NOROOT(0)
+	REQUIRE `?<Segment init: NEAR_I>`
+//   49 VSDATA const VS = 
+VS:
+        DS 323
+	REQUIRE `?<Initializer for VS>`
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01cH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01dH
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01eH
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EEARH:
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_Z>`:
+	DW	SFE(NEAR_Z) - SFB(NEAR_Z)
+	DW	SFB(NEAR_Z)
+	DW	0
+	REQUIRE ?need_segment_init
+
+        RSEG NEAR_ID:CODE:NOROOT(0)
+`?<Initializer for VS>`:
+        DB 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 0, 64, 5, 0, 5, 7, 10, 3, 21, 11
+        DB 6, 17, 0, 0, 1, 21, 1, 16, 1, 0, 1, 9, 1, 17, 3, 0, 0, 2, 0, 7, 8, 1
+        DB 16, 2, 0, 4, 10, 22, 1, 16, 2, 0, 3, 5, 22, 1, 16, 2, 1, 0, 11, 6, 1
+        DB 16, 2, 2, 0, 11, 6, 1, 16, 2, 2, 0, 11, 6, 1, 16, 2, 3, 0, 11, 6, 1
+        DB 16, 2, 4, 0, 11, 6, 1, 32, 2, 5, 6, 7, 23, 20, 2, 0, 1, 6, 7, 18, 1
+        DB 16, 1, 6, 5, 17, 0, 0, 1, 13, 0, 0, 1, 12, 1, 16, 1, 1, 1, 5, 1, 16
+        DB 2, 1, 1, 11, 2, 1, 16, 2, 1, 1, 11, 2, 1, 16, 2, 2, 2, 11, 4, 1, 16
+        DB 1, 2, 2, 1, 1, 16, 2, 2, 2, 11, 4, 1, 16, 2, 2, 2, 11, 4, 1, 16, 2
+        DB 3, 3, 11, 2, 1, 16, 2, 3, 3, 11, 2, 1, 16, 1, 4, 4, 5, 1, 16, 2, 4
+        DB 4, 11, 2, 1, 16, 2, 4, 4, 11, 2, 1, 16, 1, 5, 5, 15, 1, 16, 1, 5, 5
+        DB 14, 2, 32, 3, 7, 6, 7, 6, 18, 23, 20, 2, 48, 2, 6, 7, 8, 6, 10, 18
+        DB 16, 2, 32, 2, 6, 7, 9, 6, 18, 16, 3, 48, 1, 10, 8, 6, 11, 8, 6, 19
+        DB 3, 48, 1, 11, 8, 6, 10, 8, 6, 16, 0, 59, 38, 108, 128, 169, 16, 141
+        DB 155, 22, 31, 52, 114, 148, 162, 175, 45, 66, 73, 135, 121, 182, 104
+        DB 12, 100, 189, 195, 88, 94, 80, 201, 211, 230, 221, 240, 0, 1, 2, 3
+        DB 6, 7, 9, 10, 11, 12, 16, 19, 20, 22, 23, 25, 26, 27, 29, 30, 31, 32
+        DB 33, 33, 34, 35
+
+        RSEG INITTAB:CODE:NOROOT(0)
+`?<Segment init: NEAR_I>`:
+	DW	SFE(NEAR_I) - SFB(NEAR_I)
+	DW	SFB(NEAR_I)
+	DW	SFB(NEAR_ID)
+	REQUIRE ?need_segment_init
+
+        END
+//   50 {
+//   51   {
+//   52     0X000, 0X000, 0X000, 0X000, 0X000, 0X001, 0X001, 0X002, 
+//   53     0X002, 0X002, 0X003, 0X003
+//   54   },
+//   55   {
+//   56     0X000, 0X040, 0X005, 0X000, 0X005, 0X007, 0X00A, 0X003, 
+//   57     0X015, 0X00B, 0X006, 0X011, 0X000, 0X000, 0X001, 0X015, 
+//   58     0X001, 0X010, 0X001, 0X000, 0X001, 0X009, 0X001, 0X011, 
+//   59     0X003, 0X000, 0X000, 0X002, 0X000, 0X007, 0X008, 0X001, 
+//   60     0X010, 0X002, 0X000, 0X004, 0X00A, 0X016, 0X001, 0X010, 
+//   61     0X002, 0X000, 0X003, 0X005, 0X016, 0X001, 0X010, 0X002, 
+//   62     0X001, 0X000, 0X00B, 0X006, 0X001, 0X010, 0X002, 0X002, 
+//   63     0X000, 0X00B, 0X006, 0X001, 0X010, 0X002, 0X002, 0X000, 
+//   64     0X00B, 0X006, 0X001, 0X010, 0X002, 0X003, 0X000, 0X00B, 
+//   65     0X006, 0X001, 0X010, 0X002, 0X004, 0X000, 0X00B, 0X006, 
+//   66     0X001, 0X020, 0X002, 0X005, 0X006, 0X007, 0X017, 0X014, 
+//   67     0X002, 0X000, 0X001, 0X006, 0X007, 0X012, 0X001, 0X010, 
+//   68     0X001, 0X006, 0X005, 0X011, 0X000, 0X000, 0X001, 0X00D, 
+//   69     0X000, 0X000, 0X001, 0X00C, 0X001, 0X010, 0X001, 0X001, 
+//   70     0X001, 0X005, 0X001, 0X010, 0X002, 0X001, 0X001, 0X00B, 
+//   71     0X002, 0X001, 0X010, 0X002, 0X001, 0X001, 0X00B, 0X002, 
+//   72     0X001, 0X010, 0X002, 0X002, 0X002, 0X00B, 0X004, 0X001, 
+//   73     0X010, 0X001, 0X002, 0X002, 0X001, 0X001, 0X010, 0X002, 
+//   74     0X002, 0X002, 0X00B, 0X004, 0X001, 0X010, 0X002, 0X002, 
+//   75     0X002, 0X00B, 0X004, 0X001, 0X010, 0X002, 0X003, 0X003, 
+//   76     0X00B, 0X002, 0X001, 0X010, 0X002, 0X003, 0X003, 0X00B, 
+//   77     0X002, 0X001, 0X010, 0X001, 0X004, 0X004, 0X005, 0X001, 
+//   78     0X010, 0X002, 0X004, 0X004, 0X00B, 0X002, 0X001, 0X010, 
+//   79     0X002, 0X004, 0X004, 0X00B, 0X002, 0X001, 0X010, 0X001, 
+//   80     0X005, 0X005, 0X00F, 0X001, 0X010, 0X001, 0X005, 0X005, 
+//   81     0X00E, 0X002, 0X020, 0X003, 0X007, 0X006, 0X007, 0X006, 
+//   82     0X012, 0X017, 0X014, 0X002, 0X030, 0X002, 0X006, 0X007, 
+//   83     0X008, 0X006, 0X00A, 0X012, 0X010, 0X002, 0X020, 0X002, 
+//   84     0X006, 0X007, 0X009, 0X006, 0X012, 0X010, 0X003, 0X030, 
+//   85     0X001, 0X00A, 0X008, 0X006, 0X00B, 0X008, 0X006, 0X013, 
+//   86     0X003, 0X030, 0X001, 0X00B, 0X008, 0X006, 0X00A, 0X008, 
+//   87     0X006, 0X010
+//   88   },
+//   89   {
+//   90     0X000, 0X03B, 0X026, 0X06C, 0X080, 0X0A9, 0X010, 0X08D, 
+//   91     0X09B, 0X016, 0X01F, 0X034, 0X072, 0X094, 0X0A2, 0X0AF, 
+//   92     0X02D, 0X042, 0X049, 0X087, 0X079, 0X0B6, 0X068, 0X00C, 
+//   93     0X064, 0X0BD, 0X0C3, 0X058, 0X05E, 0X050, 0X0C9, 0X0D3, 
+//   94     0X0E6, 0X0DD, 0X0F0
+//   95   },
+//   96   {
+//   97     0X000, 0X001, 0X002, 0X003, 0X006, 0X007, 0X009, 0X00A, 
+//   98     0X00B, 0X00C, 0X010, 0X013, 0X014, 0X016, 0X017, 0X019, 
+//   99     0X01A, 0X01B, 0X01D, 0X01E, 0X01F, 0X020, 0X021, 0X021, 
+//  100     0X022, 0X023
+//  101   }
+//  102 };
+// 
+//  12 bytes in segment INITTAB
+// 323 bytes in segment NEAR_I
+// 323 bytes in segment NEAR_ID
+//  28 bytes in segment NEAR_Z
+// 
+// 323 bytes of CODE memory (+ 12 bytes shared)
+// 351 bytes of DATA memory
+//
+//Errors: none
+//Warnings: none

@@ -1,0 +1,240 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+// IAR Atmel AVR C Compiler V3.10C/W32                 31/Jan/2006  09:32:55 /
+// Copyright 1996-2004 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\VSMain.c         /
+//    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Deb /
+//                    ug\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\Li /
+//                    st\ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\  /
+//                    -z2 --no_cse --no_inline --no_code_motion              /
+//                    --no_cross_call --no_clustering --debug                /
+//                    -DENABLE_BIT_DEFINITIONS -e -I                         /
+//                    M:\VisualState\ProjectM16Motor\ew\src\ -I              /
+//                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I            /
+//                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I            /
+//                    "C:\Program Files\IAR Systems\Embedded Workbench       /
+//                    3.2\avr\INC\" -I "C:\Program Files\IAR                 /
+//                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"          /
+//                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\sr /
+//                    c\VSMain.c                                             /
+//    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\VSMain.s9 /
+//                    0                                                      /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME VSMain
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        PUBLIC HandleError
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC main
+
+        EXTERN InitDevice
+        EXTERN InitOutputs
+        EXTERN SEM_InitAll
+        EXTERN SEQ_Initialize
+        EXTERN SEQ_AddEvent
+        EXTERN UserLoop
+        EXTERN SEQ_RetrieveEvent
+        EXTERN SEM_Deduct
+        EXTERN SEM_GetOutput
+        EXTERN SEM_NextState
+        EXTERN System1VSAction
+
+// M:\VisualState\ProjectM16Motor\ew\src\VSMain.c
+//    1 /*****************************************************************************
+//    2 * IAR visualSTATE Main Loop Source File
+//    3 *
+//    4 * The file contains an implementation for a main loop using the visualSTATE
+//    5 * basic API.
+//    6 *
+//    7 * The code uses a simple queue for storing events. The functions for inter-
+//    8 * facing to the queue are described in the sample code file
+//    9 * simpleEventHandler.h.
+//   10 *****************************************************************************/
+//   11 
+//   12 
+//   13 
+//   14 #include <iom16.h>		 	// Atmel up definitions
+//   15 #include <inavr.h>			// AVR intrinsic functions
+//   16 #include "VSMain.h"			// VisualState definitions (further includes)
+//   17 
+//   18 void InitDevice(void);		// Critical device I/O setup
+//   19 void InitOutputs(void);		// Critical PORT setup (i.e. devices off)
+//   20 void UserLoop(void);		// User (application) loop
+//   21 
+//   22 							// NB. Setup of interrupts = DeviceSetup.c
+//   23 
+//   24 
+//   25 void HandleError(unsigned char cc);
+//   26 
+//   27 
+//   28 void RealLinkCommInit(void);
+//   29 
+//   30 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   31 void HandleError(unsigned char cc) 
+HandleError:
+??HandleError_0:
+//   32 {
+//   33   /* Critical error: Stop State Machine: */
+//   34   while(1)
+	RJMP	??HandleError_0
+//   35   {
+//   36 	// force watch-dog error (maybe set status led)
+//   37   }
+//   38 }
+//   39 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   40 void main(void) 
+main:
+//   41 {
+	ST	-Y,R24
+	SBIW	R29 : R28,2
+//   42 /* Define completion code variable. */
+//   43 unsigned char cc;
+//   44 
+//   45 /* Define action expression variable. */
+//   46 SEM_ACTION_EXPRESSION_TYPE actionExpressNo;
+//   47 
+//   48 /* Define and initialize. */
+//   49 SEM_EVENT_TYPE eventNo;
+//   50 
+//   51 	__disable_interrupt();
+	CLI
+//   52 
+//   53 	InitDevice();
+	CALL	InitDevice
+//   54 
+//   55 	InitOutputs();
+	CALL	InitOutputs
+//   56     
+//   57 	/* Initialize the VS System. */
+//   58 	SEM_InitAll();
+	CALL	SEM_InitAll
+//   59     
+//   60 #if (VS_REALLINKMODE == 1)    
+//   61 	/* Initialize RealLink communication. */
+//   62 	RealLinkCommInit();
+//   63 	/* Initializing RealLink API. */
+//   64 	VS_RealLinkInit();    
+//   65 #endif  
+//   66   
+//   67 	/* Initialize the VS Event queue. */
+//   68 	SEQ_Initialize();
+	CALL	SEQ_Initialize
+//   69   
+//   70 	/* Add SE_RESET to initialize system. */
+//   71 	SEQ_AddEvent(SE_RESET);
+	LDI	R16,0
+	CALL	SEQ_AddEvent
+//   72 
+//   73 	__enable_interrupt();
+	SEI
+//   74   
+//   75 	/* Do forever: */
+//   76 	for(;;) 
+//   77   	{    
+//   78 #if (VS_REALLINKMODE == 1)
+//   79     	    VS_WAIT();
+//   80 #endif        
+//   81 
+//   82             /* Provide function to do any other user (application) processing */
+//   83             UserLoop();
+??main_0:
+	CALL	UserLoop
+//   84 
+//   85             if(SEQ_RetrieveEvent(&eventNo) != UCC_QUEUE_EMPTY)
+	MOVW	R17 : R16,R29 : R28
+	CALL	SEQ_RetrieveEvent
+	CPI	R16,254
+	BREQ	??main_0
+//   86             {     
+//   87       		/* Deduct the event. */
+//   88       		if ((cc = SEM_Deduct(eventNo)) != SES_OKAY) 
+	LD	R16,Y
+	CALL	SEM_Deduct
+	MOV	R24,R16
+	TST	R24
+	BREQ	??main_1
+//   89 	          HandleError(eventNo);
+	LD	R16,Y
+	RCALL	HandleError
+//   90       
+//   91       		/* Get resulting action expressions and execute them. */
+//   92       		while ((cc = SEM_GetOutput(&actionExpressNo)) == SES_FOUND) 
+??main_1:
+	MOVW	R17 : R16,R29 : R28
+	SUBI	R16,255
+	SBCI	R17,255
+	CALL	SEM_GetOutput
+	MOV	R24,R16
+	CPI	R24,1
+	BRNE	??main_2
+//   93         	  SEM_Action(actionExpressNo);
+	LDD	R16,Y+1
+	LDI	R17,0
+	LSL	R16
+	ROL	R17
+	MOVW	R31 : R30,R17 : R16
+	SUBI	R30,LOW((-(System1VSAction) & 0xFFFF))
+	SBCI	R31,(-(System1VSAction) & 0xFFFF) >> 8
+	LD	R16,Z
+	LDD	R17,Z+1
+	MOVW	R31 : R30,R17 : R16
+	ICALL
+	RJMP	??main_1
+//   94             
+//   95       		/* Check for error. */
+//   96       		if (cc != SES_OKAY) 
+??main_2:
+	TST	R24
+	BREQ	??main_3
+//   97         	  HandleError(cc);
+	MOV	R16,R24
+	RCALL	HandleError
+//   98       
+//   99       		/* Change the next state vector. */
+//  100       		if ((cc = SEM_NextState()) != SES_OKAY) 
+??main_3:
+	CALL	SEM_NextState
+	MOV	R24,R16
+	TST	R24
+	BREQ	??main_0
+//  101         	  HandleError(cc);          
+	MOV	R16,R24
+	RCALL	HandleError
+	RJMP	??main_0
+//  102             }  
+//  103 	}
+//  104 }
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01cH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01dH
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01eH
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EEARH:
+
+        END
+// 
+// 126 bytes in segment CODE
+// 
+// 126 bytes of CODE memory
+//
+//Errors: none
+//Warnings: none

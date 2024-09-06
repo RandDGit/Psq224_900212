@@ -1,0 +1,204 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  28/Sep/2012  11:33:22 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\vssrc\System1Data.c                    #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\vssrc\System1Data.c                    #
+#    List file    =  C:\hmhome\900212\Debug\List\System1Data.lst             #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\System1Data.r90              #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\vssrc\System1Data.c
+      1          /*
+      2           * Id:        System1Data.c
+      3           *
+      4           * Function:  VS System Data Source File.
+      5           *
+      6           * Generated: Fri Jan 13 13:08:29 2006
+      7           *
+      8           * Coder 5.1.0.215 
+      9           * 
+     10           * This is an automatically generated file. It will be overwritten by the Coder. 
+     11           * 
+     12           * DO NOT EDIT THE FILE! 
+     13           */
+     14          
+     15          
+     16          /*
+     17           * Include SEM Library Header File.
+     18           */
+     19          #include "SEMLibB.h"
+     20          
+     21          
+     22          /*
+     23           * Include VS System Data Header File.
+     24           */
+     25          #include "System1Data.h"
+     26          
+     27          
+     28          /*
+     29           * Include VS System Action Expression Pointer Table File.
+     30           */
+     31          #include "System1Action.h"
+     32          
+     33          
+     34          /*
+     35           * Include Compiler Standard Library Header Files.
+     36           */
+     37          #if (SEM_DEDUCT_WITH_VA_LIST)
+     38          #include <stdarg.h>
+     39          #endif
+     40          
+     41          
+     42          /*
+     43           * VS System External Variable Declarations.
+     44           */
+     45          VS_UCHAR val_ip_hom;
+     46          
+     47          VS_UCHAR val_ip_lim;
+     48          
+     49          VS_UINT vsstick_stall;
+     50          
+     51          VS_UINT vsstick_txwait;
+     52          
+     53          typedef struct
+     54          {
+     55            VS_UCHAR         VS_UCHARVar[0X00013];
+     56            VS_UINT16        VS_UINT16Var[0X00002];
+     57            VS_INT           VS_INTVar[0X00002];
+     58          } VSINTVARDATA;
+     59          
+     60          
+     61          
+     62          /*
+     63           * VS System Internal Variable Declaration.
+     64           */
+     65          static VSINTVARDATA VSIntVar;
+     66          
+     67          
+     68          
+     69          
+     70          /*
+     71           * Guard Expression Functions.
+     72           */
+     73          static VS_BOOL VSGuard_0 (VS_VOID)
+     74          {
+     75            return SEM_GUARD_TYPE_CAST ((val_ip_hom == 0) && (val_ip_lim == 0));
+     76          }
+     77          
+     78          
+     79          /*
+     80           * Guard Expression Pointer Table.
+     81           */
+     82          VS_GUARDEXPR_TYPE const VSGuard[1] = 
+     83          {
+     84            VSGuard_0
+     85          };
+     86          
+     87          
+     88          
+     89          /*
+     90           * Action Expression Functions.
+     91           */
+     92          VS_VOID System1VSAction_21 (VS_VOID)
+     93          {
+     94            TM_Status (14 /* E_Periodic */, 10);
+     95          }
+     96          VS_VOID System1VSAction_22 (VS_VOID)
+     97          {
+     98            TM_Stall (9 /* E_AxisStall */, vsstick_stall);
+     99          }
+    100          VS_VOID System1VSAction_23 (VS_VOID)
+    101          {
+    102            TM_TimerTxWait (19 /* E_TimerTxWait */, vsstick_txwait);
+    103          }
+    104          
+    105          
+    106          /*
+    107           * Action Expression Pointer Table.
+    108           */
+    109          VS_ACTIONEXPR_TYPE const System1VSAction[24] = 
+    110          {
+    111            A_AxisCalcProfile,
+    112            A_AxisPosUpdate,
+    113            A_ForceStop,
+    114            A_Initialise,
+    115            A_MotorError,
+    116            A_MotorFwd,
+    117            A_MotorIdle,
+    118            A_MotorMove,
+    119            A_MotorOn,
+    120            A_MotorReRef,
+    121            A_MotorRev,
+    122            A_MotorStop,
+    123            A_MotorTest,
+    124            A_Periodic,
+    125            A_RxDoComms,
+    126            A_RxProcess,
+    127            A_TxChar,
+    128            A_TxEnableOff,
+    129            A_TxEnableOn,
+    130            A_TxProcessMsg,
+    131            A_TxTestBusIdle,
+    132            System1VSAction_21,
+    133            System1VSAction_22,
+    134            System1VSAction_23
+    135          };
+    136          
+
+   Maximum stack usage in bytes:
+
+     Function            CSTACK RSTACK
+     --------            ------ ------
+     System1VSAction_21      0      2
+       -> TM_Status          0      2
+     System1VSAction_22      0      2
+       -> TM_Stall           0      2
+     System1VSAction_23      0      2
+       -> TM_TimerTxWait     0      2
+     VSGuard_0               0      2
+
+
+   Segment part sizes:
+
+     Function/Label                 Bytes
+     --------------                 -----
+     val_ip_hom                        1
+     val_ip_lim                        1
+     vsstick_stall                     2
+     vsstick_txwait                    2
+     VSGuard_0                        24
+     VSGuard                           2
+     System1VSAction_21               14
+     System1VSAction_22               18
+     System1VSAction_23               18
+     System1VSAction                  48
+     ?<Initializer for VSGuard>        2
+     ?<Initializer for System1VSAction>
+                                      48
+      Others                          12
+
+ 
+ 74 bytes in segment CODE
+ 12 bytes in segment INITTAB
+ 50 bytes in segment NEAR_I
+ 50 bytes in segment NEAR_ID
+  6 bytes in segment NEAR_Z
+ 
+ 124 bytes of CODE memory (+ 12 bytes shared)
+  56 bytes of DATA memory
+
+Errors: none
+Warnings: 1

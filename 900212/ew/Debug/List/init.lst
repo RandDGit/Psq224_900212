@@ -1,0 +1,615 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:33:00 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\init.c            #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \init.c                                                 #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\init.lst   #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\init.r90    #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\init.c
+      1          #include "iom16.h"			// Atmel definitions Mega16
+      2          #include "inavr.h"			// Atmel register definitions
+      3          #include "VSMain.h"			// Visual State definitions
+      4          
+      5          #include "defs.h"			// Application (GENERAL) defs
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",122  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",131  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",137  Warning[Pe375]: 
+          declaration requires a typedef name
+      6          #include "globals.h"		// Application global data/variables
+      7          
+      8          
+      9          unsigned char wal_bsf_eeget( unsigned char s_address);
+     10          
+     11          // REFERENCE TO HARDWARE 900-152C
+     12          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     13          void LoadNVData( void)
+   \                     LoadNVData:
+     14          {
+     15          	// read predefined EE locations: 
+     16          
+     17          	// comms ID, vital for comms, DEST & FROM
+     18          	// comm ID limited to 0..31
+     19          	uc_comm_adid = wal_bsf_eeget( WAL_EE_COMMID);
+   \   00000000   E001                       LDI     R16,1
+   \   00000002   ........                   CALL    wal_bsf_eeget
+   \   00000006   9300....                   STS     uc_comm_adid,R16
+     20          	if( uc_comm_adid > 37 || uc_comm_adid == 0xFF || uc_comm_adid == 0)
+   \   0000000A   9100....                   LDS     R16,uc_comm_adid
+   \   0000000E   3206                       CPI     R16,38
+   \   00000010   F440                       BRCC    ??LoadNVData_0
+   \   00000012   9100....                   LDS     R16,uc_comm_adid
+   \   00000016   3F0F                       CPI     R16,255
+   \   00000018   F021                       BREQ    ??LoadNVData_0
+   \   0000001A   9100....                   LDS     R16,uc_comm_adid
+   \   0000001E   2300                       TST     R16
+   \   00000020   F419                       BRNE    ??LoadNVData_1
+     21          	{
+     22          		uc_comm_adid = WAL_UNIQUE_COMMID;
+   \                     ??LoadNVData_0:
+   \   00000022   E10E                       LDI     R16,30
+   \   00000024   9300....                   STS     uc_comm_adid,R16
+     23          	}
+     24          
+     25          	// communications mode baud: 0 = Hi (125k) or 1 = Lo (9600):
+     26          	// NB. consider baud rate mode as pre-programmed (pragma def)
+     27          	uc_comm_hilo = wal_bsf_eeget( WAL_EE_COMMHILO);
+   \                     ??LoadNVData_1:
+   \   00000028   E002                       LDI     R16,2
+   \   0000002A   ........                   CALL    wal_bsf_eeget
+   \   0000002E   9300....                   STS     uc_comm_hilo,R16
+     28          	if( (uc_comm_hilo > 1) || (uc_comm_hilo == 0xFF))
+   \   00000032   9100....                   LDS     R16,uc_comm_hilo
+   \   00000036   3002                       CPI     R16,2
+   \   00000038   F420                       BRCC    ??LoadNVData_2
+   \   0000003A   9100....                   LDS     R16,uc_comm_hilo
+   \   0000003E   3F0F                       CPI     R16,255
+   \   00000040   F419                       BRNE    ??LoadNVData_3
+     29          	{
+     30          		uc_comm_hilo = 0;     // 0 is hi-speed comms
+   \                     ??LoadNVData_2:
+   \   00000042   E000                       LDI     R16,0
+   \   00000044   9300....                   STS     uc_comm_hilo,R16
+     31          	}
+     32          	// V1.7 16JAN06: Hi-speed comms only:
+     33          	uc_comm_hilo = 0;     // 0 is hi-speed comms
+   \                     ??LoadNVData_3:
+   \   00000048   E000                       LDI     R16,0
+   \   0000004A   9300....                   STS     uc_comm_hilo,R16
+     34          
+     35          	uc_axis_chi = wal_bsf_eeget( WAL_EE_MAXTHI);
+   \   0000004E   E006                       LDI     R16,6
+   \   00000050   ........                   CALL    wal_bsf_eeget
+   \   00000054   9300....                   STS     uc_axis_chi,R16
+     36          	uc_axis_clo = wal_bsf_eeget( WAL_EE_MAXTLO);
+   \   00000058   E007                       LDI     R16,7
+   \   0000005A   ........                   CALL    wal_bsf_eeget
+   \   0000005E   9300....                   STS     uc_axis_clo,R16
+     37                  ui_axis_maxallow = (unsigned int) (uc_axis_chi << 8) + uc_axis_clo;
+   \   00000062   9130....                   LDS     R19,uc_axis_chi
+   \   00000066   E020                       LDI     R18,0
+   \   00000068   9100....                   LDS     R16,uc_axis_clo
+   \   0000006C   E010                       LDI     R17,0
+   \   0000006E   0F02                       ADD     R16,R18
+   \   00000070   1F13                       ADC     R17,R19
+   \   00000072   ....                       LDI     R30,LOW(ui_axis_maxallow)
+   \   00000074   ....                       LDI     R31,(ui_axis_maxallow) >> 8
+   \   00000076   8300                       ST      Z,R16
+   \   00000078   8311                       STD     Z+1,R17
+     38          
+     39          	uc_axis_chi = wal_bsf_eeget( WAL_EE_COUNTHI);
+   \   0000007A   E003                       LDI     R16,3
+   \   0000007C   ........                   CALL    wal_bsf_eeget
+   \   00000080   9300....                   STS     uc_axis_chi,R16
+     40          	uc_axis_clo = wal_bsf_eeget( WAL_EE_COUNTLO);
+   \   00000084   E004                       LDI     R16,4
+   \   00000086   ........                   CALL    wal_bsf_eeget
+   \   0000008A   9300....                   STS     uc_axis_clo,R16
+     41          	
+     42          	uc_axis_err = wal_bsf_eeget( WAL_EE_ERROR);
+   \   0000008E   E005                       LDI     R16,5
+   \   00000090   ........                   CALL    wal_bsf_eeget
+   \   00000094   9300....                   STS     uc_axis_err,R16
+     43          
+     44                  if( uc_axis_err == 0)
+   \   00000098   9100....                   LDS     R16,uc_axis_err
+   \   0000009C   2300                       TST     R16
+   \   0000009E   F491                       BRNE    ??LoadNVData_4
+     45                  {	
+     46          	  ui_axis_pos = (unsigned int) (uc_axis_chi << 8);
+   \   000000A0   9110....                   LDS     R17,uc_axis_chi
+   \   000000A4   E000                       LDI     R16,0
+   \   000000A6   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   000000A8   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   000000AA   8300                       ST      Z,R16
+   \   000000AC   8311                       STD     Z+1,R17
+     47          	  ui_axis_pos += (unsigned int) (uc_axis_clo);
+   \   000000AE   9100....                   LDS     R16,uc_axis_clo
+   \   000000B2   E010                       LDI     R17,0
+   \   000000B4   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   000000B6   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   000000B8   8120                       LD      R18,Z
+   \   000000BA   8131                       LDD     R19,Z+1
+   \   000000BC   0F20                       ADD     R18,R16
+   \   000000BE   1F31                       ADC     R19,R17
+   \   000000C0   8320                       ST      Z,R18
+   \   000000C2   8331                       STD     Z+1,R19
+     48          	}
+     49          	
+     50          	uc_num_moveslo = wal_bsf_eeget( WAL_EE_MOVELO);
+   \                     ??LoadNVData_4:
+   \   000000C4   E008                       LDI     R16,8
+   \   000000C6   ........                   CALL    wal_bsf_eeget
+   \   000000CA   9300....                   STS     uc_num_moveslo,R16
+     51          	uc_num_moveshi = wal_bsf_eeget( WAL_EE_MOVEHI);
+   \   000000CE   E009                       LDI     R16,9
+   \   000000D0   ........                   CALL    wal_bsf_eeget
+   \   000000D4   9300....                   STS     uc_num_moveshi,R16
+     52          	uc_num_moves24 = wal_bsf_eeget( WAL_EE_MOVE24);
+   \   000000D8   E00A                       LDI     R16,10
+   \   000000DA   ........                   CALL    wal_bsf_eeget
+   \   000000DE   9300....                   STS     uc_num_moves24,R16
+     53          	if( uc_num_moves24 & 0xC0 )
+   \   000000E2   9100....                   LDS     R16,uc_num_moves24
+   \   000000E6   7C00                       ANDI    R16,0xC0
+   \   000000E8   2300                       TST     R16
+   \   000000EA   F039                       BREQ    ??LoadNVData_5
+     54          	{
+     55          	  uc_num_moveslo = uc_num_moveshi = uc_num_moves24 = 0;
+   \   000000EC   E000                       LDI     R16,0
+   \   000000EE   9300....                   STS     uc_num_moves24,R16
+   \   000000F2   9300....                   STS     uc_num_moveshi,R16
+   \   000000F6   9300....                   STS     uc_num_moveslo,R16
+     56          	}
+     57          
+     58          }
+   \                     ??LoadNVData_5:
+   \   000000FA   9508                       RET
+     59          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     60          void InitOutputs( void)
+   \                     InitOutputs:
+     61          {
+     62          // Once device had been correctly setup (Port I/O, and peripheral usage)
+     63          // ensure all ports are correctly configured as per idle state:
+     64          
+     65          	WAL_OP_PWM = 0;		// PWM OC2 output (=Byte)
+   \   00000000   E000                       LDI     R16,0
+   \   00000002   BD03                       OUT     0x23,R16
+     66          	WAL_OP_TRO = 1;		// Trigger default = Hi
+   \   00000004   9AC3                       SBI     0x18,0x03
+     67          	WAL_OP_LED = 0;		// LED1 (Lo = ON)
+   \   00000006   98C0                       CBI     0x18,0x00
+     68          	WAL_OP_DIR = 0;		// Direction towards Home
+   \   00000008   9894                       CBI     0x12,0x04
+     69          	WAL_OP_BRK = 0;		// Brake (Motor Enable)
+   \   0000000A   9895                       CBI     0x12,0x05
+     70          
+     71          }
+   \   0000000C   9508                       RET
+     72          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     73          void InitData( void)
+   \                     InitData:
+     74          {
+     75          
+     76          	vsstick_stall = 240;
+   \   00000000   EF00                       LDI     R16,240
+   \   00000002   E010                       LDI     R17,0
+   \   00000004   ....                       LDI     R30,LOW(vsstick_stall)
+   \   00000006   ....                       LDI     R31,(vsstick_stall) >> 8
+   \   00000008   8300                       ST      Z,R16
+   \   0000000A   8311                       STD     Z+1,R17
+     77          	vsstick_txwait = 3;
+   \   0000000C   E003                       LDI     R16,3
+   \   0000000E   E010                       LDI     R17,0
+   \   00000010   ....                       LDI     R30,LOW(vsstick_txwait)
+   \   00000012   ....                       LDI     R31,(vsstick_txwait) >> 8
+   \   00000014   8300                       ST      Z,R16
+   \   00000016   8311                       STD     Z+1,R17
+     78          
+     79          	uc_tprim = 0;
+   \   00000018   E000                       LDI     R16,0
+   \   0000001A   9300....                   STS     uc_tprim,R16
+     80          	uc_tprev = 0;
+   \   0000001E   E000                       LDI     R16,0
+   \   00000020   9300....                   STS     uc_tprev,R16
+     81          
+     82          	uc_rxrdptr = uc_rxwrptr = 0;
+   \   00000024   E000                       LDI     R16,0
+   \   00000026   9300....                   STS     uc_rxwrptr,R16
+   \   0000002A   9300....                   STS     uc_rxrdptr,R16
+     83          
+     84          	uc_tx_chsent = 0;
+   \   0000002E   E000                       LDI     R16,0
+   \   00000030   9300....                   STS     uc_tx_chsent,R16
+     85          	uc_rx_process = 0;
+   \   00000034   E000                       LDI     R16,0
+   \   00000036   9300....                   STS     uc_rx_process,R16
+     86          
+     87          	uc_led_value = WAL_LED_DEFAULT;	// Status LED (reload value = frequency)
+   \   0000003A   E005                       LDI     R16,5
+   \   0000003C   9300....                   STS     uc_led_value,R16
+     88          	uc_led_count = 0;				// Status LED (counter)
+   \   00000040   E000                       LDI     R16,0
+   \   00000042   9300....                   STS     uc_led_count,R16
+     89          
+     90          	dblead_ip_enc = WAL_DBNC_IN_ENC;
+   \   00000046   E002                       LDI     R16,2
+   \   00000048   9300....                   STS     dblead_ip_enc,R16
+     91          	dbtail_ip_enc = WAL_DBNC_IN_ENC;
+   \   0000004C   E002                       LDI     R16,2
+   \   0000004E   9300....                   STS     dbtail_ip_enc,R16
+     92          	val_ip_enc = 2;			// set = 2 ==> don't care
+   \   00000052   E002                       LDI     R16,2
+   \   00000054   9300....                   STS     val_ip_enc,R16
+     93          
+     94          	dblead_ip_trg = WAL_DBNC_IN_TRG;
+   \   00000058   E00A                       LDI     R16,10
+   \   0000005A   9300....                   STS     dblead_ip_trg,R16
+     95          	dbtail_ip_trg = WAL_DBNC_IN_TRG;
+   \   0000005E   E00A                       LDI     R16,10
+   \   00000060   9300....                   STS     dbtail_ip_trg,R16
+     96          	val_ip_trg = 0;			// assume (set) trigger inactive at POR
+   \   00000064   E000                       LDI     R16,0
+   \   00000066   9300....                   STS     val_ip_trg,R16
+     97          
+     98          	dblead_ip_hom = WAL_DBNC_IN_HOM;
+   \   0000006A   E00A                       LDI     R16,10
+   \   0000006C   9300....                   STS     dblead_ip_hom,R16
+     99          	dbtail_ip_hom = 0;
+   \   00000070   E000                       LDI     R16,0
+   \   00000072   9300....                   STS     dbtail_ip_hom,R16
+    100          	val_ip_hom = 0;			// assume (set) home inactive at POR
+   \   00000076   E000                       LDI     R16,0
+   \   00000078   9300....                   STS     val_ip_hom,R16
+    101          
+    102          	dblead_ip_lim = WAL_DBNC_IN_LIM;
+   \   0000007C   E00A                       LDI     R16,10
+   \   0000007E   9300....                   STS     dblead_ip_lim,R16
+    103          	dbtail_ip_lim = 0;
+   \   00000082   E000                       LDI     R16,0
+   \   00000084   9300....                   STS     dbtail_ip_lim,R16
+    104          	val_ip_lim = 0;			// assume (set) limit inactive at POR
+   \   00000088   E000                       LDI     R16,0
+   \   0000008A   9300....                   STS     val_ip_lim,R16
+    105          
+    106          	dblead_ip_sw1 = 0;              // start with IN_SW1 set at hi
+   \   0000008E   E000                       LDI     R16,0
+   \   00000090   9300....                   STS     dblead_ip_sw1,R16
+    107          	dbtail_ip_sw1 = WAL_DBNC_IN_SW1;
+   \   00000094   E30C                       LDI     R16,60
+   \   00000096   9300....                   STS     dbtail_ip_sw1,R16
+    108          	val_ip_sw1 = 0;			// assume (set) button inactive at POR
+   \   0000009A   E000                       LDI     R16,0
+   \   0000009C   9300....                   STS     val_ip_sw1,R16
+    109          
+    110          
+    111                  // V1.6 12JAN06: setting uc_axis_dir = 1 forces 'reverse' on first button press
+    112                  uc_powerup_once = 1;
+   \   000000A0   E001                       LDI     R16,1
+   \   000000A2   9300....                   STS     uc_powerup_once,R16
+    113                  uc_axis_dir = 1;    
+   \   000000A6   E001                       LDI     R16,1
+   \   000000A8   9300....                   STS     uc_axis_dir,R16
+    114                  uc_motoron = 0;
+   \   000000AC   E000                       LDI     R16,0
+   \   000000AE   9300....                   STS     uc_motoron,R16
+    115                  uc_unitravel = 0;
+   \   000000B2   E000                       LDI     R16,0
+   \   000000B4   9300....                   STS     uc_unitravel,R16
+    116                  
+    117                  uc_settlepower = 200;     // Prevent i-o until power-up
+   \   000000B8   EC08                       LDI     R16,200
+   \   000000BA   9300....                   STS     uc_settlepower,R16
+    118          
+    119                  
+    120          	// set comm_id must be unique for this hardware
+    121          	// uc_comm_adid = WAL_UNIQUE_COMMID;
+    122          
+    123          	// clear counter timer and setup functions
+    124          	ws_ctimer[0].exp_routine = NULL;
+   \   000000BE   E000                       LDI     R16,0
+   \   000000C0   E010                       LDI     R17,0
+   \   000000C2   ....                       LDI     R30,LOW(ws_ctimer)
+   \   000000C4   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   000000C6   8303                       STD     Z+3,R16
+   \   000000C8   8314                       STD     Z+4,R17
+    125          	ws_ctimer[1].exp_routine = NULL;
+   \   000000CA   E000                       LDI     R16,0
+   \   000000CC   E010                       LDI     R17,0
+   \   000000CE   ....                       LDI     R30,LOW(ws_ctimer)
+   \   000000D0   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   000000D2   8700                       STD     Z+8,R16
+   \   000000D4   8711                       STD     Z+9,R17
+    126          	ws_ctimer[2].exp_routine = NULL;
+   \   000000D6   E000                       LDI     R16,0
+   \   000000D8   E010                       LDI     R17,0
+   \   000000DA   ....                       LDI     R30,LOW(ws_ctimer)
+   \   000000DC   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   000000DE   8705                       STD     Z+13,R16
+   \   000000E0   8716                       STD     Z+14,R17
+    127          	ws_ctimer[3].exp_routine = NULL;
+   \   000000E2   E000                       LDI     R16,0
+   \   000000E4   E010                       LDI     R17,0
+   \   000000E6   ....                       LDI     R30,LOW(ws_ctimer)
+   \   000000E8   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   000000EA   8B02                       STD     Z+18,R16
+   \   000000EC   8B13                       STD     Z+19,R17
+    128          	ws_ctimer[4].exp_routine = NULL;
+   \   000000EE   E000                       LDI     R16,0
+   \   000000F0   E010                       LDI     R17,0
+   \   000000F2   ....                       LDI     R30,LOW(ws_ctimer)
+   \   000000F4   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   000000F6   8B07                       STD     Z+23,R16
+   \   000000F8   8F10                       STD     Z+24,R17
+    129          	ws_ctimer[5].exp_routine = NULL;
+   \   000000FA   E000                       LDI     R16,0
+   \   000000FC   E010                       LDI     R17,0
+   \   000000FE   ....                       LDI     R30,LOW(ws_ctimer)
+   \   00000100   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   00000102   8F04                       STD     Z+28,R16
+   \   00000104   8F15                       STD     Z+29,R17
+    130          	ws_ctimer[6].exp_routine = NULL;
+   \   00000106   E000                       LDI     R16,0
+   \   00000108   E010                       LDI     R17,0
+   \   0000010A   ....                       LDI     R30,LOW(ws_ctimer)
+   \   0000010C   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   0000010E   A301                       STD     Z+33,R16
+   \   00000110   A312                       STD     Z+34,R17
+    131          	ws_ctimer[7].exp_routine = NULL;
+   \   00000112   E000                       LDI     R16,0
+   \   00000114   E010                       LDI     R17,0
+   \   00000116   ....                       LDI     R30,LOW(ws_ctimer)
+   \   00000118   ....                       LDI     R31,(ws_ctimer) >> 8
+   \   0000011A   A306                       STD     Z+38,R16
+   \   0000011C   A317                       STD     Z+39,R17
+    132          }
+   \   0000011E   9508                       RET
+    133          
+    134          
+    135          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    136          void InitDevice(void)
+   \                     InitDevice:
+    137          {
+    138          // __disable_interrupt();
+    139          
+    140            MCUCSR |= 0x80;
+   \   00000000   B704                       IN      R16,0x34
+   \   00000002   6800                       ORI     R16,0x80
+   \   00000004   BF04                       OUT     0x34,R16
+    141            /* Configure PortA..  +28V */
+    142            DDRA = 0x00;
+   \   00000006   E000                       LDI     R16,0
+   \   00000008   BB0A                       OUT     0x1A,R16
+    143            /* Port B..7..0 , rxtx_en, op_tr0, in_trg, in_enc, heart*/
+    144            /* V1.6 13JAN06: use PB.6 as debug pin WAL_DEBUG_MISO */
+    145            /* DDRB = 0x19; */
+    146            DDRB = 0x59;
+   \   0000000A   E509                       LDI     R16,89
+   \   0000000C   BB07                       OUT     0x17,R16
+    147            /* Port C.. n/c */
+    148            DDRC = 0x00;
+   \   0000000E   E000                       LDI     R16,0
+   \   00000010   BB04                       OUT     0x14,R16
+    149            /* Port D.7..0. OP_PWM, IN_SW1, OP_BRK, OP_DIR, IN_LIM, IN_HOM, TX, RX */
+    150            DDRD = 0xB0;
+   \   00000012   EB00                       LDI     R16,176
+   \   00000014   BB01                       OUT     0x11,R16
+    151          
+    152            WDTCR = 0x0F;
+   \   00000016   E00F                       LDI     R16,15
+   \   00000018   BD01                       OUT     0x21,R16
+    153          
+    154            // Configure Timer 0 to expire for each ~1 ms.
+    155            // TCCR0 = 0x03;   		// Start the timer by prescale CK/64
+    156            // mTCNT = 193;    		// Load timer to expire for each ~1ms
+    157            TCCR0 = 0x02;   			// Start the timer by prescale CK/8 (2us/pulse)
+   \   0000001A   E002                       LDI     R16,2
+   \   0000001C   BF03                       OUT     0x33,R16
+    158            // uc_tm0preset = 206;    // Load timer to expire for each ~0.1ms (400 instr/int)
+    159            uc_tm0preset = 8;    		// Load timer to expire for each ~0.5ms (2000 instr/int)
+   \   0000001E   E008                       LDI     R16,8
+   \   00000020   9300....                   STS     uc_tm0preset,R16
+    160          							// 256 - 250 = 6, but allow for latency (16 instr)
+    161          
+    162            TCNT0 = uc_tm0preset;  	// Load the timer counter register
+   \   00000024   9100....                   LDS     R16,uc_tm0preset
+   \   00000028   BF02                       OUT     0x32,R16
+    163            TIMSK |= 0x01;  		// Enable Timer0 overflow interrupt
+   \   0000002A   B709                       IN      R16,0x39
+   \   0000002C   6001                       ORI     R16,0x01
+   \   0000002E   BF09                       OUT     0x39,R16
+    164          
+    165            MCUCR |= 0X0A;    		// Falling edge int0, int1 and int2
+   \   00000030   B705                       IN      R16,0x35
+   \   00000032   600A                       ORI     R16,0x0A
+   \   00000034   BF05                       OUT     0x35,R16
+    166          							// However, INT0, INT1, INT2 not used
+    167            // GICR |= (1<<INT1);  GICR |= (1<<INT0);   GICR |= (1<<INT2); 
+    168          
+    169            // Setup TIMER2 = PWM output on OC2
+    170            // Phase correct PWM (WGM20), Set OC2 on compare (COM21,20), Clk/1024 = (CS22,21,20) = 0x07
+    171            // Clk/8 | (1<<CS22)  | (1<<CS20)
+    172            TCCR2 = (1<<WGM20) | (1<<COM21) | (1<<COM20) | (1<<CS21);
+   \   00000036   E702                       LDI     R16,114
+   \   00000038   BD05                       OUT     0x25,R16
+    173            OCR2 = 0;
+   \   0000003A   E000                       LDI     R16,0
+   \   0000003C   BD03                       OUT     0x23,R16
+    174          
+    175            ASSR = 0;					// non Asynchronous operation
+   \   0000003E   E000                       LDI     R16,0
+   \   00000040   BD02                       OUT     0x22,R16
+    176            
+    177            // __enable_interrupt();
+    178            
+    179          }
+   \   00000042   9508                       RET
+
+   \                                 In segment ABSOLUTE, at 0x31
+   \   union <unnamed> volatile __io _A_DDRD
+   \                     _A_DDRD:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x32
+   \   union <unnamed> volatile __io _A_PORTD
+   \                     _A_PORTD:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x34
+   \   union <unnamed> volatile __io _A_DDRC
+   \                     _A_DDRC:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x37
+   \   union <unnamed> volatile __io _A_DDRB
+   \                     _A_DDRB:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x38
+   \   union <unnamed> volatile __io _A_PORTB
+   \                     _A_PORTB:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3a
+   \   union <unnamed> volatile __io _A_DDRA
+   \                     _A_DDRA:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x41
+   \   union <unnamed> volatile __io _A_WDTCR
+   \                     _A_WDTCR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x42
+   \   union <unnamed> volatile __io _A_ASSR
+   \                     _A_ASSR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x43
+   \   union <unnamed> volatile __io _A_OCR2
+   \                     _A_OCR2:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x45
+   \   union <unnamed> volatile __io _A_TCCR2
+   \                     _A_TCCR2:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x52
+   \   union <unnamed> volatile __io _A_TCNT0
+   \                     _A_TCNT0:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x53
+   \   union <unnamed> volatile __io _A_TCCR0
+   \                     _A_TCCR0:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x54
+   \   union <unnamed> volatile __io _A_MCUCSR
+   \                     _A_MCUCSR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x55
+   \   union <unnamed> volatile __io _A_MCUCR
+   \                     _A_MCUCR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x59
+   \   union <unnamed> volatile __io _A_TIMSK
+   \                     _A_TIMSK:
+   \   00000000                              DS 1
+    180          
+    181          
+    182          
+
+   Maximum stack usage in bytes:
+
+     Function           CSTACK RSTACK
+     --------           ------ ------
+     InitData               0      2
+     InitDevice             0      2
+     InitOutputs            0      2
+     LoadNVData             0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+       -> wal_bsf_eeget     0      2
+
+
+   Segment part sizes:
+
+     Function/Label Bytes
+     -------------- -----
+     LoadNVData      252
+     InitOutputs      14
+     InitData        288
+     InitDevice       68
+     _A_DDRD           1
+     _A_PORTD          1
+     _A_DDRC           1
+     _A_DDRB           1
+     _A_PORTB          1
+     _A_DDRA           1
+     _A_WDTCR          1
+     _A_ASSR           1
+     _A_OCR2           1
+     _A_TCCR2          1
+     _A_TCNT0          1
+     _A_TCCR0          1
+     _A_MCUCSR         1
+     _A_MCUCR          1
+     _A_TIMSK          1
+
+ 
+  15 bytes in segment ABSOLUTE
+ 622 bytes in segment CODE
+ 
+ 622 bytes of CODE memory
+   0 bytes of DATA memory (+ 15 bytes shared)
+
+Errors: none
+Warnings: 3

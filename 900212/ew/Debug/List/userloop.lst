@@ -1,0 +1,1777 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:33:14 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\userloop.c        #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \userloop.c                                             #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\userloop.l #
+#                    st                                                      #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\userloop.r9 #
+#                    0                                                       #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\userloop.c
+      1          /* UserLoop = Application, excluding State Machine */
+      2          
+      3          #include <iom16.h>		 		// Atmel up definitions
+      4          #include <inavr.h>				// AVR intrinsic functions
+      5          #include "VSMain.h"				// VisualState definitions (further includes)
+      6          
+      7          #include "defs.h"				// Application (GENERAL) defs
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",122  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",131  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",137  Warning[Pe375]: 
+          declaration requires a typedef name
+      8          
+      9          // following (global) application data variables declared in "globals.h"
+     10          
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_I>`
+     11          const char wstr_build_date[] = __DATE__;
+   \                     wstr_build_date:
+   \   00000000                              DS 12
+   \   0000000C                              REQUIRE `?<Initializer for wstr_build_date>`
+
+   \                                 In segment NEAR_I, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_I>`
+     12          const char wstr_build_time[] = __TIME__;
+   \                     wstr_build_time:
+   \   00000000                              DS 9
+   \   00000009                              REQUIRE `?<Initializer for wstr_build_time>`
+     13          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     14          unsigned int ui_axis_set;	// Axis Set Point
+   \                     ui_axis_set:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     15          unsigned int ui_axis_pos;	// Axis Position
+   \                     ui_axis_pos:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     16          unsigned int ui_axis_setrx;     // Axis set pt. rx'd (0.1mm units)
+   \                     ui_axis_setrx:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     17          unsigned int ui_axis_postx;     // Axis pos tx'd (normalised 0.1mm)
+   \                     ui_axis_postx:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     18          unsigned int ui_axis_conv;      // Axis ui value for conversion
+   \                     ui_axis_conv:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     19          unsigned int ui_axis_mult;      // 4/5 -> 5/4 conversion
+   \                     ui_axis_mult:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     20          unsigned int ui_axis_tacho;     // NB. tacho unit 0.125mm
+   \                     ui_axis_tacho:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     21          unsigned int ui_axis_diff;      // Axis set pt - actual pos difference
+   \                     ui_axis_diff:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     22          unsigned int ui_axis_rup;	// Axis Ramp-up end point
+   \                     ui_axis_rup:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     23          unsigned int ui_axis_rdn;	// Axis Ramp-dn end point
+   \                     ui_axis_rdn:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     24          unsigned int ui_axis_tmm;	// Axis Set Value in 1/10th mm units
+   \                     ui_axis_tmm:
+   \   00000000                              DS 2
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     25          unsigned int ui_axis_maxallow;  // Axis Max. Allowable travel (soft)
+   \                     ui_axis_maxallow:
+   \   00000000                              DS 2
+     26          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     27          unsigned int ui_axis_uni;       // Axis unidirectional temp. pos
+   \                     ui_axis_uni:
+   \   00000000                              DS 2
+     28          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     29          int si_axis_dif;		// Axis Set vs. Actual difference
+   \                     si_axis_dif:
+   \   00000000                              DS 2
+     30          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     31          unsigned char uc_carrybit;      // used for 0.1mm <--> 0.125mm conversions
+   \                     uc_carrybit:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     32          unsigned char uc_tprim;	        // Primary timer base (TMR0 ovf)
+   \                     uc_tprim:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     33          unsigned char uc_tprev;	        // Prev. value
+   \                     uc_tprev:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     34          unsigned char uc_tm0preset;	// Timer 0 preset (controls base period)
+   \                     uc_tm0preset:
+   \   00000000                              DS 1
+     35          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     36          unsigned char uc_num_moveslo;   // Record number of axis moves
+   \                     uc_num_moveslo:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     37          unsigned char uc_num_moveshi;   // Record number of axis moves
+   \                     uc_num_moveshi:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     38          unsigned char uc_num_moves24;   // Record number of axis moves
+   \                     uc_num_moves24:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     39          unsigned char uc_done_move;     // Record move
+   \                     uc_done_move:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     40          unsigned char uc_powerup_once;  // Action only once after power-on
+   \                     uc_powerup_once:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     41          unsigned char uc_settlepower;   // Prevent i-o until power-up
+   \                     uc_settlepower:
+   \   00000000                              DS 1
+     42          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     43          unsigned char uc_axis_vss;	// Motor State
+   \                     uc_axis_vss:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     44          unsigned char uc_axis_dir;	// Motor Direction
+   \                     uc_axis_dir:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     45          unsigned char uc_axis_pwm;	// Motor PWM output
+   \                     uc_axis_pwm:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     46          unsigned char uc_axis_rud;	// Motor Ramp Up,Down state
+   \                     uc_axis_rud:
+   \   00000000                              DS 1
+     47          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     48          unsigned char uc_axis_chi;	// Axis power on count (hi)
+   \                     uc_axis_chi:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     49          unsigned char uc_axis_clo;	// Axis power on count (lo) = ui_axis_pos
+   \                     uc_axis_clo:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     50          unsigned char uc_axis_err;	// Axis error state
+   \                     uc_axis_err:
+   \   00000000                              DS 1
+     51          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     52          unsigned char uc_led_value;	// Status LED (reload value = frequency)
+   \                     uc_led_value:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     53          unsigned char uc_led_count;	// Status LED (counter)
+   \                     uc_led_count:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     54          unsigned char uc_led_scale;	// Scale factor to LED timebase
+   \                     uc_led_scale:
+   \   00000000                              DS 1
+     55          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     56          unsigned char uc_rx_stata;	// comms rx status (a) used by USART_RXC_interrupt
+   \                     uc_rx_stata:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     57          unsigned char uc_rx_statb;	// comms rx status (b) used by USART_RXC_interrupt
+   \                     uc_rx_statb:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     58          unsigned char uc_rx_chbyte;	// comms rx byte       used by USART_RXC_interrupt
+   \                     uc_rx_chbyte:
+   \   00000000                              DS 1
+     59          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     60          struct wdef_rxbuff uc_rxbuff[WAL_MAX_RXBUFF];
+   \                     uc_rxbuff:
+   \   00000000                              DS 64
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     61          unsigned char uc_rxrdptr;	// read pointer (rxbuff)
+   \                     uc_rxrdptr:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     62          unsigned char uc_rxwrptr;	// write pointer (rxbuff)
+   \                     uc_rxwrptr:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     63          unsigned char uc_rx_chrecv;	// comms rx received, read from buffer to function
+   \                     uc_rx_chrecv:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     64          unsigned char uc_rx_chksum;	// comms rx check sum
+   \                     uc_rx_chksum:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     65          unsigned char uc_rx_process;	// comms rx byte processed
+   \                     uc_rx_process:
+   \   00000000                              DS 1
+     66          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     67          unsigned char uc_tx_chout;	// character to be TX'd out
+   \                     uc_tx_chout:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     68          unsigned char uc_tx_chksum;	// comms tx check sum
+   \                     uc_tx_chksum:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     69          unsigned char uc_tx_chsent;	// TX char out complete
+   \                     uc_tx_chsent:
+   \   00000000                              DS 1
+     70          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     71          unsigned char uc_comm_adid;	// comm address id
+   \                     uc_comm_adid:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     72          unsigned char uc_comm_idle;	// comm RS485 bus idle test
+   \                     uc_comm_idle:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     73          unsigned char uc_comm_flag;	// comms bit flags
+   \                     uc_comm_flag:
+   \   00000000                              DS 1
+     74          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     75          unsigned char uc_comm_9set;	// 9th bit set (derived from statb)
+   \                     uc_comm_9set:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     76          unsigned char uc_comm_hilo;	// Comms hi-speed (9bit) or lo-speed (8bit)
+   \                     uc_comm_hilo:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     77          unsigned char uc_comm_comp;	// Comms compare Tx out with Rx in (TX integrity)
+   \                     uc_comm_comp:
+   \   00000000                              DS 1
+     78          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     79          unsigned char uc_comm_noecho;	// do not respond to comms
+   \                     uc_comm_noecho:
+   \   00000000                              DS 1
+     80          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     81          unsigned char uca_msgrx[6];     // rx buffer dst:src:cmd:dhi:dlo:cks
+   \                     uca_msgrx:
+   \   00000000                              DS 6
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     82          unsigned char uca_msgtx[6];     // tx buffer
+   \                     uca_msgtx:
+   \   00000000                              DS 6
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     83          unsigned char uc_msgrxptr;	// index to rx message = 6 if hi-speed = 5 if lo-speed
+   \                     uc_msgrxptr:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     84          unsigned char uc_msgtxprt;	// index to tx message
+   \                     uc_msgtxprt:
+   \   00000000                              DS 1
+     85          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     86          unsigned char dblead_ip_enc;	// Debounce Lead edge encoder
+   \                     dblead_ip_enc:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     87          unsigned char dbtail_ip_enc;
+   \                     dbtail_ip_enc:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     88          unsigned char val_ip_enc;
+   \                     val_ip_enc:
+   \   00000000                              DS 1
+     89          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     90          unsigned char dblead_ip_trg;	// Debounce Lead edge trigger input
+   \                     dblead_ip_trg:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     91          unsigned char dbtail_ip_trg;
+   \                     dbtail_ip_trg:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     92          unsigned char val_ip_trg;
+   \                     val_ip_trg:
+   \   00000000                              DS 1
+     93          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     94          unsigned char dblead_ip_hom;	// Debounce Lead edge home input
+   \                     dblead_ip_hom:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     95          unsigned char dbtail_ip_hom;
+   \                     dbtail_ip_hom:
+   \   00000000                              DS 1
+     96          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     97          unsigned char dblead_ip_lim;	// Debounce Lead edge limit input
+   \                     dblead_ip_lim:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     98          unsigned char dbtail_ip_lim;
+   \                     dbtail_ip_lim:
+   \   00000000                              DS 1
+     99          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    100          unsigned char dblead_ip_sw1;	// Debounce Lead edge button input
+   \                     dblead_ip_sw1:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    101          unsigned char dbtail_ip_sw1;
+   \                     dbtail_ip_sw1:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    102          unsigned char val_ip_sw1;
+   \                     val_ip_sw1:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    103          unsigned char pin_ip_sw1;
+   \                     pin_ip_sw1:
+   \   00000000                              DS 1
+    104          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    105          unsigned char uc_motoron;       // use motor-on status for home switch 'zero'
+   \                     uc_motoron:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    106          unsigned char uc_unitravel;     // flag overshoot
+   \                     uc_unitravel:
+   \   00000000                              DS 1
+    107          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    108          unsigned char uc_read_portd;    // PIND
+   \                     uc_read_portd:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    109          unsigned char uc_read_portb;    // PINB
+   \                     uc_read_portb:
+   \   00000000                              DS 1
+    110          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    111          unsigned char uc_stall_active;  // i.e. motor moving
+   \                     uc_stall_active:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    112          unsigned char uc_stall_error;   // stall condition detected
+   \                     uc_stall_error:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    113          unsigned char uc_stall_tacin;   // num. of tachos received
+   \                     uc_stall_tacin:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    114          unsigned char uc_stall_mslo;    // msec
+   \                     uc_stall_mslo:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    115          unsigned char uc_stall_mshi;    // hi msec
+   \                     uc_stall_mshi:
+   \   00000000                              DS 1
+    116          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    117          unsigned char uc_mstimer_lo;    // lo-count 0.5msec timer
+   \                     uc_mstimer_lo:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    118          unsigned char uc_mstimer_hi;    // hi-count = 100msec count
+   \                     uc_mstimer_hi:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    119          unsigned char uc_delay_uni;     // flag to delay direction change
+   \                     uc_delay_uni:
+   \   00000000                              DS 1
+    120          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    121          unsigned char uc_eetbl_fsm;
+   \                     uc_eetbl_fsm:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    122          unsigned char uc_eetbl_wrp;
+   \                     uc_eetbl_wrp:
+   \   00000000                              DS 1
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    123          unsigned char uc_eetbl_rdp;
+   \                     uc_eetbl_rdp:
+   \   00000000                              DS 1
+    124          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    125          unsigned char uc_eetbl_adr[16];
+   \                     uc_eetbl_adr:
+   \   00000000                              DS 16
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    126          unsigned char uc_eetbl_val[16];
+   \                     uc_eetbl_val:
+   \   00000000                              DS 16
+    127          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    128          struct wdef_ctimer ws_ctimer[WDEF_MAX_TIMERS];	// application timer function(s)
+   \                     ws_ctimer:
+   \   00000000                              DS 40
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+    129          struct wdef_ctimer *wsp_tc;			// timer counter implementation
+   \                     wsp_tc:
+   \   00000000                              DS 2
+    130          
+    131          // external variables used by VSS model (critical)
+    132          // defined & declared within VSS <System1>Data generated files
+    133          // VS_UCHAR val_ip_hom;
+    134          // VS_UCHAR val_ip_lim;
+    135          // VS_UINT vsstick_stall;
+    136          // VS_UINT vsstick_txwait;
+    137          
+    138          void wal_calc_setpos_diff( void);
+    139          unsigned char wal_pos_similar( void);
+    140          void wal_motor_goto( void);
+    141          void wal_motor_start( void);
+    142          void wal_motor_stop( void);
+    143          void wal_timer_counter( void);
+    144          
+    145          void UserLoop( void);
+    146          
+    147          
+    148          // void wal_vss_timer_function( void);		// VSS Timer (tick) function
+    149          void wal_dbnc_inputs( void);                    // input handler level & debounce
+    150          void wal_eetbl_fsm( void);
+    151          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+    152          
+    153          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    154          void vss_seq_error( void)
+   \                     vss_seq_error:
+    155          {
+    156          // UCC_QUEUE_FULL condition has occurred:
+    157            uc_led_value = WAL_LED_QERROR;	// Status LED (reload value = frequency)
+   \   00000000   E001                       LDI     R16,1
+   \   00000002   9300....                   STS     uc_led_value,R16
+    158            uc_led_count = 0;			// Status LED (counter)
+   \   00000006   E000                       LDI     R16,0
+   \   00000008   9300....                   STS     uc_led_count,R16
+    159          }
+   \   0000000C   9508                       RET
+    160          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    161          void wal_eetbl_write( unsigned char s_address, unsigned char s_value)
+   \                     wal_eetbl_write:
+    162          {
+    163          // V1.6 Write to EE directly to avoid processor lock-up during write
+    164            uc_eetbl_adr[uc_eetbl_wrp] = s_address;
+   \   00000000   9120....                   LDS     R18,uc_eetbl_wrp
+   \   00000004   E030                       LDI     R19,0
+   \   00000006   01F9                       MOVW    R31 : R30,R19 : R18
+   \   00000008   ....                       SUBI    R30,LOW((-(uc_eetbl_adr) & 0xFFFF))
+   \   0000000A   ....                       SBCI    R31,(-(uc_eetbl_adr) & 0xFFFF) >> 8
+   \   0000000C   8300                       ST      Z,R16
+    165            uc_eetbl_val[uc_eetbl_wrp] = s_value;
+   \   0000000E   9120....                   LDS     R18,uc_eetbl_wrp
+   \   00000012   E030                       LDI     R19,0
+   \   00000014   01F9                       MOVW    R31 : R30,R19 : R18
+   \   00000016   ....                       SUBI    R30,LOW((-(uc_eetbl_val) & 0xFFFF))
+   \   00000018   ....                       SBCI    R31,(-(uc_eetbl_val) & 0xFFFF) >> 8
+   \   0000001A   8310                       ST      Z,R17
+    166            uc_eetbl_wrp++;
+   \   0000001C   ....                       LDI     R30,LOW(uc_eetbl_wrp)
+   \   0000001E   ....                       LDI     R31,(uc_eetbl_wrp) >> 8
+   \   00000020   8120                       LD      R18,Z
+   \   00000022   9523                       INC     R18
+   \   00000024   8320                       ST      Z,R18
+    167            uc_eetbl_wrp &= 0x0F;
+   \   00000026   ....                       LDI     R30,LOW(uc_eetbl_wrp)
+   \   00000028   ....                       LDI     R31,(uc_eetbl_wrp) >> 8
+   \   0000002A   8120                       LD      R18,Z
+   \   0000002C   702F                       ANDI    R18,0x0F
+   \   0000002E   8320                       ST      Z,R18
+    168            return;  
+   \   00000030   9508                       RET
+    169          }
+    170          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    171          void wal_eetbl_fsm( void)
+   \                     wal_eetbl_fsm:
+    172          {
+    173          // V1.6 13JAN06: provide FSM to prevent processor lock-up EE writes
+    174          
+    175            if( uc_eetbl_wrp != uc_eetbl_rdp)
+   \   00000000   9100....                   LDS     R16,uc_eetbl_wrp
+   \   00000004   9110....                   LDS     R17,uc_eetbl_rdp
+   \   00000008   1701                       CP      R16,R17
+   \   0000000A   F409                       BRNE    $+2+2
+   \   0000000C   C042                       RJMP    ??wal_eetbl_fsm_0
+    176            {
+    177              // outstand EE write..
+    178              switch( uc_eetbl_fsm)
+   \   0000000E   9100....                   LDS     R16,uc_eetbl_fsm
+   \   00000012   5000                       SUBI    R16,0
+   \   00000014   F039                       BREQ    ??wal_eetbl_fsm_1
+   \   00000016   950A                       DEC     R16
+   \   00000018   F059                       BREQ    ??wal_eetbl_fsm_2
+   \   0000001A   950A                       DEC     R16
+   \   0000001C   F119                       BREQ    ??wal_eetbl_fsm_3
+   \   0000001E   950A                       DEC     R16
+   \   00000020   F139                       BREQ    ??wal_eetbl_fsm_4
+   \   00000022   C034                       RJMP    ??wal_eetbl_fsm_5
+    179              {
+    180              case 0:
+    181                // only progress if (EECR & 0x02) not active...
+    182                if( !(EECR & 0x02))
+   \                     ??wal_eetbl_fsm_1:
+   \   00000024   99E1                       SBIC    0x1C,0x01
+   \   00000026   C035                       RJMP    ??wal_eetbl_fsm_0
+    183                {
+    184                  uc_eetbl_fsm = 1;
+   \   00000028   E001                       LDI     R16,1
+   \   0000002A   9300....                   STS     uc_eetbl_fsm,R16
+   \   0000002E   9508                       RET
+    185                }
+    186                break;
+    187              case 1:
+    188                EEARH = 0;
+   \                     ??wal_eetbl_fsm_2:
+   \   00000030   E000                       LDI     R16,0
+   \   00000032   BB0F                       OUT     0x1F,R16
+    189                EEARL = uc_eetbl_adr[uc_eetbl_rdp];
+   \   00000034   9100....                   LDS     R16,uc_eetbl_rdp
+   \   00000038   E010                       LDI     R17,0
+   \   0000003A   01F8                       MOVW    R31 : R30,R17 : R16
+   \   0000003C   ....                       SUBI    R30,LOW((-(uc_eetbl_adr) & 0xFFFF))
+   \   0000003E   ....                       SBCI    R31,(-(uc_eetbl_adr) & 0xFFFF) >> 8
+   \   00000040   8100                       LD      R16,Z
+   \   00000042   BB0E                       OUT     0x1E,R16
+    190                EEDR = uc_eetbl_val[uc_eetbl_rdp];
+   \   00000044   9100....                   LDS     R16,uc_eetbl_rdp
+   \   00000048   E010                       LDI     R17,0
+   \   0000004A   01F8                       MOVW    R31 : R30,R17 : R16
+   \   0000004C   ....                       SUBI    R30,LOW((-(uc_eetbl_val) & 0xFFFF))
+   \   0000004E   ....                       SBCI    R31,(-(uc_eetbl_val) & 0xFFFF) >> 8
+   \   00000050   8100                       LD      R16,Z
+   \   00000052   BB0D                       OUT     0x1D,R16
+    191                EECR = 0x04;
+   \   00000054   E004                       LDI     R16,4
+   \   00000056   BB0C                       OUT     0x1C,R16
+    192                EECR = 0x02;
+   \   00000058   E002                       LDI     R16,2
+   \   0000005A   BB0C                       OUT     0x1C,R16
+    193                uc_eetbl_fsm = 2;
+   \   0000005C   E002                       LDI     R16,2
+   \   0000005E   9300....                   STS     uc_eetbl_fsm,R16
+   \   00000062   9508                       RET
+    194                break;
+    195              case 2:
+    196                // only progress if (EECR & 0x02) not active...
+    197                if( !(EECR & 0x02))
+   \                     ??wal_eetbl_fsm_3:
+   \   00000064   99E1                       SBIC    0x1C,0x01
+   \   00000066   C015                       RJMP    ??wal_eetbl_fsm_0
+    198                {
+    199                  uc_eetbl_fsm = 3;
+   \   00000068   E003                       LDI     R16,3
+   \   0000006A   9300....                   STS     uc_eetbl_fsm,R16
+   \   0000006E   9508                       RET
+    200                }
+    201                break;
+    202              case 3:
+    203                // end of sequence, increment 'read' pointer and exit
+    204                uc_eetbl_rdp++;
+   \                     ??wal_eetbl_fsm_4:
+   \   00000070   ....                       LDI     R30,LOW(uc_eetbl_rdp)
+   \   00000072   ....                       LDI     R31,(uc_eetbl_rdp) >> 8
+   \   00000074   8100                       LD      R16,Z
+   \   00000076   9503                       INC     R16
+   \   00000078   8300                       ST      Z,R16
+    205                uc_eetbl_rdp &= 0x0F;
+   \   0000007A   ....                       LDI     R30,LOW(uc_eetbl_rdp)
+   \   0000007C   ....                       LDI     R31,(uc_eetbl_rdp) >> 8
+   \   0000007E   8100                       LD      R16,Z
+   \   00000080   700F                       ANDI    R16,0x0F
+   \   00000082   8300                       ST      Z,R16
+    206                uc_eetbl_fsm = 0;
+   \   00000084   E000                       LDI     R16,0
+   \   00000086   9300....                   STS     uc_eetbl_fsm,R16
+   \   0000008A   9508                       RET
+    207                break;
+    208              default: 
+    209                uc_eetbl_fsm = 0;
+   \                     ??wal_eetbl_fsm_5:
+   \   0000008C   E000                       LDI     R16,0
+   \   0000008E   9300....                   STS     uc_eetbl_fsm,R16
+    210              }
+    211            }
+    212          }
+   \                     ??wal_eetbl_fsm_0:
+   \   00000092   9508                       RET
+    213          
+    214          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    215          void wal_position_store( void)
+   \                     wal_position_store:
+    216          {
+    217            uc_axis_chi = (unsigned char) (ui_axis_pos >> 8);
+   \   00000000   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000002   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000004   8111                       LDD     R17,Z+1
+   \   00000006   2F01                       MOV     R16,R17
+   \   00000008   9300....                   STS     uc_axis_chi,R16
+    218            uc_axis_clo = (unsigned char) (ui_axis_pos & 0x00FF);
+   \   0000000C   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   0000000E   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000010   8100                       LD      R16,Z
+   \   00000012   9300....                   STS     uc_axis_clo,R16
+    219            uc_axis_err = 0;
+   \   00000016   E000                       LDI     R16,0
+   \   00000018   9300....                   STS     uc_axis_err,R16
+    220            
+    221            wal_eetbl_write( WAL_EE_COUNTHI, uc_axis_chi);
+   \   0000001C   9110....                   LDS     R17,uc_axis_chi
+   \   00000020   E003                       LDI     R16,3
+   \   00000022   ....                       RCALL   wal_eetbl_write
+    222            wal_eetbl_write( WAL_EE_COUNTLO, uc_axis_clo);
+   \   00000024   9110....                   LDS     R17,uc_axis_clo
+   \   00000028   E004                       LDI     R16,4
+   \   0000002A   ....                       RCALL   wal_eetbl_write
+    223            wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+   \   0000002C   9110....                   LDS     R17,uc_axis_err
+   \   00000030   E005                       LDI     R16,5
+   \   00000032   ....                       RCALL   wal_eetbl_write
+    224          }
+   \   00000034   9508                       RET
+    225          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    226          void wal_calc_setpos_diff( void)
+   \                     wal_calc_setpos_diff:
+    227          {
+    228            if( ui_axis_set > ui_axis_pos)
+   \   00000000   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000002   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000004   8100                       LD      R16,Z
+   \   00000006   8111                       LDD     R17,Z+1
+   \   00000008   ....                       LDI     R30,LOW(ui_axis_set)
+   \   0000000A   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   0000000C   8120                       LD      R18,Z
+   \   0000000E   8131                       LDD     R19,Z+1
+   \   00000010   1702                       CP      R16,R18
+   \   00000012   0713                       CPC     R17,R19
+   \   00000014   F478                       BRCC    ??wal_calc_setpos_diff_0
+    229            {
+    230              ui_axis_diff = ui_axis_set - ui_axis_pos;
+   \   00000016   ....                       LDI     R30,LOW(ui_axis_set)
+   \   00000018   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   0000001A   8100                       LD      R16,Z
+   \   0000001C   8111                       LDD     R17,Z+1
+   \   0000001E   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000020   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000022   8120                       LD      R18,Z
+   \   00000024   8131                       LDD     R19,Z+1
+   \   00000026   1B02                       SUB     R16,R18
+   \   00000028   0B13                       SBC     R17,R19
+   \   0000002A   ....                       LDI     R30,LOW(ui_axis_diff)
+   \   0000002C   ....                       LDI     R31,(ui_axis_diff) >> 8
+   \   0000002E   8300                       ST      Z,R16
+   \   00000030   8311                       STD     Z+1,R17
+   \   00000032   9508                       RET
+    231            }
+    232            else
+    233            {
+    234              ui_axis_diff = ui_axis_pos - ui_axis_set;
+   \                     ??wal_calc_setpos_diff_0:
+   \   00000034   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000036   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000038   8100                       LD      R16,Z
+   \   0000003A   8111                       LDD     R17,Z+1
+   \   0000003C   ....                       LDI     R30,LOW(ui_axis_set)
+   \   0000003E   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   00000040   8120                       LD      R18,Z
+   \   00000042   8131                       LDD     R19,Z+1
+   \   00000044   1B02                       SUB     R16,R18
+   \   00000046   0B13                       SBC     R17,R19
+   \   00000048   ....                       LDI     R30,LOW(ui_axis_diff)
+   \   0000004A   ....                       LDI     R31,(ui_axis_diff) >> 8
+   \   0000004C   8300                       ST      Z,R16
+   \   0000004E   8311                       STD     Z+1,R17
+    235            }
+    236          }  
+   \   00000050   9508                       RET
+    237          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    238          unsigned char wal_pos_similar( void)
+   \                     wal_pos_similar:
+    239          {
+   \   00000000   93BA                       ST      -Y,R27
+   \   00000002   93AA                       ST      -Y,R26
+    240          // compare ui_axis_set with ui_axis_pos; return (TRUE) if difference zero or +/- 1
+    241          // use wal_calc_setpos_diff() to determine ui_axis_diff
+    242          
+    243            wal_calc_setpos_diff();
+   \   00000004   ....                       RCALL   wal_calc_setpos_diff
+    244            if( ui_axis_diff < WDEF_TACHO_DEADBAND)
+   \   00000006   ....                       LDI     R26,LOW(ui_axis_diff)
+   \   00000008   ....                       LDI     R27,(ui_axis_diff) >> 8
+   \   0000000A   91ED                       LD      R30,X+
+   \   0000000C   91FC                       LD      R31,X
+   \   0000000E   9733                       SBIW    R31 : R30,3
+   \   00000010   F410                       BRCC    ??wal_pos_similar_0
+    245              return 1;
+   \   00000012   E001                       LDI     R16,1
+   \   00000014   C001                       RJMP    ??wal_pos_similar_1
+    246            return 0;
+   \                     ??wal_pos_similar_0:
+   \   00000016   E000                       LDI     R16,0
+   \                     ??wal_pos_similar_1:
+   \   00000018   91A9                       LD      R26,Y+
+   \   0000001A   91B9                       LD      R27,Y+
+   \   0000001C   9508                       RET
+    247          }
+    248          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    249          void wal_motor_goto( void)
+   \                     wal_motor_goto:
+    250          {
+    251          
+    252          // mgoto
+    253          /*
+    254          				; appears to be out of range...
+    255          				; a set point of 500mm only has
+    256          				; a high byte value of 19!
+    257          				; & exclude negative numbers.
+    258          	movlw	0xF0		; -'ve & greater than 409.6mm
+    259          	andwf	RXDHI,0		; hi byte AND with 0xF0 
+    260          	btfss	_zero		; should be zero, if not
+    261          	return 			; ignore
+    262          	call	readcf		; read confidence byte
+    263          	iorlw	.0		; OR with 0
+    264          	btfss	_zero		; is zero?
+    265          	goto	mgopos		; seems ok
+    266          	movlw	.42		; *
+    267          	movwf	RXCOM		;
+    268          	movlw	.85		; U
+    269          	movwf	RXDLO		; 
+    270          	return			; do not move if no confidence
+    271          mgopos	clrf	SETLO		;
+    272          	clrf	SETHI		;
+    273          	movfw	GEARR		;
+    274          	movwf	COUNT		;
+    275          mgoadd	movfw	RXDLO		; load Data lo
+    276          	addwf	SETLO,1		; store as low set point
+    277          	btfsc	_carry		; > 256
+    278          	incf	SETHI,1		; 
+    279          	movfw	RXDHI		; load Data hi
+    280          	addwf	SETHI,1		; store as high set point
+    281          	decfsz	COUNT,1		; multiply by gear ratio
+    282          	goto	mgoadd		; keep adding
+    283          	call	subcnt		; subtract Set point - Counter = Diff
+    284          
+    285          	movfw	DIFFLO		; for debug return calculated difference
+    286          	movwf	RXDLO		; 
+    287          	movfw	DIFFHI		; 
+    288          	movwf	RXDHI		; 
+    289          
+    290          	btfss	_differr	; negative if bit 7 of DIFFHI set
+    291          	goto	gofwd		; not negative so go forward
+    292          gorev	comf	DIFFHI,0	; negate DIFFHI -> W
+    293          	btfss	_zero		; if zero test DIFFLO
+    294          	goto	mgorev		; Difference large so do reverse..
+    295          	comf	DIFFLO,0	; negate DIFFLO -> W
+    296          	andlw	0xFC		; was difference < -4?
+    297          	btfss	_zero		; if zero then do not go backward..
+    298          	goto	mgorev		; not zero so reverse
+    299          mnogo	movlw	.81		; Q
+    300          	movwf	RXCOM		; i.e. error *Q
+    301          	return			; return without starting reverse..
+    302          mgorev	movlw	OverRun		; alter SET point
+    303          	subwf	SETLO,1		; v2.6 unidirection to position
+    304          	btfss	_carry		; SETLO - OverRun -> SETLO
+    305          	decf	SETHI,1		; OverRun > SETLO, SETHI--
+    306          	bsf	_unidir		; make sure unidirection flag indicator set
+    307          	bsf	_fwdrev		; set reverse indicator
+    308          	call	mrev		; start motor backwards (goto)
+    309          	return
+    310          gofwd	nop			; Disable unidirectional control 7.11.96
+    311          ;	movlw	OverRun		; overshoot value
+    312          ;	addwf	SETLO,1		; add to target value
+    313          ;	btfsc	_carry		; was addition > 255
+    314          ;	incf	SETHI,1		; yes, so add to hi-value
+    315          	bcf	_unidir		; reset unidirection flag indicator..
+    316          	movf	DIFFHI,1	; 1st check hi-byte
+    317          	btfss	_zero		; if zero test DIFFLO
+    318          	goto	mgofwd		; Difference large so fwd ok
+    319          	movfw	DIFFLO		; test DIFFLO
+    320          	andlw	0xFC		; is diff > 3
+    321          	btfss	_zero		; if zero then do not go forward..
+    322          	goto	mgofwd		; not zero so fwd ok
+    323          	goto	mnogo		; do not move
+    324          mgofwd	bcf	_fwdrev		; reset forward indicator
+    325          	call	mfwd		; start motor forwards (GOTO)
+    326          	return
+    327          
+    328          */
+    329          }
+   \   00000000   9508                       RET
+    330          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    331          void wal_motor_start( void)
+   \                     wal_motor_start:
+    332          {
+    333            WAL_OP_DIR = (uc_axis_dir == 1) ? 1: 0;
+   \   00000000   9100....                   LDS     R16,uc_axis_dir
+   \   00000004   3001                       CPI     R16,1
+   \   00000006   F411                       BRNE    ??wal_motor_start_0
+   \   00000008   E001                       LDI     R16,1
+   \   0000000A   C001                       RJMP    ??wal_motor_start_1
+   \                     ??wal_motor_start_0:
+   \   0000000C   E000                       LDI     R16,0
+   \                     ??wal_motor_start_1:
+   \   0000000E   2F10                       MOV     R17,R16
+   \   00000010   FD10                       SBRC    R17,0
+   \   00000012   9A94                       SBI     0x12,0x04
+   \                     ??wal_motor_start_2:
+   \   00000014   FF10                       SBRS    R17,0
+   \   00000016   9894                       CBI     0x12,0x04
+    334            // V1.5 15DEC05: always 100% PWM
+    335            // WAL_OP_PWM = uc_axis_pwm;
+    336            WAL_OP_PWM = WAL_PWM_MAXSP;
+   \                     ??wal_motor_start_3:
+   \   00000018   EF0F                       LDI     R16,255
+   \   0000001A   BD03                       OUT     0x23,R16
+    337            WAL_OP_BRK = 1;
+   \   0000001C   9A95                       SBI     0x12,0x05
+    338            
+    339            uc_motoron = 1;
+   \   0000001E   E001                       LDI     R16,1
+   \   00000020   9300....                   STS     uc_motoron,R16
+    340            
+    341            uc_stall_active = 1;
+   \   00000024   E001                       LDI     R16,1
+   \   00000026   9300....                   STS     uc_stall_active,R16
+    342            uc_stall_tacin = 0;
+   \   0000002A   E000                       LDI     R16,0
+   \   0000002C   9300....                   STS     uc_stall_tacin,R16
+    343            uc_stall_mshi = uc_stall_mslo = 0;
+   \   00000030   E000                       LDI     R16,0
+   \   00000032   9300....                   STS     uc_stall_mslo,R16
+   \   00000036   9300....                   STS     uc_stall_mshi,R16
+    344          }
+   \   0000003A   9508                       RET
+    345          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    346          void wal_motor_stop( void)
+   \                     wal_motor_stop:
+    347          {
+    348            /*
+    349            bcf	_brake		; stop motor .. brake active low
+    350            bsf	_enable		; active low
+    351            bcf	_moving		; clear _moving flag
+    352            bsf	_lastdir	; reset _lastdir flag to reverse
+    353            btfss	_direct		; last known direction (reset is fwd)
+    354            bcf	_lastdir	; (0 = CW at hall, 1=CCW)
+    355            */
+    356          
+    357            WAL_OP_BRK = 0;
+   \   00000000   9895                       CBI     0x12,0x05
+    358            WAL_OP_PWM = 0;			// NB. Output inversion
+   \   00000002   E000                       LDI     R16,0
+   \   00000004   BD03                       OUT     0x23,R16
+    359            
+    360            uc_motoron = 0;
+   \   00000006   E000                       LDI     R16,0
+   \   00000008   9300....                   STS     uc_motoron,R16
+    361            
+    362            uc_stall_active = 0;
+   \   0000000C   E000                       LDI     R16,0
+   \   0000000E   9300....                   STS     uc_stall_active,R16
+    363          }
+   \   00000012   9508                       RET
+    364          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    365          void wal_stall_manage( void)
+   \                     wal_stall_manage:
+    366          {
+    367          
+    368          
+    369            // unsigned char uc_stall_active;  // i.e. motor moving
+    370            // unsigned char uc_stall_error;   // stall condition detected
+    371            // unsigned char uc_stall_tacin;   // num. of tachos received
+    372            // unsigned char uc_stall_mslo;    // msec
+    373            // unsigned char uc_stall_mshi;    // hi msec
+    374          
+    375            uc_stall_mslo++;
+   \   00000000   ....                       LDI     R30,LOW(uc_stall_mslo)
+   \   00000002   ....                       LDI     R31,(uc_stall_mslo) >> 8
+   \   00000004   8100                       LD      R16,Z
+   \   00000006   9503                       INC     R16
+   \   00000008   8300                       ST      Z,R16
+    376            if( uc_stall_mslo == 200)
+   \   0000000A   9100....                   LDS     R16,uc_stall_mslo
+   \   0000000E   3C08                       CPI     R16,200
+   \   00000010   F521                       BRNE    ??wal_stall_manage_0
+    377            {
+    378              // ~100 msec
+    379              uc_stall_mslo = 0;
+   \   00000012   E000                       LDI     R16,0
+   \   00000014   9300....                   STS     uc_stall_mslo,R16
+    380              uc_stall_mshi++;
+   \   00000018   ....                       LDI     R30,LOW(uc_stall_mshi)
+   \   0000001A   ....                       LDI     R31,(uc_stall_mshi) >> 8
+   \   0000001C   8100                       LD      R16,Z
+   \   0000001E   9503                       INC     R16
+   \   00000020   8300                       ST      Z,R16
+    381              
+    382              if( uc_stall_mshi > 2)
+   \   00000022   9100....                   LDS     R16,uc_stall_mshi
+   \   00000026   3003                       CPI     R16,3
+   \   00000028   F0C0                       BRCS    ??wal_stall_manage_0
+    383              {
+    384                // V1.7 reduce 'stall detect period' to avoid 'wrap' of stall counter.
+    385                // stall if less than 5 tachos in 300msec
+    386                if( uc_stall_tacin < 5)
+   \   0000002A   9100....                   LDS     R16,uc_stall_tacin
+   \   0000002E   3005                       CPI     R16,5
+   \   00000030   F470                       BRCC    ??wal_stall_manage_1
+    387                {
+    388                  // error condition
+    389                  wal_motor_stop();
+   \   00000032   ....                       RCALL   wal_motor_stop
+    390                  uc_axis_err = 1;
+   \   00000034   E001                       LDI     R16,1
+   \   00000036   9300....                   STS     uc_axis_err,R16
+    391                  wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+   \   0000003A   9110....                   LDS     R17,uc_axis_err
+   \   0000003E   E005                       LDI     R16,5
+   \   00000040   ....                       RCALL   wal_eetbl_write
+    392                  // V1.6 13JAN06: Force E_AxisError to quit motion state
+    393                  // NB. Rationalise to use E_AxisStop (E_AxisStall)
+    394                  if( SEQ_AddEvent( E_AxisStall) != UCC_OK )
+   \   00000042   E009                       LDI     R16,9
+   \   00000044   ........                   CALL    SEQ_AddEvent
+   \   00000048   2300                       TST     R16
+   \   0000004A   F009                       BREQ    ??wal_stall_manage_1
+    395                  {
+    396                    vss_seq_error();
+   \   0000004C   ....                       RCALL   vss_seq_error
+    397                  }
+    398                }
+    399                uc_stall_mshi = 0;
+   \                     ??wal_stall_manage_1:
+   \   0000004E   E000                       LDI     R16,0
+   \   00000050   9300....                   STS     uc_stall_mshi,R16
+    400                uc_stall_tacin = 0;
+   \   00000054   E000                       LDI     R16,0
+   \   00000056   9300....                   STS     uc_stall_tacin,R16
+    401              }
+    402            }
+    403          }
+   \                     ??wal_stall_manage_0:
+   \   0000005A   9508                       RET
+    404          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    405          void UserLoop( void)
+   \                     UserLoop:
+    406          {
+    407          
+    408            // Timer0 overflow should occur every 0.5msec
+    409            if( uc_tprim != uc_tprev)
+   \   00000000   9100....                   LDS     R16,uc_tprim
+   \   00000004   9110....                   LDS     R17,uc_tprev
+   \   00000008   1701                       CP      R16,R17
+   \   0000000A   F409                       BRNE    $+2+2
+   \   0000000C   C041                       RJMP    ??UserLoop_0
+    410            {
+    411              uc_tprev = uc_tprim;
+   \   0000000E   9100....                   LDS     R16,uc_tprim
+   \   00000012   9300....                   STS     uc_tprev,R16
+    412              // Seed VisualSTATE tick:
+    413              wal_vss_timer_function();   // VSActionToOutput.c
+                     ^
+Warning[Pe223]: function declared implicitly
+   \   00000016   ........                   CALL    wal_vss_timer_function
+    414              // wal_timer_counter();
+    415              
+    416              // Also 'fast' debounce & switching on inputs:
+    417              // WAL_DEBUG_MISO = 1;
+    418              wal_dbnc_inputs();
+   \   0000001A   ........                   CALL    wal_dbnc_inputs
+    419              // WAL_DEBUG_MISO = 0;
+    420              
+    421              if( uc_stall_active)
+   \   0000001E   9100....                   LDS     R16,uc_stall_active
+   \   00000022   2300                       TST     R16
+   \   00000024   F009                       BREQ    ??UserLoop_1
+    422              {
+    423                wal_stall_manage();
+   \   00000026   ....                       RCALL   wal_stall_manage
+    424              }
+    425              
+    426              // V1.6 13JAN06: use FSM to structure EE writes
+    427              wal_eetbl_fsm();
+   \                     ??UserLoop_1:
+   \   00000028   ....                       RCALL   wal_eetbl_fsm
+    428              
+    429              // V1.7 16JAN06: use timer function to delay uni-reverse:
+    430              if( uc_delay_uni)
+   \   0000002A   9100....                   LDS     R16,uc_delay_uni
+   \   0000002E   2300                       TST     R16
+   \   00000030   F179                       BREQ    ??UserLoop_0
+    431              {
+    432                uc_mstimer_lo++;
+   \   00000032   ....                       LDI     R30,LOW(uc_mstimer_lo)
+   \   00000034   ....                       LDI     R31,(uc_mstimer_lo) >> 8
+   \   00000036   8100                       LD      R16,Z
+   \   00000038   9503                       INC     R16
+   \   0000003A   8300                       ST      Z,R16
+    433                if( uc_mstimer_lo > 199)
+   \   0000003C   9100....                   LDS     R16,uc_mstimer_lo
+   \   00000040   3C08                       CPI     R16,200
+   \   00000042   F130                       BRCS    ??UserLoop_0
+    434                {
+    435                  uc_mstimer_lo = 0;
+   \   00000044   E000                       LDI     R16,0
+   \   00000046   9300....                   STS     uc_mstimer_lo,R16
+    436                  uc_mstimer_hi++;
+   \   0000004A   ....                       LDI     R30,LOW(uc_mstimer_hi)
+   \   0000004C   ....                       LDI     R31,(uc_mstimer_hi) >> 8
+   \   0000004E   8100                       LD      R16,Z
+   \   00000050   9503                       INC     R16
+   \   00000052   8300                       ST      Z,R16
+    437                  if( uc_mstimer_hi > 1)
+   \   00000054   9100....                   LDS     R16,uc_mstimer_hi
+   \   00000058   3002                       CPI     R16,2
+   \   0000005A   F0D0                       BRCS    ??UserLoop_0
+    438                  {
+    439                    // i.e. approx. 0.2 sec
+    440                    ui_axis_set = ui_axis_uni;
+   \   0000005C   ....                       LDI     R30,LOW(ui_axis_uni)
+   \   0000005E   ....                       LDI     R31,(ui_axis_uni) >> 8
+   \   00000060   8100                       LD      R16,Z
+   \   00000062   8111                       LDD     R17,Z+1
+   \   00000064   ....                       LDI     R30,LOW(ui_axis_set)
+   \   00000066   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   00000068   8300                       ST      Z,R16
+   \   0000006A   8311                       STD     Z+1,R17
+    441                    uc_mstimer_hi = 0;
+   \   0000006C   E000                       LDI     R16,0
+   \   0000006E   9300....                   STS     uc_mstimer_hi,R16
+    442                    uc_unitravel = 0;
+   \   00000072   E000                       LDI     R16,0
+   \   00000074   9300....                   STS     uc_unitravel,R16
+    443                    uc_delay_uni = 0;
+   \   00000078   E000                       LDI     R16,0
+   \   0000007A   9300....                   STS     uc_delay_uni,R16
+    444                    if( !wal_pos_similar())
+   \   0000007E   ....                       RCALL   wal_pos_similar
+   \   00000080   2300                       TST     R16
+   \   00000082   F431                       BRNE    ??UserLoop_0
+    445                    {
+    446                      if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+   \   00000084   E006                       LDI     R16,6
+   \   00000086   ........                   CALL    SEQ_AddEvent
+   \   0000008A   2300                       TST     R16
+   \   0000008C   F009                       BREQ    ??UserLoop_0
+    447                      {
+    448                              vss_seq_error();
+   \   0000008E   ....                       RCALL   vss_seq_error
+    449                      }
+    450                    }
+    451                  }
+    452                }
+    453              }
+    454              
+    455            }
+    456          
+    457          
+    458            // If TXC interrupt flagged:
+    459            // uc_tx_chsent used rather than Add_Event directly to minimize overhead
+    460            if( uc_tx_chsent != 0)
+   \                     ??UserLoop_0:
+   \   00000090   9100....                   LDS     R16,uc_tx_chsent
+   \   00000094   2300                       TST     R16
+   \   00000096   F409                       BRNE    $+2+2
+   \   00000098   C066                       RJMP    ??UserLoop_2
+    461            {
+    462              
+    463              // character should now be in UDR as 485 RX always on
+    464              // therefore RXC bit should now be set, so clear by reading UDR
+    465              // and then check character in == character out 
+    466              uc_rx_stata = UCSRA;
+   \   0000009A   B10B                       IN      R16,0x0B
+   \   0000009C   9300....                   STS     uc_rx_stata,R16
+    467              if( uc_rx_stata & 0x80)
+   \   000000A0   ....                       LDI     R30,LOW(uc_rx_stata)
+   \   000000A2   ....                       LDI     R31,(uc_rx_stata) >> 8
+   \   000000A4   8100                       LD      R16,Z
+   \   000000A6   FF07                       SBRS    R16,7
+   \   000000A8   C017                       RJMP    ??UserLoop_3
+    468              {
+    469                uc_rx_statb = UCSRB;
+   \   000000AA   B10A                       IN      R16,0x0A
+   \   000000AC   9300....                   STS     uc_rx_statb,R16
+    470                uc_rx_chbyte = UDR;		// Read UART data register
+   \   000000B0   B10C                       IN      R16,0x0C
+   \   000000B2   9300....                   STS     uc_rx_chbyte,R16
+    471          
+    472                UCSRB &= ~(1<<TXB8);	// reset 9th bit
+   \   000000B6   9850                       CBI     0x0A,0x00
+    473          
+    474                // character received
+    475                uc_comm_comp = uc_rx_chbyte;
+   \   000000B8   9100....                   LDS     R16,uc_rx_chbyte
+   \   000000BC   9300....                   STS     uc_comm_comp,R16
+    476                if( uc_tx_chout != uc_comm_comp)
+   \   000000C0   9100....                   LDS     R16,uc_tx_chout
+   \   000000C4   9110....                   LDS     R17,uc_comm_comp
+   \   000000C8   1701                       CP      R16,R17
+   \   000000CA   F061                       BREQ    ??UserLoop_4
+    477                {
+    478                  uc_comm_flag |= WAL_COMM_MISM;
+   \   000000CC   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   000000CE   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   000000D0   8100                       LD      R16,Z
+   \   000000D2   6200                       ORI     R16,0x20
+   \   000000D4   8300                       ST      Z,R16
+   \   000000D6   C006                       RJMP    ??UserLoop_4
+    479                }
+    480              }
+    481              else
+    482              {
+    483                uc_comm_flag |= WAL_COMM_MISM;
+   \                     ??UserLoop_3:
+   \   000000D8   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   000000DA   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   000000DC   8100                       LD      R16,Z
+   \   000000DE   6200                       ORI     R16,0x20
+   \   000000E0   8300                       ST      Z,R16
+    484                UCSRB &= ~(1<<TXB8);	// reset 9th bit
+   \   000000E2   9850                       CBI     0x0A,0x00
+    485              }
+    486          
+    487              uc_tx_chsent = 0;
+   \                     ??UserLoop_4:
+   \   000000E4   E000                       LDI     R16,0
+   \   000000E6   9300....                   STS     uc_tx_chsent,R16
+    488          
+    489              // only use State Transitions if not hi-speed comms:
+    490              if( uc_comm_hilo == 0)
+   \   000000EA   9100....                   LDS     R16,uc_comm_hilo
+   \   000000EE   2300                       TST     R16
+   \   000000F0   F599                       BRNE    ??UserLoop_5
+    491              {
+    492                // continue (E_TxComplete) directly:
+    493                if( (uc_msgtxprt > 5) || (uc_comm_flag & WAL_COMM_MISM) )
+   \   000000F2   9100....                   LDS     R16,uc_msgtxprt
+   \   000000F6   3006                       CPI     R16,6
+   \   000000F8   F428                       BRCC    ??UserLoop_6
+   \   000000FA   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   000000FC   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   000000FE   8100                       LD      R16,Z
+   \   00000100   FF05                       SBRS    R16,5
+   \   00000102   C00D                       RJMP    ??UserLoop_7
+    494                {
+    495                  uc_comm_flag &= ~WAL_COMM_MISM;
+   \                     ??UserLoop_6:
+   \   00000104   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000106   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000108   8100                       LD      R16,Z
+   \   0000010A   7D0F                       ANDI    R16,0xDF
+   \   0000010C   8300                       ST      Z,R16
+    496                  if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+   \   0000010E   E101                       LDI     R16,17
+   \   00000110   ........                   CALL    SEQ_AddEvent
+   \   00000114   2300                       TST     R16
+   \   00000116   F409                       BRNE    $+2+2
+   \   00000118   C05F                       RJMP    ??UserLoop_8
+    497                  {
+    498                    vss_seq_error();
+   \   0000011A   ....                       RCALL   vss_seq_error
+   \   0000011C   9508                       RET
+    499                  }
+    500                }
+    501                else
+    502                {
+    503                  // uc_msgtxprt ==> 1,2,3,4,5
+    504                  uc_tx_chout = uca_msgtx[uc_msgtxprt];
+   \                     ??UserLoop_7:
+   \   0000011E   9100....                   LDS     R16,uc_msgtxprt
+   \   00000122   E010                       LDI     R17,0
+   \   00000124   01F8                       MOVW    R31 : R30,R17 : R16
+   \   00000126   ....                       SUBI    R30,LOW((-(uca_msgtx) & 0xFFFF))
+   \   00000128   ....                       SBCI    R31,(-(uca_msgtx) & 0xFFFF) >> 8
+   \   0000012A   8100                       LD      R16,Z
+   \   0000012C   9300....                   STS     uc_tx_chout,R16
+    505          
+    506                  // checksum generation:
+    507                  if( uc_msgtxprt != 5)
+   \   00000130   9100....                   LDS     R16,uc_msgtxprt
+   \   00000134   3005                       CPI     R16,5
+   \   00000136   F039                       BREQ    ??UserLoop_9
+    508                  {
+    509                    uca_msgtx[5] += uc_tx_chout;
+   \   00000138   9100....                   LDS     R16,uc_tx_chout
+   \   0000013C   ....                       LDI     R30,LOW(uca_msgtx)
+   \   0000013E   ....                       LDI     R31,(uca_msgtx) >> 8
+   \   00000140   8115                       LDD     R17,Z+5
+   \   00000142   0F10                       ADD     R17,R16
+   \   00000144   8315                       STD     Z+5,R17
+    510                  }
+    511                  uc_msgtxprt++;
+   \                     ??UserLoop_9:
+   \   00000146   ....                       LDI     R30,LOW(uc_msgtxprt)
+   \   00000148   ....                       LDI     R31,(uc_msgtxprt) >> 8
+   \   0000014A   8100                       LD      R16,Z
+   \   0000014C   9503                       INC     R16
+   \   0000014E   8300                       ST      Z,R16
+    512          
+    513                  UDR = uc_tx_chout;
+   \   00000150   9100....                   LDS     R16,uc_tx_chout
+   \   00000154   B90C                       OUT     0x0C,R16
+   \   00000156   9508                       RET
+    514                  // SEQ_AddEvent( E_TxMoreMsg)
+    515                }
+    516              }
+    517              else
+    518              {
+    519                // Low speed comms:
+    520                if( SEQ_AddEvent( E_TxComplete) != UCC_OK )
+   \                     ??UserLoop_5:
+   \   00000158   E105                       LDI     R16,21
+   \   0000015A   ........                   CALL    SEQ_AddEvent
+   \   0000015E   2300                       TST     R16
+   \   00000160   F1D9                       BREQ    ??UserLoop_8
+    521                {
+    522                  vss_seq_error();
+   \   00000162   ....                       RCALL   vss_seq_error
+   \   00000164   9508                       RET
+    523                }
+    524              }
+    525            }
+    526            else
+    527            {
+    528              // If Rx char received, check if OK & set RX_Event
+    529              // (unless doing TX)
+    530              // ensure only single event until 'action' achieved:
+    531              if( (uc_rxrdptr != uc_rxwrptr) && ( uc_rx_process == 0) )
+   \                     ??UserLoop_2:
+   \   00000166   9100....                   LDS     R16,uc_rxrdptr
+   \   0000016A   9110....                   LDS     R17,uc_rxwrptr
+   \   0000016E   1701                       CP      R16,R17
+   \   00000170   F199                       BREQ    ??UserLoop_8
+   \   00000172   9100....                   LDS     R16,uc_rx_process
+   \   00000176   2300                       TST     R16
+   \   00000178   F579                       BRNE    ??UserLoop_8
+    532              {
+    533                uc_rx_process = 1;
+   \   0000017A   E001                       LDI     R16,1
+   \   0000017C   9300....                   STS     uc_rx_process,R16
+    534                // valid character stored in uc_rx_chbyte
+    535          
+    536                uc_rx_chrecv = uc_rxbuff[uc_rxrdptr].charin;
+   \   00000180   9100....                   LDS     R16,uc_rxrdptr
+   \   00000184   E010                       LDI     R17,0
+   \   00000186   0F00                       LSL     R16
+   \   00000188   1F11                       ROL     R17
+   \   0000018A   01F8                       MOVW    R31 : R30,R17 : R16
+   \   0000018C   ....                       SUBI    R30,LOW((-(uc_rxbuff) & 0xFFFF))
+   \   0000018E   ....                       SBCI    R31,(-(uc_rxbuff) & 0xFFFF) >> 8
+   \   00000190   8100                       LD      R16,Z
+   \   00000192   9300....                   STS     uc_rx_chrecv,R16
+    537                uc_comm_9set = (uc_rxbuff[uc_rxrdptr].status & 0x02) ? 1 : 0;
+   \   00000196   ....                       LDI     R30,LOW(uc_rxbuff)
+   \   00000198   ....                       LDI     R31,(uc_rxbuff) >> 8
+   \   0000019A   9100....                   LDS     R16,uc_rxrdptr
+   \   0000019E   E010                       LDI     R17,0
+   \   000001A0   0F00                       LSL     R16
+   \   000001A2   1F11                       ROL     R17
+   \   000001A4   0FE0                       ADD     R30,R16
+   \   000001A6   1FF1                       ADC     R31,R17
+   \   000001A8   8101                       LDD     R16,Z+1
+   \   000001AA   FF01                       SBRS    R16,1
+   \   000001AC   C002                       RJMP    ??UserLoop_10
+   \   000001AE   E001                       LDI     R16,1
+   \   000001B0   C001                       RJMP    ??UserLoop_11
+   \                     ??UserLoop_10:
+   \   000001B2   E000                       LDI     R16,0
+   \                     ??UserLoop_11:
+   \   000001B4   9300....                   STS     uc_comm_9set,R16
+    538                // event E_RxChar causes action A_RxProcess
+    539                if( SEQ_AddEvent( E_RxChar) != UCC_OK )
+   \   000001B8   E00F                       LDI     R16,15
+   \   000001BA   ........                   CALL    SEQ_AddEvent
+   \   000001BE   2300                       TST     R16
+   \   000001C0   F009                       BREQ    ??UserLoop_12
+    540                {
+    541                  vss_seq_error();
+   \   000001C2   ....                       RCALL   vss_seq_error
+    542                }
+    543                uc_rxrdptr++;
+   \                     ??UserLoop_12:
+   \   000001C4   ....                       LDI     R30,LOW(uc_rxrdptr)
+   \   000001C6   ....                       LDI     R31,(uc_rxrdptr) >> 8
+   \   000001C8   8100                       LD      R16,Z
+   \   000001CA   9503                       INC     R16
+   \   000001CC   8300                       ST      Z,R16
+    544                uc_rxrdptr &= (WAL_MAX_RXBUFF-1);
+   \   000001CE   ....                       LDI     R30,LOW(uc_rxrdptr)
+   \   000001D0   ....                       LDI     R31,(uc_rxrdptr) >> 8
+   \   000001D2   8100                       LD      R16,Z
+   \   000001D4   710F                       ANDI    R16,0x1F
+   \   000001D6   8300                       ST      Z,R16
+    545              }
+    546            }
+    547          
+    548            // NB. Most 'housekeeping' should be within 'state' periodic function.
+    549          }
+   \                     ??UserLoop_8:
+   \   000001D8   9508                       RET
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for wstr_build_date>`:
+   \   00000000   614A206E3133               DB "Jan 31 2006"
+   \              322030300036
+
+   \                                 In segment NEAR_ID, align 1, keep-with-next
+   \                     `?<Initializer for wstr_build_time>`:
+   \   00000000   3930333A3A33               DB "09:33:12"
+   \              323100      
+
+   \                                 In segment ABSOLUTE, at 0x2a
+   \   union <unnamed> volatile __io _A_UCSRB
+   \                     _A_UCSRB:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x2b
+   \   union <unnamed> volatile __io _A_UCSRA
+   \                     _A_UCSRA:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x2c
+   \   union <unnamed> volatile __io _A_UDR
+   \                     _A_UDR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x32
+   \   union <unnamed> volatile __io _A_PORTD
+   \                     _A_PORTD:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3c
+   \   union <unnamed> volatile __io _A_EECR
+   \                     _A_EECR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3d
+   \   union <unnamed> volatile __io _A_EEDR
+   \                     _A_EEDR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x3e
+   \   union <unnamed> volatile __io _A_EEAR
+   \                     _A_EEAR:
+   \   00000000                              DS 2
+
+   \                                 In segment ABSOLUTE, at 0x43
+   \   union <unnamed> volatile __io _A_OCR2
+   \                     _A_OCR2:
+   \   00000000                              DS 1
+    550          
+    551          
+
+   Maximum stack usage in bytes:
+
+     Function                    CSTACK RSTACK
+     --------                    ------ ------
+     UserLoop                        0      2
+       -> wal_vss_timer_function     0      2
+       -> wal_dbnc_inputs            0      2
+       -> wal_stall_manage           0      2
+       -> wal_eetbl_fsm              0      2
+       -> wal_pos_similar            0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+     vss_seq_error                   0      2
+     wal_calc_setpos_diff            0      2
+     wal_eetbl_fsm                   0      2
+     wal_eetbl_write                 0      2
+     wal_motor_goto                  0      2
+     wal_motor_start                 0      2
+     wal_motor_stop                  0      2
+     wal_pos_similar                 2      2
+       -> wal_calc_setpos_diff       2      2
+     wal_position_store              0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+       -> wal_eetbl_write            0      2
+     wal_stall_manage                0      2
+       -> wal_motor_stop             0      2
+       -> wal_eetbl_write            0      2
+       -> SEQ_AddEvent               0      2
+       -> vss_seq_error              0      2
+
+
+   Segment part sizes:
+
+     Function/Label                 Bytes
+     --------------                 -----
+     wstr_build_date                  12
+     wstr_build_time                   9
+     ui_axis_set                       2
+     ui_axis_pos                       2
+     ui_axis_setrx                     2
+     ui_axis_postx                     2
+     ui_axis_conv                      2
+     ui_axis_mult                      2
+     ui_axis_tacho                     2
+     ui_axis_diff                      2
+     ui_axis_rup                       2
+     ui_axis_rdn                       2
+     ui_axis_tmm                       2
+     ui_axis_maxallow                  2
+     ui_axis_uni                       2
+     si_axis_dif                       2
+     uc_carrybit                       1
+     uc_tprim                          1
+     uc_tprev                          1
+     uc_tm0preset                      1
+     uc_num_moveslo                    1
+     uc_num_moveshi                    1
+     uc_num_moves24                    1
+     uc_done_move                      1
+     uc_powerup_once                   1
+     uc_settlepower                    1
+     uc_axis_vss                       1
+     uc_axis_dir                       1
+     uc_axis_pwm                       1
+     uc_axis_rud                       1
+     uc_axis_chi                       1
+     uc_axis_clo                       1
+     uc_axis_err                       1
+     uc_led_value                      1
+     uc_led_count                      1
+     uc_led_scale                      1
+     uc_rx_stata                       1
+     uc_rx_statb                       1
+     uc_rx_chbyte                      1
+     uc_rxbuff                        64
+     uc_rxrdptr                        1
+     uc_rxwrptr                        1
+     uc_rx_chrecv                      1
+     uc_rx_chksum                      1
+     uc_rx_process                     1
+     uc_tx_chout                       1
+     uc_tx_chksum                      1
+     uc_tx_chsent                      1
+     uc_comm_adid                      1
+     uc_comm_idle                      1
+     uc_comm_flag                      1
+     uc_comm_9set                      1
+     uc_comm_hilo                      1
+     uc_comm_comp                      1
+     uc_comm_noecho                    1
+     uca_msgrx                         6
+     uca_msgtx                         6
+     uc_msgrxptr                       1
+     uc_msgtxprt                       1
+     dblead_ip_enc                     1
+     dbtail_ip_enc                     1
+     val_ip_enc                        1
+     dblead_ip_trg                     1
+     dbtail_ip_trg                     1
+     val_ip_trg                        1
+     dblead_ip_hom                     1
+     dbtail_ip_hom                     1
+     dblead_ip_lim                     1
+     dbtail_ip_lim                     1
+     dblead_ip_sw1                     1
+     dbtail_ip_sw1                     1
+     val_ip_sw1                        1
+     pin_ip_sw1                        1
+     uc_motoron                        1
+     uc_unitravel                      1
+     uc_read_portd                     1
+     uc_read_portb                     1
+     uc_stall_active                   1
+     uc_stall_error                    1
+     uc_stall_tacin                    1
+     uc_stall_mslo                     1
+     uc_stall_mshi                     1
+     uc_mstimer_lo                     1
+     uc_mstimer_hi                     1
+     uc_delay_uni                      1
+     uc_eetbl_fsm                      1
+     uc_eetbl_wrp                      1
+     uc_eetbl_rdp                      1
+     uc_eetbl_adr                     16
+     uc_eetbl_val                     16
+     ws_ctimer                        40
+     wsp_tc                            2
+     vss_seq_error                    14
+     wal_eetbl_write                  50
+     wal_eetbl_fsm                   148
+     wal_position_store               54
+     wal_calc_setpos_diff             82
+     wal_pos_similar                  30
+     wal_motor_goto                    2
+     wal_motor_start                  60
+     wal_motor_stop                   20
+     wal_stall_manage                 92
+     UserLoop                        474
+     ?<Initializer for wstr_build_date>
+                                      12
+     ?<Initializer for wstr_build_time>
+                                       9
+     _A_UCSRB                          1
+     _A_UCSRA                          1
+     _A_UDR                            1
+     _A_PORTD                          1
+     _A_EECR                           1
+     _A_EEDR                           1
+     _A_EEAR                           2
+     _A_OCR2                           1
+      Others                          12
+
+ 
+     9 bytes in segment ABSOLUTE
+ 1 026 bytes in segment CODE
+    12 bytes in segment INITTAB
+    21 bytes in segment NEAR_I
+    21 bytes in segment NEAR_ID
+   247 bytes in segment NEAR_Z
+ 
+ 1 047 bytes of CODE memory (+ 12 bytes shared)
+   268 bytes of DATA memory (+  9 bytes shared)
+
+Errors: none
+Warnings: 4

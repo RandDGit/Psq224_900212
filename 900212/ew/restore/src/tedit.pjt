@@ -1,0 +1,132 @@
+;Codewright Project File (do not remove or modify this line)
+[ProjInit]
+ProjSetConfigFlags=0x00010140
+
+[Files]
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\defs.h
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\DeviceSetup.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\eventHandler.h
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\generic.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\globals.h
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\init.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\simpleEventHandler.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\simpleEventHandler.h
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\timers.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.h
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\userloop.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSActionToOutput.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.c
+D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.h
+
+
+[State]
+SysSetCwd='D:\sw_dev\VisualState\ProjectM16Motor\ew\src'
+SrchSetFlags=0x0413600b
+FileSortMode=0x0
+StateWindowFrame=88,88,600,411,0x63097fca
+_StateWindow=88,88,1045,461,0x00100018,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\userloop.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,1,10,'',12,255,48,0,10,499,14,15,753,252,249,109,2,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=66,66,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.h',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,8,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=44,44,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,107,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=22,22,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\timers.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,47,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=0,0,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\simpleEventHandler.h',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,1,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=198,198,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\simpleEventHandler.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,54,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=176,176,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\init.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,33,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=154,154,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\globals.h',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,37,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=132,132,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\generic.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,12,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=110,110,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\eventHandler.h',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,1,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=88,88,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\DeviceSetup.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,13,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=66,66,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\defs.h',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,40,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=154,154,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.h',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,17,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=132,132,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,23,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=110,110,1045,461,0x00100008,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSActionToOutput.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,334,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateWindow=176,176,1045,461,0x00100008,'D:\sw_dev\VisualState\ProjectM16Motor\ew\src\inputs.c',240,15,244,32,32,0,32,32,32,32,8,4294967295,4294967295,0,10,'',12,255,48,0,10,499,14,15,753,252,249,87,1,400,0,244,246,242,252,753,753,253,253,253,0,0
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\userloop.c',0x0400040e,109,2,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.h',0x0c00048e,8,2,25,'9 17','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.c',0x0400040e,107,20,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\timers.c',0x0400040e,47,43,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\simpleEventHandler.h',0x0000048e,1,1,25,'9 17','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\simpleEventHandler.c',0x0400040e,54,1,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\init.c',0x0c00040e,33,5,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\globals.h',0x0400048e,37,34,25,'9 17','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\generic.c',0x0400040e,12,1,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\eventHandler.h',0x0000048e,1,1,25,'9 17','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\DeviceSetup.c',0x0400040e,13,1,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\defs.h',0x0400048e,40,77,25,'9 17','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.h',0x0c00048e,17,90,25,'9 17','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.c',0x0400040e,23,1,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSActionToOutput.c',0x0c00040e,334,65,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateBuffer='D:\sw_dev\VisualState\ProjectM16Motor\ew\src\inputs.c',0x0400040e,87,1,25,'5 9 13 17 21 25 29 33','',0x0,''
+_StateHistory=SEARCH,'EXTERN ','val_ip_hom','E_Stall','TIMER0_SW_init','wal_tc_tick','ws_ctimer','wdef_ctimer','wal_similar','Dev_SetMotor','WAL_PWM_RAMPUP'
+_StateHistory=REPLACE,'','extern '
+_StateHistory=FILELIST,'D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\simpleEventHandler.h','D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\timers.c','D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.c','D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\usart2.h','D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\userloop.c','D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSActionToOutput.c','D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.c','D:\SW_DEV\VISUALSTATE\PROJECTM16MOTOR\EW\SRC\VSMain.h','D:\sw_dev\VisualState\ProjectM16Motor\ew\src\inputs.c'
+
+[Editor]
+ClipboardSetTermStr='\r\n',0
+ClipboardEnableTermStr=1
+ClipboardSetSepStr='\r\n',0
+ClipboardEnableSepStr=1
+ScrapSetCount=1
+VCSProject=''
+VCSProjectPath=''
+VCSProjectLocalPath=''
+_RestoreSysFlags=0x63097fca, 0xfffffffc, 0
+_RestoreSysFlags=0x00000000, 0xffffffff, 1
+
+[Compiler]
+TagSetFile=''
+BrowseSetFile=''
+CompilerAssign='TASKING c','.c'
+CompilerAssign='TASKING a96','.a96'
+TagSetCmd='${HOME}${WTAGS} -oc -d -t${TAGFILE}.tag -p${TAGFILE}.ptg',0x8000060
+CompilerAddCmd='$_cw_proj_hash_$','d:\c196\bin\ftee.exe d:\C196\bin\mk.exe %r.obj -a -m d:\sw_dev\6805\wa100v38\offline.opt',1073742416,'d:\c196\bin\ftee.exe d:\C196\bin\mk.exe %r.obj -a -m d:\sw_dev\6805\wa100v38\offline.opt',1073742416,'d:\c196\bin\ftee.exe d:\C196\bin\mk.exe -m d:\sw_dev\6805\wa100v38\offline.opt',1073742480,'d:\c196\bin\ftee.exe d:\C196\bin\mk.exe -a -m d:\sw_dev\6805\wa100v38\offline.opt',1073742480,'cvdemx96.exe  d:\sw_dev\6805\wa100v38\offline.abs',1073741856,'',0,'_TaskingErrorInfo1','_TaskingErrorInfo2','','%y.err','%v%p'
+CompilerAddResponse='$_cw_proj_hash_$',
+CompilerAddCmd='TASKING a96','d:\c196\bin\ftee.exe d:\C196\bin\mk.exe %r.obj -a -m d:\sw_dev\6805\wa100v38\offline.opt',1073741904,'',80,'',80,'',80,'',0,'',0,'_TaskingErrorInfo2','','','%y.err',''
+CompilerAddResponse='TASKING a96',
+CompilerAddCmd='TASKING c','d:\c196\bin\ftee.exe d:\C196\bin\mk.exe %r.obj -a -m d:\sw_dev\6805\wa100v38\offline.opt',1073741904,'',80,'',80,'',80,'',0,'',0,'_TaskingErrorInfo1','','','%y.err',''
+CompilerAddResponse='TASKING c',
+
+[Ede]
+UseDOSShell=False
+SaveFiles=True
+IgnoreBuildFlags=False
+ExtMakefileName=
+ExtMakefile=False
+ExtDebuggerName=
+ExtDebugger=False
+KeepTmpFiles=False
+StopAfterError=True
+CompileForeground=True
+RebuildForeground=True
+BuildForeground=True
+ShowOptions=False
+Toolchain=d:\C196\etc\c196.dol
+
+[Directories]
+Libraries=d:\C196\lib
+Includes=d:\C196\include
+Executables=d:\C196\bin
+
+[Dependencies]
+defs.h=
+devicesetup.c=vsmain.h
+vsmain.h=simpleeventhandler.h
+simpleeventhandler.h=eventhandler.h
+eventhandler.h=
+generic.c=vsmain.h,usart2.h,defs.h
+usart2.h=
+globals.h=vsmain.h,usart2.h,defs.h
+init.c=vsmain.h
+simpleeventhandler.c=simpleeventhandler.h
+timers.c=vsmain.h,usart2.h,defs.h
+usart2.c=usart2.h,simpleeventhandler.h,vsmain.h,defs.h
+userloop.c=vsmain.h,usart2.h,defs.h,globals.h
+vsactiontooutput.c=usart2.h,vsmain.h,defs.h
+vsmain.c=vsmain.h
+FileList=defs.h,devicesetup.c,vsmain.h,simpleeventhandler.h,eventhandler.h,generic.c,usart2.h,globals.h,init.c,simpleeventhandler.c,timers.c,usart2.c,userloop.c,vsactiontooutput.c,vsmain.c
+
+[Options]
+FileList=
+
+[DefaultOptions]
+OptionList=

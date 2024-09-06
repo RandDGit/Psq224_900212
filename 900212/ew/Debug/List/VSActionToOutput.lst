@@ -1,0 +1,2230 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  31/Jan/2006  09:32:52 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\VSActionToOutput. #
+#                    c                                                       #
+#    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Debu #
+#                    g\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\List #
+#                    \ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\     #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug                 #
+#                    -DENABLE_BIT_DEFINITIONS -e -I                          #
+#                    M:\VisualState\ProjectM16Motor\ew\src\ -I               #
+#                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I             #
+#                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\" -I "C:\Program Files\IAR                  #
+#                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"           #
+#                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\src #
+#                    \VSActionToOutput.c                                     #
+#    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\VSActionTo #
+#                    Output.lst                                              #
+#    Object file  =  M:\VisualState\ProjectM16Motor\ew\Debug\Obj\VSActionToO #
+#                    utput.r90                                               #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+M:\VisualState\ProjectM16Motor\ew\src\VSActionToOutput.c
+      1          /*****************************************************************************
+      2          * IAR visualSTATE action functions and error handler.
+      3          * i.e. flesh out functions corresponding to System1action.h (VisualSTATE)
+      4          *****************************************************************************/
+      5          
+      6          #include <iom16.h>		 	// Atmel up definitions
+      7          #include <inavr.h>			// AVR intrinsic functions
+      8          #include "VSMain.h"			// VisualState definitions (further includes)
+      9          #include "system1Action.h"              // VisualState generated 'action' functions:
+     10          
+     11          #include "usart2.h"			// Application (UART) defs
+     12          #include "defs.h"			// Application (GENERAL) defs
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",122  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",131  Warning[Pe375]: 
+          declaration requires a typedef name
+
+  };
+   ^
+"M:\VisualState\ProjectM16Motor\ew\src\defs.h",137  Warning[Pe375]: 
+          declaration requires a typedef name
+     13          #include "globals.h"		// Application global data/variables
+     14          
+     15          
+     16          unsigned char wal_pos_similar( void);
+     17          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+     18          
+     19          void wal_motor_start( void);
+     20          void wal_motor_stop( void);
+     21          void wal_position_store( void);
+     22          
+     23          void InitData( void);
+     24          void LoadNVData( void);	        // read eeprom (nv data)
+     25          void wal_do_command( void);
+     26          void wal_picnet_motor( void);
+     27          
+     28          void wal_setup_vss_timer( void);
+     29          void wal_vss_timer_function( void);
+     30          void vss_seq_error( void);
+     31          
+     32          /* Implement timer counter structure */
+     33          /* Relies upon hardware::application tick generation */
+     34          
+     35          
+     36          typedef struct wdef_vss_timer{
+     37            VS_UINT event;
+     38            VS_UINT ticks;
+     39            unsigned char active;
+     40            unsigned char other;
+     41          };
+                  ^
+Warning[Pe375]: declaration requires a typedef name
+     42          
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     43          struct wdef_vss_timer wvt_period;
+   \                     wvt_period:
+   \   00000000                              DS 6
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     44          struct wdef_vss_timer wvt_stall;
+   \                     wvt_stall:
+   \   00000000                              DS 6
+
+   \                                 In segment NEAR_Z, align 1, keep-with-next
+   \   00000000                              REQUIRE `?<Segment init: NEAR_Z>`
+     45          struct wdef_vss_timer wvt_txwait;
+   \                     wvt_txwait:
+   \   00000000                              DS 6
+     46          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     47          void wal_setup_vss_timer( void)
+   \                     wal_setup_vss_timer:
+     48          {
+     49          	wvt_period.event = E_Periodic;		        // results in A_Periodic
+   \   00000000   E00E                       LDI     R16,14
+   \   00000002   E010                       LDI     R17,0
+   \   00000004   ....                       LDI     R30,LOW(wvt_period)
+   \   00000006   ....                       LDI     R31,(wvt_period) >> 8
+   \   00000008   8300                       ST      Z,R16
+   \   0000000A   8311                       STD     Z+1,R17
+     50          	wvt_period.ticks = 0;
+   \   0000000C   E000                       LDI     R16,0
+   \   0000000E   E010                       LDI     R17,0
+   \   00000010   ....                       LDI     R30,LOW(wvt_period)
+   \   00000012   ....                       LDI     R31,(wvt_period) >> 8
+   \   00000014   8302                       STD     Z+2,R16
+   \   00000016   8313                       STD     Z+3,R17
+     51          	wvt_period.active = 0;
+   \   00000018   E000                       LDI     R16,0
+   \   0000001A   9300....                   STS     (wvt_period + 4),R16
+     52          	wvt_period.other = 0;
+   \   0000001E   E000                       LDI     R16,0
+   \   00000020   9300....                   STS     (wvt_period + 5),R16
+     53          	wvt_stall.event = E_AxisStall;			// used within 'MoveTo' state
+   \   00000024   E009                       LDI     R16,9
+   \   00000026   E010                       LDI     R17,0
+   \   00000028   ....                       LDI     R30,LOW(wvt_stall)
+   \   0000002A   ....                       LDI     R31,(wvt_stall) >> 8
+   \   0000002C   8300                       ST      Z,R16
+   \   0000002E   8311                       STD     Z+1,R17
+     54          	wvt_stall.ticks = 0;
+   \   00000030   E000                       LDI     R16,0
+   \   00000032   E010                       LDI     R17,0
+   \   00000034   ....                       LDI     R30,LOW(wvt_stall)
+   \   00000036   ....                       LDI     R31,(wvt_stall) >> 8
+   \   00000038   8302                       STD     Z+2,R16
+   \   0000003A   8313                       STD     Z+3,R17
+     55          	wvt_stall.active = 0;
+   \   0000003C   E000                       LDI     R16,0
+   \   0000003E   9300....                   STS     (wvt_stall + 4),R16
+     56          	wvt_stall.other = 0;
+   \   00000042   E000                       LDI     R16,0
+   \   00000044   9300....                   STS     (wvt_stall + 5),R16
+     57          	wvt_txwait.event = E_TimerTxWait;		// used within 'Sending' state
+   \   00000048   E103                       LDI     R16,19
+   \   0000004A   E010                       LDI     R17,0
+   \   0000004C   ....                       LDI     R30,LOW(wvt_txwait)
+   \   0000004E   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   00000050   8300                       ST      Z,R16
+   \   00000052   8311                       STD     Z+1,R17
+     58          	wvt_txwait.ticks = 0;
+   \   00000054   E000                       LDI     R16,0
+   \   00000056   E010                       LDI     R17,0
+   \   00000058   ....                       LDI     R30,LOW(wvt_txwait)
+   \   0000005A   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   0000005C   8302                       STD     Z+2,R16
+   \   0000005E   8313                       STD     Z+3,R17
+     59          	wvt_txwait.active = 0;
+   \   00000060   E000                       LDI     R16,0
+   \   00000062   9300....                   STS     (wvt_txwait + 4),R16
+     60          	wvt_txwait.other = 0;
+   \   00000066   E000                       LDI     R16,0
+   \   00000068   9300....                   STS     (wvt_txwait + 5),R16
+     61          }
+   \   0000006C   9508                       RET
+     62          
+
+   \                                 In segment CODE, align 2, keep-with-next
+     63          void wal_vss_timer_function( void)
+   \                     wal_vss_timer_function:
+     64          {
+     65          // Function for VSS Timer counter activity
+     66          // Must be called every <x> msec, where <x> = VSS timebase
+     67          // i.e. this application tick = 0.5 msec
+     68          
+     69          // could use timer ->
+     70          // if timer->active == 1 .. if timer->ticks ... timer->event
+     71          
+     72          	if( wvt_period.active == 1)
+   \   00000000   9100....                   LDS     R16,(wvt_period + 4)
+   \   00000004   3001                       CPI     R16,1
+   \   00000006   F4E9                       BRNE    ??wal_vss_timer_function_0
+     73          	{
+     74          		if( wvt_period.ticks != 0)
+   \   00000008   ....                       LDI     R30,LOW(wvt_period)
+   \   0000000A   ....                       LDI     R31,(wvt_period) >> 8
+   \   0000000C   8102                       LDD     R16,Z+2
+   \   0000000E   8113                       LDD     R17,Z+3
+   \   00000010   2B01                       OR      R16,R17
+   \   00000012   F0B9                       BREQ    ??wal_vss_timer_function_0
+     75          		{
+     76          			wvt_period.ticks--;
+   \   00000014   ....                       LDI     R30,LOW(wvt_period)
+   \   00000016   ....                       LDI     R31,(wvt_period) >> 8
+   \   00000018   8102                       LDD     R16,Z+2
+   \   0000001A   8113                       LDD     R17,Z+3
+   \   0000001C   5001                       SUBI    R16,1
+   \   0000001E   4010                       SBCI    R17,0
+   \   00000020   8302                       STD     Z+2,R16
+   \   00000022   8313                       STD     Z+3,R17
+     77          			if( wvt_period.ticks == 0)
+   \   00000024   ....                       LDI     R30,LOW(wvt_period)
+   \   00000026   ....                       LDI     R31,(wvt_period) >> 8
+   \   00000028   8102                       LDD     R16,Z+2
+   \   0000002A   8113                       LDD     R17,Z+3
+   \   0000002C   2B01                       OR      R16,R17
+   \   0000002E   F449                       BRNE    ??wal_vss_timer_function_0
+     78          			{
+     79          				if( SEQ_AddEvent( wvt_period.event) != UCC_OK )
+   \   00000030   ....                       LDI     R30,LOW(wvt_period)
+   \   00000032   ....                       LDI     R31,(wvt_period) >> 8
+   \   00000034   8100                       LD      R16,Z
+   \   00000036   ........                   CALL    SEQ_AddEvent
+   \   0000003A   2300                       TST     R16
+   \   0000003C   F011                       BREQ    ??wal_vss_timer_function_0
+     80          				{
+     81          					vss_seq_error();
+   \   0000003E   ........                   CALL    vss_seq_error
+     82          				}
+     83          			}
+     84          		}
+     85          	}
+     86          	if( wvt_stall.active == 1)
+   \                     ??wal_vss_timer_function_0:
+   \   00000042   9100....                   LDS     R16,(wvt_stall + 4)
+   \   00000046   3001                       CPI     R16,1
+   \   00000048   F501                       BRNE    ??wal_vss_timer_function_1
+     87          	{
+     88          		if( wvt_stall.ticks != 0)
+   \   0000004A   ....                       LDI     R30,LOW(wvt_stall)
+   \   0000004C   ....                       LDI     R31,(wvt_stall) >> 8
+   \   0000004E   8102                       LDD     R16,Z+2
+   \   00000050   8113                       LDD     R17,Z+3
+   \   00000052   2B01                       OR      R16,R17
+   \   00000054   F0D1                       BREQ    ??wal_vss_timer_function_1
+     89          		{
+     90          			wvt_stall.ticks--;
+   \   00000056   ....                       LDI     R30,LOW(wvt_stall)
+   \   00000058   ....                       LDI     R31,(wvt_stall) >> 8
+   \   0000005A   8102                       LDD     R16,Z+2
+   \   0000005C   8113                       LDD     R17,Z+3
+   \   0000005E   5001                       SUBI    R16,1
+   \   00000060   4010                       SBCI    R17,0
+   \   00000062   8302                       STD     Z+2,R16
+   \   00000064   8313                       STD     Z+3,R17
+     91          			if( wvt_stall.ticks == 0)
+   \   00000066   ....                       LDI     R30,LOW(wvt_stall)
+   \   00000068   ....                       LDI     R31,(wvt_stall) >> 8
+   \   0000006A   8102                       LDD     R16,Z+2
+   \   0000006C   8113                       LDD     R17,Z+3
+   \   0000006E   2B01                       OR      R16,R17
+   \   00000070   F461                       BRNE    ??wal_vss_timer_function_1
+     92          			{
+     93          				if( SEQ_AddEvent( wvt_stall.event) != UCC_OK )
+   \   00000072   ....                       LDI     R30,LOW(wvt_stall)
+   \   00000074   ....                       LDI     R31,(wvt_stall) >> 8
+   \   00000076   8100                       LD      R16,Z
+   \   00000078   ........                   CALL    SEQ_AddEvent
+   \   0000007C   2300                       TST     R16
+   \   0000007E   F011                       BREQ    ??wal_vss_timer_function_2
+     94          				{
+     95          					vss_seq_error();
+   \   00000080   ........                   CALL    vss_seq_error
+     96          				}
+     97          				wvt_stall.active = 0;
+   \                     ??wal_vss_timer_function_2:
+   \   00000084   E000                       LDI     R16,0
+   \   00000086   9300....                   STS     (wvt_stall + 4),R16
+     98          			}
+     99          		}
+    100          	}
+    101          	if( wvt_txwait.active == 1)
+   \                     ??wal_vss_timer_function_1:
+   \   0000008A   9100....                   LDS     R16,(wvt_txwait + 4)
+   \   0000008E   3001                       CPI     R16,1
+   \   00000090   F4E9                       BRNE    ??wal_vss_timer_function_3
+    102          	{
+    103          		if( wvt_txwait.ticks != 0)
+   \   00000092   ....                       LDI     R30,LOW(wvt_txwait)
+   \   00000094   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   00000096   8102                       LDD     R16,Z+2
+   \   00000098   8113                       LDD     R17,Z+3
+   \   0000009A   2B01                       OR      R16,R17
+   \   0000009C   F0B9                       BREQ    ??wal_vss_timer_function_3
+    104          		{
+    105          			wvt_txwait.ticks--;
+   \   0000009E   ....                       LDI     R30,LOW(wvt_txwait)
+   \   000000A0   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   000000A2   8102                       LDD     R16,Z+2
+   \   000000A4   8113                       LDD     R17,Z+3
+   \   000000A6   5001                       SUBI    R16,1
+   \   000000A8   4010                       SBCI    R17,0
+   \   000000AA   8302                       STD     Z+2,R16
+   \   000000AC   8313                       STD     Z+3,R17
+    106          			if( wvt_txwait.ticks == 0)
+   \   000000AE   ....                       LDI     R30,LOW(wvt_txwait)
+   \   000000B0   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   000000B2   8102                       LDD     R16,Z+2
+   \   000000B4   8113                       LDD     R17,Z+3
+   \   000000B6   2B01                       OR      R16,R17
+   \   000000B8   F449                       BRNE    ??wal_vss_timer_function_3
+    107          			{
+    108          				if( SEQ_AddEvent( wvt_txwait.event) != UCC_OK )
+   \   000000BA   ....                       LDI     R30,LOW(wvt_txwait)
+   \   000000BC   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   000000BE   8100                       LD      R16,Z
+   \   000000C0   ........                   CALL    SEQ_AddEvent
+   \   000000C4   2300                       TST     R16
+   \   000000C6   F011                       BREQ    ??wal_vss_timer_function_3
+    109          				{
+    110          					vss_seq_error();
+   \   000000C8   ........                   CALL    vss_seq_error
+    111          				}
+    112          			}
+    113          		}
+    114          	}
+    115          }
+   \                     ??wal_vss_timer_function_3:
+   \   000000CC   9508                       RET
+    116          
+    117          
+    118          /* REFER TO VS generated "System1action.h" */
+    119          /* Last updated 08DEC04 */
+    120          
+    121          /* 
+    122          
+    123          extern VS_VOID A_AxisCalcProfile (VS_VOID);
+    124          extern VS_VOID A_AxisPosUpdate (VS_VOID);
+    125          extern VS_VOID A_ForceStop (VS_VOID);
+    126          extern VS_VOID A_Initialise (VS_VOID);
+    127          extern VS_VOID A_MotorError (VS_VOID);
+    128          extern VS_VOID A_MotorFwd (VS_VOID);
+    129          extern VS_VOID A_MotorIdle (VS_VOID);
+    130          extern VS_VOID A_MotorMove (VS_VOID);
+    131          extern VS_VOID A_MotorOn (VS_VOID);
+    132          extern VS_VOID A_MotorReRef (VS_VOID);
+    133          extern VS_VOID A_MotorRev (VS_VOID);
+    134          extern VS_VOID A_MotorStop (VS_VOID);
+    135          extern VS_VOID A_MotorTest (VS_VOID);
+    136          extern VS_VOID A_Periodic (VS_VOID);
+    137          extern VS_VOID A_RxDoComms (VS_VOID);
+    138          extern VS_VOID A_RxProcess (VS_VOID);
+    139          extern VS_VOID A_TxChar (VS_VOID);
+    140          extern VS_VOID A_TxEnableOff (VS_VOID);
+    141          extern VS_VOID A_TxEnableOn (VS_VOID);
+    142          extern VS_VOID A_TxProcessMsg (VS_VOID);
+    143          extern VS_VOID A_TxTestBusIdle (VS_VOID);
+    144          extern VS_VOID TM_Stall (VS_UINT event, VS_UINT ticks);
+    145          extern VS_VOID TM_Status (VS_UINT event, VS_UINT ticks);
+    146          extern VS_VOID TM_TimerTxWait (VS_UINT event, VS_UINT ticks);
+    147          
+    148          */
+    149          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    150          VS_VOID A_AxisCalcProfile (VS_VOID)
+   \                     A_AxisCalcProfile:
+    151          {
+    152          // action upon entry to motor profile
+    153          // associated with A_MotorMove()
+    154          
+    155          // use difference to determine motor direction (uc_axis_dir)
+    156          // prepare ramp-up & ramp-down profile
+    157          
+    158          // negative difference so move in reverse
+    159          // decrease 'set point' for uni-directional motion,
+    160          // and set unidirection flag:
+    161          
+    162            // V1.7 16JAN06: always set 'uni' == 'set'
+    163            ui_axis_uni = ui_axis_set;
+   \   00000000   ....                       LDI     R30,LOW(ui_axis_set)
+   \   00000002   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   00000004   8100                       LD      R16,Z
+   \   00000006   8111                       LDD     R17,Z+1
+   \   00000008   ....                       LDI     R30,LOW(ui_axis_uni)
+   \   0000000A   ....                       LDI     R31,(ui_axis_uni) >> 8
+   \   0000000C   8300                       ST      Z,R16
+   \   0000000E   8311                       STD     Z+1,R17
+    164            // clear 'uni-directional flag' (set later if required)
+    165            uc_unitravel = 0;
+   \   00000010   E000                       LDI     R16,0
+   \   00000012   9300....                   STS     uc_unitravel,R16
+    166          
+    167            if( ui_axis_set == ui_axis_pos)
+   \   00000016   ....                       LDI     R30,LOW(ui_axis_set)
+   \   00000018   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   0000001A   8100                       LD      R16,Z
+   \   0000001C   8111                       LDD     R17,Z+1
+   \   0000001E   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000020   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000022   8120                       LD      R18,Z
+   \   00000024   8131                       LDD     R19,Z+1
+   \   00000026   1702                       CP      R16,R18
+   \   00000028   0713                       CPC     R17,R19
+   \   0000002A   F449                       BRNE    ??A_AxisCalcProfile_0
+    168            {
+    169              if( SEQ_AddEvent( E_AxisSetPoint) != UCC_OK )
+   \   0000002C   E008                       LDI     R16,8
+   \   0000002E   ........                   CALL    SEQ_AddEvent
+   \   00000032   2300                       TST     R16
+   \   00000034   F409                       BRNE    $+2+2
+   \   00000036   C04C                       RJMP    ??A_AxisCalcProfile_1
+    170              {
+    171                vss_seq_error();
+   \   00000038   ........                   CALL    vss_seq_error
+   \   0000003C   9508                       RET
+    172              }
+    173              return;
+    174            }
+    175          
+    176            if( ui_axis_set > ui_axis_pos)
+   \                     ??A_AxisCalcProfile_0:
+   \   0000003E   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000040   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000042   8100                       LD      R16,Z
+   \   00000044   8111                       LDD     R17,Z+1
+   \   00000046   ....                       LDI     R30,LOW(ui_axis_set)
+   \   00000048   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   0000004A   8120                       LD      R18,Z
+   \   0000004C   8131                       LDD     R19,Z+1
+   \   0000004E   1702                       CP      R16,R18
+   \   00000050   0713                       CPC     R17,R19
+   \   00000052   F490                       BRCC    ??A_AxisCalcProfile_2
+    177            {
+    178              uc_axis_dir = 1;
+   \   00000054   E001                       LDI     R16,1
+   \   00000056   9300....                   STS     uc_axis_dir,R16
+    179              ui_axis_diff = ui_axis_set - ui_axis_pos;
+   \   0000005A   ....                       LDI     R30,LOW(ui_axis_set)
+   \   0000005C   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   0000005E   8100                       LD      R16,Z
+   \   00000060   8111                       LDD     R17,Z+1
+   \   00000062   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000064   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000066   8120                       LD      R18,Z
+   \   00000068   8131                       LDD     R19,Z+1
+   \   0000006A   1B02                       SUB     R16,R18
+   \   0000006C   0B13                       SBC     R17,R19
+   \   0000006E   ....                       LDI     R30,LOW(ui_axis_diff)
+   \   00000070   ....                       LDI     R31,(ui_axis_diff) >> 8
+   \   00000072   8300                       ST      Z,R16
+   \   00000074   8311                       STD     Z+1,R17
+    180              // calculate ramp profile; pwm output value (STEPA) set in A_MotorOn
+    181              return;
+   \   00000076   9508                       RET
+    182            }
+    183            
+    184            // V1.6 12JAN06: implement UNI-DIRECTIONAL travel!
+    185            // Just force position less than intended, let 'top' control re-send move
+    186            // (A_MotorMove)
+    187            // if( ui_axis_set > WAL_UNI_TRAVEL)
+    188            // {
+    189            //   ui_axis_set -= WAL_UNI_TRAVEL;
+    190            // }
+    191            // else force re-reference.... (maybe set ui_axis_set == 0)
+    192            
+    193            // V1.7 16JAN06: re-implement UNI-DIRECTIONAL travel:
+    194            // but include auto-repositioning based upon internal flag...
+    195            uc_unitravel = 1;     // force 're-position' at end of travel
+   \                     ??A_AxisCalcProfile_2:
+   \   00000078   E001                       LDI     R16,1
+   \   0000007A   9300....                   STS     uc_unitravel,R16
+    196            // V1.7.. use A_MotorIdle to force move (E_AxisMove) if uc_unitravel
+    197            
+    198            ui_axis_set = 0;
+   \   0000007E   E000                       LDI     R16,0
+   \   00000080   E010                       LDI     R17,0
+   \   00000082   ....                       LDI     R30,LOW(ui_axis_set)
+   \   00000084   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   00000086   8300                       ST      Z,R16
+   \   00000088   8311                       STD     Z+1,R17
+    199            if( ui_axis_uni > WAL_UNI_TRAVEL)
+   \   0000008A   ....                       LDI     R30,LOW(ui_axis_uni)
+   \   0000008C   ....                       LDI     R31,(ui_axis_uni) >> 8
+   \   0000008E   8100                       LD      R16,Z
+   \   00000090   8111                       LDD     R17,Z+1
+   \   00000092   3501                       CPI     R16,81
+   \   00000094   E020                       LDI     R18,0
+   \   00000096   0712                       CPC     R17,R18
+   \   00000098   F050                       BRCS    ??A_AxisCalcProfile_3
+    200            {
+    201              ui_axis_set = (ui_axis_uni - WAL_UNI_TRAVEL);
+   \   0000009A   ....                       LDI     R30,LOW(ui_axis_uni)
+   \   0000009C   ....                       LDI     R31,(ui_axis_uni) >> 8
+   \   0000009E   8100                       LD      R16,Z
+   \   000000A0   8111                       LDD     R17,Z+1
+   \   000000A2   5500                       SUBI    R16,80
+   \   000000A4   4010                       SBCI    R17,0
+   \   000000A6   ....                       LDI     R30,LOW(ui_axis_set)
+   \   000000A8   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   000000AA   8300                       ST      Z,R16
+   \   000000AC   8311                       STD     Z+1,R17
+    202            }
+    203            
+    204            
+    205            uc_axis_dir = 0;
+   \                     ??A_AxisCalcProfile_3:
+   \   000000AE   E000                       LDI     R16,0
+   \   000000B0   9300....                   STS     uc_axis_dir,R16
+    206            ui_axis_diff = ui_axis_pos - ui_axis_set;
+   \   000000B4   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   000000B6   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   000000B8   8100                       LD      R16,Z
+   \   000000BA   8111                       LDD     R17,Z+1
+   \   000000BC   ....                       LDI     R30,LOW(ui_axis_set)
+   \   000000BE   ....                       LDI     R31,(ui_axis_set) >> 8
+   \   000000C0   8120                       LD      R18,Z
+   \   000000C2   8131                       LDD     R19,Z+1
+   \   000000C4   1B02                       SUB     R16,R18
+   \   000000C6   0B13                       SBC     R17,R19
+   \   000000C8   ....                       LDI     R30,LOW(ui_axis_diff)
+   \   000000CA   ....                       LDI     R31,(ui_axis_diff) >> 8
+   \   000000CC   8300                       ST      Z,R16
+   \   000000CE   8311                       STD     Z+1,R17
+    207            // calculate ramp profile
+    208          
+    209          }
+   \                     ??A_AxisCalcProfile_1:
+   \   000000D0   9508                       RET
+    210          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    211          VS_VOID A_AxisPosUpdate (VS_VOID)
+   \                     A_AxisPosUpdate:
+    212          {
+    213          // action due to E_Tacho (update counter position)
+    214          // NB. uc_axis_dir fwd == 1, rev == 0
+    215          
+    216            // uc_stall_tacin++; updated within tacho input routine
+    217            
+    218            // V1.6 13JAN06: rationalise 'tacho' position update within input
+    219            // only handle 'motion' (vss==2) logic within this function...
+    220          
+    221            if( wal_pos_similar() )
+   \   00000000   ........                   CALL    wal_pos_similar
+   \   00000004   2300                       TST     R16
+   \   00000006   F061                       BREQ    ??A_AxisPosUpdate_0
+    222            {
+    223              wal_motor_stop();
+   \   00000008   ........                   CALL    wal_motor_stop
+    224              wal_position_store();
+   \   0000000C   ........                   CALL    wal_position_store
+    225              if( SEQ_AddEvent( E_AxisSetPoint) != UCC_OK )
+   \   00000010   E008                       LDI     R16,8
+   \   00000012   ........                   CALL    SEQ_AddEvent
+   \   00000016   2300                       TST     R16
+   \   00000018   F0E1                       BREQ    ??A_AxisPosUpdate_1
+    226              {
+    227                vss_seq_error();
+   \   0000001A   ........                   CALL    vss_seq_error
+   \   0000001E   9508                       RET
+    228              }
+    229              return;
+    230            }
+    231          
+    232            if( ui_axis_pos > WAL_MAX_AXIS_TACHO )
+   \                     ??A_AxisPosUpdate_0:
+   \   00000020   ....                       LDI     R30,LOW(ui_axis_pos)
+   \   00000022   ....                       LDI     R31,(ui_axis_pos) >> 8
+   \   00000024   8100                       LD      R16,Z
+   \   00000026   8111                       LDD     R17,Z+1
+   \   00000028   3000                       CPI     R16,0
+   \   0000002A   E420                       LDI     R18,64
+   \   0000002C   0712                       CPC     R17,R18
+   \   0000002E   F048                       BRCS    ??A_AxisPosUpdate_2
+    233            {
+    234              wal_motor_stop();
+   \   00000030   ........                   CALL    wal_motor_stop
+    235              if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+   \   00000034   E001                       LDI     R16,1
+   \   00000036   ........                   CALL    SEQ_AddEvent
+   \   0000003A   2300                       TST     R16
+   \   0000003C   F011                       BREQ    ??A_AxisPosUpdate_2
+    236              {
+    237                      vss_seq_error();
+   \   0000003E   ........                   CALL    vss_seq_error
+    238              }
+    239            }
+    240            
+    241            // check ramp-up, ramp-down conditions:
+    242            // NB. wal_pos_similar calls wal_calc_setpos_diff()
+    243            // therefore ui_axis_diff already determined...
+    244            
+    245            ui_axis_rup++;
+   \                     ??A_AxisPosUpdate_2:
+   \   00000042   ....                       LDI     R30,LOW(ui_axis_rup)
+   \   00000044   ....                       LDI     R31,(ui_axis_rup) >> 8
+   \   00000046   8100                       LD      R16,Z
+   \   00000048   8111                       LDD     R17,Z+1
+   \   0000004A   5F0F                       SUBI    R16,255
+   \   0000004C   4F1F                       SBCI    R17,255
+   \   0000004E   8300                       ST      Z,R16
+   \   00000050   8311                       STD     Z+1,R17
+    246            
+    247            /*
+    248            if( ui_axis_diff < WAL_PWM_ZONEE)
+    249            {
+    250              WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    251              return;
+    252            }
+    253            
+    254            if( ui_axis_diff < WAL_PWM_ZONED)
+    255            {
+    256              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    257                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    258              else
+    259                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    260              return;
+    261            }
+    262          
+    263            if( ui_axis_diff < WAL_PWM_ZONEC)
+    264            {
+    265              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    266              {
+    267                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    268              }
+    269              else
+    270              {
+    271                if( ui_axis_rup < WAL_PWM_ZONED)
+    272                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    273                else
+    274                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    275              }
+    276              return;
+    277            }
+    278          
+    279            if( ui_axis_diff < WAL_PWM_ZONEB)
+    280            {
+    281              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    282              {
+    283                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    284              }
+    285              else
+    286              {
+    287                if( ui_axis_rup < WAL_PWM_ZONED)
+    288                {
+    289                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    290                }
+    291                else
+    292                {
+    293                  if( ui_axis_rup < WAL_PWM_ZONEC)
+    294                    WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    295                  else
+    296                    WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+    297                }
+    298              }
+    299              return;
+    300            }
+    301          
+    302            if( ui_axis_diff < WAL_PWM_ZONEA)
+    303            {
+    304              if( ui_axis_rup < WAL_PWM_ZONEE) 
+    305              {
+    306                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;
+    307              }
+    308              else
+    309              {
+    310                if( ui_axis_rup < WAL_PWM_ZONED)
+    311                {
+    312                  WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    313                }
+    314                else
+    315                {
+    316                  if( ui_axis_rup < WAL_PWM_ZONEC)
+    317                  {
+    318                    WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    319                  }
+    320                  else
+    321                  {
+    322                    if( ui_axis_rup < WAL_PWM_ZONEB)
+    323                      WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+    324                    else
+    325                      WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPE;
+    326                  }
+    327                }
+    328              }
+    329              return;
+    330            }
+    331            */
+    332          
+    333            // no ramp down in effect; therefore check if ramp up only:
+    334            // V1.5 15DEC05: 100% PWM on ramp up:
+    335            /*
+    336            if( ui_axis_rup < WAL_PWM_ZONEA)              // ZONEA is largest
+    337            {
+    338              WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPE;   // STEPE is below max
+    339              if( ui_axis_rup < WAL_PWM_ZONEB)
+    340                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPD;
+    341              if( ui_axis_rup < WAL_PWM_ZONEC)
+    342                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPC;
+    343              if( ui_axis_rup < WAL_PWM_ZONED)
+    344                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPB;
+    345              if( ui_axis_rup < WAL_PWM_ZONEE)
+    346                WAL_OP_PWM = uc_axis_pwm = WAL_PWM_STEPA;   // STEP A is slowest
+    347            }
+    348            else
+    349            {
+    350              WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+    351            }
+    352            */
+    353            
+    354            // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+    355            // WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+    356              
+    357          }
+   \                     ??A_AxisPosUpdate_1:
+   \   00000052   9508                       RET
+    358          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    359          VS_VOID A_ForceStop (VS_VOID)
+   \                     A_ForceStop:
+    360          {
+    361            if( SEQ_AddEvent( E_AxisStop) != UCC_OK )
+   \   00000000   E00A                       LDI     R16,10
+   \   00000002   ........                   CALL    SEQ_AddEvent
+   \   00000006   2300                       TST     R16
+   \   00000008   F011                       BREQ    ??A_ForceStop_0
+    362            {
+    363              vss_seq_error();
+   \   0000000A   ........                   CALL    vss_seq_error
+    364            }
+    365          }
+   \                     ??A_ForceStop_0:
+   \   0000000E   9508                       RET
+    366          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    367          VS_VOID A_Initialise (VS_VOID)
+   \                     A_Initialise:
+    368          {
+    369            // Primary initialisation done prior to application start
+    370            // setup ports and interupts
+    371            // InitDevice();  
+    372            // once ports setup, set outputs per application
+    373            // InitOutputs();
+    374          
+    375            // reset variables:
+    376            InitData();
+   \   00000000   ........                   CALL    InitData
+    377            // read eeprom (nv data)
+    378            LoadNVData();
+   \   00000004   ........                   CALL    LoadNVData
+    379          
+    380            // setup baud rate dependent upon option
+    381            if( uc_comm_hilo == 0)
+   \   00000008   9100....                   LDS     R16,uc_comm_hilo
+   \   0000000C   2300                       TST     R16
+   \   0000000E   F429                       BRNE    ??A_Initialise_0
+    382            {
+    383              // (max) 115200 ~= 125k baud (vario)
+    384              USART_Init_High(1);
+   \   00000010   E001                       LDI     R16,1
+   \   00000012   E010                       LDI     R17,0
+   \   00000014   ........                   CALL    USART_Init_High
+   \   00000018   9508                       RET
+    385            }
+    386            else
+    387            {
+    388              // 9600 baud (pic) = 25 with 4MHz osc and U2X = 0
+    389              USART_Init_Low( 25);
+   \                     ??A_Initialise_0:
+   \   0000001A   E109                       LDI     R16,25
+   \   0000001C   E010                       LDI     R17,0
+   \   0000001E   ........                   CALL    USART_Init_Low
+    390            }
+    391          
+    392            // SEQ_AddEvent(E_AxisInvalid);
+    393          }
+   \   00000022   9508                       RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+    394          VS_VOID A_MotorError (VS_VOID)
+   \                     A_MotorError:
+    395          {
+    396            // response to stall, limit detect E_AxisError
+    397            if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+   \   00000000   E001                       LDI     R16,1
+   \   00000002   ........                   CALL    SEQ_AddEvent
+   \   00000006   2300                       TST     R16
+   \   00000008   F011                       BREQ    ??A_MotorError_0
+    398            {
+    399                    vss_seq_error();
+   \   0000000A   ........                   CALL    vss_seq_error
+    400            }
+    401          }
+   \                     ??A_MotorError_0:
+   \   0000000E   9508                       RET
+    402          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    403          VS_VOID A_MotorFwd (VS_VOID)
+   \                     A_MotorFwd:
+    404          {
+    405          // called upon Axis Home Event
+    406            wal_motor_stop();
+   \   00000000   ........                   CALL    wal_motor_stop
+    407            uc_axis_dir = 1;
+   \   00000004   E001                       LDI     R16,1
+   \   00000006   9300....                   STS     uc_axis_dir,R16
+    408            // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+    409            // WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+    410            uc_axis_pwm = WAL_PWM_HOME;
+   \   0000000A   EC0C                       LDI     R16,204
+   \   0000000C   9300....                   STS     uc_axis_pwm,R16
+    411            wal_motor_start();
+   \   00000010   ........                   CALL    wal_motor_start
+    412          }
+   \   00000014   9508                       RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+    413          VS_VOID A_MotorIdle (VS_VOID)
+   \                     A_MotorIdle:
+    414          {
+    415            // set internal axis state for status
+    416            uc_axis_vss = 0;
+   \   00000000   E000                       LDI     R16,0
+   \   00000002   9300....                   STS     uc_axis_vss,R16
+    417          
+    418            uc_done_move = 1;
+   \   00000006   E001                       LDI     R16,1
+   \   00000008   9300....                   STS     uc_done_move,R16
+    419            if( uc_powerup_once )
+   \   0000000C   9100....                   LDS     R16,uc_powerup_once
+   \   00000010   2300                       TST     R16
+   \   00000012   F031                       BREQ    ??A_MotorIdle_0
+    420            {
+    421              uc_powerup_once = 0;
+   \   00000014   E000                       LDI     R16,0
+   \   00000016   9300....                   STS     uc_powerup_once,R16
+    422              uc_done_move = 0;
+   \   0000001A   E000                       LDI     R16,0
+   \   0000001C   9300....                   STS     uc_done_move,R16
+    423            }
+    424            
+    425            // V1.7 16JAN06: self-contained 'uni-directional travel'
+    426            // change in direction delayed using 'uc_delay_uni'
+    427          
+    428            if( uc_unitravel)
+   \                     ??A_MotorIdle_0:
+   \   00000020   9100....                   LDS     R16,uc_unitravel
+   \   00000024   2300                       TST     R16
+   \   00000026   F059                       BREQ    ??A_MotorIdle_1
+    429            {
+    430              uc_delay_uni = 1;
+   \   00000028   E001                       LDI     R16,1
+   \   0000002A   9300....                   STS     uc_delay_uni,R16
+    431              uc_mstimer_lo = uc_mstimer_hi = 0;
+   \   0000002E   E000                       LDI     R16,0
+   \   00000030   9300....                   STS     uc_mstimer_hi,R16
+   \   00000034   9300....                   STS     uc_mstimer_lo,R16
+    432              uc_done_move = 0;
+   \   00000038   E000                       LDI     R16,0
+   \   0000003A   9300....                   STS     uc_done_move,R16
+    433            }
+    434          }
+   \                     ??A_MotorIdle_1:
+   \   0000003E   9508                       RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+    435          VS_VOID A_MotorMove (VS_VOID)
+   \                     A_MotorMove:
+    436          {
+    437            // set internal axis state for status
+    438            uc_axis_vss = 2;
+   \   00000000   E002                       LDI     R16,2
+   \   00000002   9300....                   STS     uc_axis_vss,R16
+    439          }
+   \   00000006   9508                       RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+    440          VS_VOID A_MotorOn (VS_VOID)
+   \                     A_MotorOn:
+    441          {
+    442            // uc_axis_dir = DIR;
+    443            // uc_axis_pwm = PWM;
+    444            
+    445            // Brake Off, Direction Set, Enable = PWM Output
+    446            uc_axis_rud = 1;	          // ramp up
+   \   00000000   E001                       LDI     R16,1
+   \   00000002   9300....                   STS     uc_axis_rud,R16
+    447            ui_axis_rup = 0;                // reset 'ramp-up' counter
+   \   00000006   E000                       LDI     R16,0
+   \   00000008   E010                       LDI     R17,0
+   \   0000000A   ....                       LDI     R30,LOW(ui_axis_rup)
+   \   0000000C   ....                       LDI     R31,(ui_axis_rup) >> 8
+   \   0000000E   8300                       ST      Z,R16
+   \   00000010   8311                       STD     Z+1,R17
+    448            // uc_axis_pwm = WAL_PWM_STEPA;
+    449            // V1.6 13JAN06: Ramp-up/down PWM disabled, set PWM dependent on function 
+    450            WAL_OP_PWM = uc_axis_pwm = WAL_PWM_MAXSP;     // Max. travel velocity
+   \   00000012   EF0F                       LDI     R16,255
+   \   00000014   9300....                   STS     uc_axis_pwm,R16
+   \   00000018   BD03                       OUT     0x23,R16
+    451            
+    452            wal_motor_start();
+   \   0000001A   ........                   CALL    wal_motor_start
+    453          }
+   \   0000001E   9508                       RET
+    454          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    455          VS_VOID A_MotorReRef (VS_VOID)
+   \                     A_MotorReRef:
+    456          {
+    457            // set internal axis state for status
+    458            uc_axis_vss = 1;
+   \   00000000   E001                       LDI     R16,1
+   \   00000002   9300....                   STS     uc_axis_vss,R16
+    459            
+    460            // if home switch start moving backwards (rev)
+    461            if( val_ip_hom == 0)
+   \   00000006   9100....                   LDS     R16,val_ip_hom
+   \   0000000A   2300                       TST     R16
+   \   0000000C   F411                       BRNE    ??A_MotorReRef_0
+    462            {
+    463              A_MotorRev();
+   \   0000000E   ....                       RCALL   A_MotorRev
+   \   00000010   9508                       RET
+    464            }
+    465            else
+    466            {
+    467              // else move forwards (if not at limit)
+    468              if( val_ip_lim == 0)
+   \                     ??A_MotorReRef_0:
+   \   00000012   9100....                   LDS     R16,val_ip_lim
+   \   00000016   2300                       TST     R16
+   \   00000018   F409                       BRNE    ??A_MotorReRef_1
+    469              {
+    470                A_MotorFwd();
+   \   0000001A   ....                       RCALL   A_MotorFwd
+    471              }
+    472            }
+    473          }
+   \                     ??A_MotorReRef_1:
+   \   0000001C   9508                       RET
+    474          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    475          VS_VOID A_MotorRev (VS_VOID) 
+   \                     A_MotorRev:
+    476          {
+    477            uc_axis_dir = 0;
+   \   00000000   E000                       LDI     R16,0
+   \   00000002   9300....                   STS     uc_axis_dir,R16
+    478            uc_axis_pwm = WAL_PWM_RAMPUP;
+   \   00000006   EC0C                       LDI     R16,204
+   \   00000008   9300....                   STS     uc_axis_pwm,R16
+    479            
+    480            // prevent 
+    481            wal_motor_start();
+   \   0000000C   ........                   CALL    wal_motor_start
+    482          }
+   \   00000010   9508                       RET
+    483          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    484          VS_VOID A_MotorStop (VS_VOID)
+   \                     A_MotorStop:
+    485          {
+    486            wal_motor_stop();
+   \   00000000   ........                   CALL    wal_motor_stop
+    487            wvt_stall.active = 0;
+   \   00000004   E000                       LDI     R16,0
+   \   00000006   9300....                   STS     (wvt_stall + 4),R16
+    488          }
+   \   0000000A   9508                       RET
+    489          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    490          VS_VOID A_MotorTest (VS_VOID)
+   \                     A_MotorTest:
+    491          {
+    492            // V1.6 13JAN06: if in 'motion' state stop & set error (A_Handle)
+    493            if( uc_axis_vss == 2)
+   \   00000000   9100....                   LDS     R16,uc_axis_vss
+   \   00000004   3002                       CPI     R16,2
+   \   00000006   F469                       BRNE    ??A_MotorTest_0
+    494            {
+    495              wal_motor_stop();
+   \   00000008   ........                   CALL    wal_motor_stop
+    496              uc_axis_err = 1;
+   \   0000000C   E001                       LDI     R16,1
+   \   0000000E   9300....                   STS     uc_axis_err,R16
+    497              // Rationalise E_AxisError --> E_AxisStop...
+    498              if( SEQ_AddEvent( E_AxisError) != UCC_OK )
+   \   00000012   E001                       LDI     R16,1
+   \   00000014   ........                   CALL    SEQ_AddEvent
+   \   00000018   2300                       TST     R16
+   \   0000001A   F1C9                       BREQ    ??A_MotorTest_1
+    499              {
+    500                vss_seq_error();
+   \   0000001C   ........                   CALL    vss_seq_error
+   \   00000020   9508                       RET
+    501              }
+    502              return;
+    503            }
+    504            
+    505            // primary action of state reached from idle due to E_Button
+    506            // set internal axis state for status
+    507            uc_axis_vss = 3;
+   \                     ??A_MotorTest_0:
+   \   00000022   E003                       LDI     R16,3
+   \   00000024   9300....                   STS     uc_axis_vss,R16
+    508            
+    509            // V1.5 15DEC05: use 100% PWM button:
+    510            // uc_axis_pwm = WAL_PWM_TEST;
+    511            uc_axis_pwm = WAL_PWM_MAXSP;
+   \   00000028   EF0F                       LDI     R16,255
+   \   0000002A   9300....                   STS     uc_axis_pwm,R16
+    512            
+    513            vsstick_stall = 4000;
+   \   0000002E   EA00                       LDI     R16,160
+   \   00000030   E01F                       LDI     R17,15
+   \   00000032   ....                       LDI     R30,LOW(vsstick_stall)
+   \   00000034   ....                       LDI     R31,(vsstick_stall) >> 8
+   \   00000036   8300                       ST      Z,R16
+   \   00000038   8311                       STD     Z+1,R17
+    514            
+    515            if( uc_axis_dir)
+   \   0000003A   9100....                   LDS     R16,uc_axis_dir
+   \   0000003E   2300                       TST     R16
+   \   00000040   F041                       BREQ    ??A_MotorTest_2
+    516            {
+    517              if( SEQ_AddEvent( E_AxisRev) != UCC_OK )
+   \   00000042   E007                       LDI     R16,7
+   \   00000044   ........                   CALL    SEQ_AddEvent
+   \   00000048   2300                       TST     R16
+   \   0000004A   F051                       BREQ    ??A_MotorTest_3
+    518              {
+    519                vss_seq_error();
+   \   0000004C   ........                   CALL    vss_seq_error
+   \   00000050   C007                       RJMP    ??A_MotorTest_3
+    520              }
+    521            }
+    522            else
+    523            {
+    524              if( SEQ_AddEvent( E_AxisFwd) != UCC_OK )
+   \                     ??A_MotorTest_2:
+   \   00000052   E002                       LDI     R16,2
+   \   00000054   ........                   CALL    SEQ_AddEvent
+   \   00000058   2300                       TST     R16
+   \   0000005A   F011                       BREQ    ??A_MotorTest_3
+    525              {
+    526                vss_seq_error();
+   \   0000005C   ........                   CALL    vss_seq_error
+    527              }
+    528            }
+    529            
+    530            // force test transmission: E_SendRequest
+    531            uca_msgtx[0] = 0x27;    	        // send to dummy bin
+   \                     ??A_MotorTest_3:
+   \   00000060   E207                       LDI     R16,39
+   \   00000062   9300....                   STS     uca_msgtx,R16
+    532            uca_msgtx[1] = uc_comm_adid; 		// from me...
+   \   00000066   9100....                   LDS     R16,uc_comm_adid
+   \   0000006A   9300....                   STS     (uca_msgtx + 1),R16
+    533            uca_msgtx[2] = WAL_OP_PWM;    	// current PWM value
+   \   0000006E   B503                       IN      R16,0x23
+   \   00000070   9300....                   STS     (uca_msgtx + 2),R16
+    534            uca_msgtx[3] = PINB;    	        // 
+   \   00000074   B306                       IN      R16,0x16
+   \   00000076   9300....                   STS     (uca_msgtx + 3),R16
+    535            uca_msgtx[4] = PIND;    	        // ..
+   \   0000007A   B300                       IN      R16,0x10
+   \   0000007C   9300....                   STS     (uca_msgtx + 4),R16
+    536            if( SEQ_AddEvent( E_SendRequest) != UCC_OK )
+   \   00000080   E102                       LDI     R16,18
+   \   00000082   ........                   CALL    SEQ_AddEvent
+   \   00000086   2300                       TST     R16
+   \   00000088   F011                       BREQ    ??A_MotorTest_1
+    537            {
+    538              vss_seq_error();
+   \   0000008A   ........                   CALL    vss_seq_error
+   \                     ??A_MotorTest_1:
+   \   0000008E   9508                       RET
+    539            }
+    540          }
+    541          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    542          VS_VOID A_Periodic (VS_VOID)
+   \                     A_Periodic:
+    543          {
+    544          // This function is indicative of concurrent state activity.
+    545          // A_Periodic is called upon E_Periodic due to timer TM_Status 
+    546          // tick value = 10, i.e. every 5msec
+    547          
+    548            __watchdog_reset();
+   \   00000000   95A8                       WDR
+    549            
+    550            if( uc_settlepower)
+   \   00000002   9100....                   LDS     R16,uc_settlepower
+   \   00000006   2300                       TST     R16
+   \   00000008   F029                       BREQ    ??A_Periodic_0
+    551            {
+    552              uc_settlepower--;
+   \   0000000A   ....                       LDI     R30,LOW(uc_settlepower)
+   \   0000000C   ....                       LDI     R31,(uc_settlepower) >> 8
+   \   0000000E   8100                       LD      R16,Z
+   \   00000010   950A                       DEC     R16
+   \   00000012   8300                       ST      Z,R16
+    553            }
+    554            
+    555            // V1.7 16JAN06: add 'move-count' feature:
+    556            if( uc_done_move)
+   \                     ??A_Periodic_0:
+   \   00000014   9100....                   LDS     R16,uc_done_move
+   \   00000018   2300                       TST     R16
+   \   0000001A   F149                       BREQ    ??A_Periodic_1
+    557            {
+    558              uc_done_move = 0;
+   \   0000001C   E000                       LDI     R16,0
+   \   0000001E   9300....                   STS     uc_done_move,R16
+    559              uc_num_moveslo++;
+   \   00000022   ....                       LDI     R30,LOW(uc_num_moveslo)
+   \   00000024   ....                       LDI     R31,(uc_num_moveslo) >> 8
+   \   00000026   8100                       LD      R16,Z
+   \   00000028   9503                       INC     R16
+   \   0000002A   8300                       ST      Z,R16
+    560              if( uc_num_moveslo == 0)
+   \   0000002C   9100....                   LDS     R16,uc_num_moveslo
+   \   00000030   2300                       TST     R16
+   \   00000032   F471                       BRNE    ??A_Periodic_2
+    561              {
+    562                uc_num_moveshi++;
+   \   00000034   ....                       LDI     R30,LOW(uc_num_moveshi)
+   \   00000036   ....                       LDI     R31,(uc_num_moveshi) >> 8
+   \   00000038   8100                       LD      R16,Z
+   \   0000003A   9503                       INC     R16
+   \   0000003C   8300                       ST      Z,R16
+    563                if( uc_num_moveshi == 0)
+   \   0000003E   9100....                   LDS     R16,uc_num_moveshi
+   \   00000042   2300                       TST     R16
+   \   00000044   F429                       BRNE    ??A_Periodic_2
+    564                {
+    565                  uc_num_moves24++;
+   \   00000046   ....                       LDI     R30,LOW(uc_num_moves24)
+   \   00000048   ....                       LDI     R31,(uc_num_moves24) >> 8
+   \   0000004A   8100                       LD      R16,Z
+   \   0000004C   9503                       INC     R16
+   \   0000004E   8300                       ST      Z,R16
+    566                }
+    567              }
+    568              wal_eetbl_write( WAL_EE_MOVELO, uc_num_moveslo);
+   \                     ??A_Periodic_2:
+   \   00000050   9110....                   LDS     R17,uc_num_moveslo
+   \   00000054   E008                       LDI     R16,8
+   \   00000056   ........                   CALL    wal_eetbl_write
+    569              wal_eetbl_write( WAL_EE_MOVEHI, uc_num_moveshi);
+   \   0000005A   9110....                   LDS     R17,uc_num_moveshi
+   \   0000005E   E009                       LDI     R16,9
+   \   00000060   ........                   CALL    wal_eetbl_write
+    570              wal_eetbl_write( WAL_EE_MOVE24, uc_num_moves24);
+   \   00000064   9110....                   LDS     R17,uc_num_moves24
+   \   00000068   E00A                       LDI     R16,10
+   \   0000006A   ........                   CALL    wal_eetbl_write
+    571            }
+    572          
+    573            // Indicate current status using LED1
+    574            if( uc_led_scale == 0)
+   \                     ??A_Periodic_1:
+   \   0000006E   9100....                   LDS     R16,uc_led_scale
+   \   00000072   2300                       TST     R16
+   \   00000074   F531                       BRNE    ??A_Periodic_3
+    575            {
+    576              uc_led_scale = WAL_LED_SCALE;		// Scale factor to LED timebase
+   \   00000076   E104                       LDI     R16,20
+   \   00000078   9300....                   STS     uc_led_scale,R16
+    577              uc_led_count++;				// use uc_led_count wrt value to set flash rate
+   \   0000007C   ....                       LDI     R30,LOW(uc_led_count)
+   \   0000007E   ....                       LDI     R31,(uc_led_count) >> 8
+   \   00000080   8100                       LD      R16,Z
+   \   00000082   9503                       INC     R16
+   \   00000084   8300                       ST      Z,R16
+    578          
+    579              // LED1 'status' usage:
+    580              // Solid on = moving
+    581              // Solid off = Home or Limit active
+    582              // Normal flash = idle, Fast flash = error, Slow flash = comms
+    583          
+    584              if( (val_ip_hom == 1) || (val_ip_lim == 1) )
+   \   00000086   9100....                   LDS     R16,val_ip_hom
+   \   0000008A   3001                       CPI     R16,1
+   \   0000008C   F021                       BREQ    ??A_Periodic_4
+   \   0000008E   9100....                   LDS     R16,val_ip_lim
+   \   00000092   3001                       CPI     R16,1
+   \   00000094   F411                       BRNE    ??A_Periodic_5
+    585              {
+    586                WAL_OP_LED = 1;
+   \                     ??A_Periodic_4:
+   \   00000096   9AC0                       SBI     0x18,0x00
+   \   00000098   9508                       RET
+    587              }
+    588              else
+    589              {
+    590                if( uc_axis_vss != 0)
+   \                     ??A_Periodic_5:
+   \   0000009A   9100....                   LDS     R16,uc_axis_vss
+   \   0000009E   2300                       TST     R16
+   \   000000A0   F011                       BREQ    ??A_Periodic_6
+    591                {
+    592                  WAL_OP_LED = 0;
+   \   000000A2   98C0                       CBI     0x18,0x00
+   \   000000A4   9508                       RET
+    593                }
+    594                else
+    595                {
+    596                  if( uc_led_count >= uc_led_value)
+   \                     ??A_Periodic_6:
+   \   000000A6   9100....                   LDS     R16,uc_led_count
+   \   000000AA   9110....                   LDS     R17,uc_led_value
+   \   000000AE   1701                       CP      R16,R17
+   \   000000B0   F0D0                       BRCS    ??A_Periodic_7
+    597                  {
+    598                    // Toggle LED1 (PB.0)
+    599                    PORTB = PINB ^ 0x01;
+   \   000000B2   B316                       IN      R17,0x16
+   \   000000B4   E001                       LDI     R16,1
+   \   000000B6   2701                       EOR     R16,R17
+   \   000000B8   BB08                       OUT     0x18,R16
+    600                    uc_led_count = 0;
+   \   000000BA   E000                       LDI     R16,0
+   \   000000BC   9300....                   STS     uc_led_count,R16
+   \   000000C0   9508                       RET
+    601                  }
+    602                }
+    603              }
+    604            }
+    605            else
+    606            {
+    607              uc_led_scale--;
+   \                     ??A_Periodic_3:
+   \   000000C2   ....                       LDI     R30,LOW(uc_led_scale)
+   \   000000C4   ....                       LDI     R31,(uc_led_scale) >> 8
+   \   000000C6   8100                       LD      R16,Z
+   \   000000C8   950A                       DEC     R16
+   \   000000CA   8300                       ST      Z,R16
+    608              // V1.7 16JAN06: ensure LED flashes even if limits active
+    609              if( uc_led_scale == 0)
+   \   000000CC   9100....                   LDS     R16,uc_led_scale
+   \   000000D0   2300                       TST     R16
+   \   000000D2   F449                       BRNE    ??A_Periodic_7
+    610              {
+    611                if( (val_ip_hom == 1) || (val_ip_lim == 1))
+   \   000000D4   9100....                   LDS     R16,val_ip_hom
+   \   000000D8   3001                       CPI     R16,1
+   \   000000DA   F021                       BREQ    ??A_Periodic_8
+   \   000000DC   9100....                   LDS     R16,val_ip_lim
+   \   000000E0   3001                       CPI     R16,1
+   \   000000E2   F409                       BRNE    ??A_Periodic_7
+    612                {
+    613                  WAL_OP_LED = 0;
+   \                     ??A_Periodic_8:
+   \   000000E4   98C0                       CBI     0x18,0x00
+    614                }
+    615              }
+    616            }
+    617          }
+   \                     ??A_Periodic_7:
+   \   000000E6   9508                       RET
+    618          
+    619          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    620          VS_VOID A_RxDoComms (VS_VOID)
+   \                     A_RxDoComms:
+    621          {
+    622          	// E_RxMsg, valid message received:
+    623          	// if valid address (i.e. match or global process message)
+    624          	// process according to hi or lo-speed comms:
+    625              if( (uca_msgrx[0] == WAL_COMMS_GLOBAL) || (uca_msgrx[0] == uc_comm_adid) )
+   \   00000000   9100....                   LDS     R16,uca_msgrx
+   \   00000004   3F0F                       CPI     R16,255
+   \   00000006   F031                       BREQ    ??A_RxDoComms_0
+   \   00000008   9100....                   LDS     R16,uca_msgrx
+   \   0000000C   9110....                   LDS     R17,uc_comm_adid
+   \   00000010   1701                       CP      R16,R17
+   \   00000012   F481                       BRNE    ??A_RxDoComms_1
+    626              {
+    627                  // assume response (echo) always (unless no-echo specifically set)
+    628                  uc_comm_noecho = 0;
+   \                     ??A_RxDoComms_0:
+   \   00000014   E000                       LDI     R16,0
+   \   00000016   9300....                   STS     uc_comm_noecho,R16
+    629          
+    630                  // response to message (transition to Sending state)
+    631                  wal_do_command();
+   \   0000001A   ........                   CALL    wal_do_command
+    632          
+    633                  // NB. reply may be suppressed:
+    634                  if( uc_comm_noecho == 0)
+   \   0000001E   9100....                   LDS     R16,uc_comm_noecho
+   \   00000022   2300                       TST     R16
+   \   00000024   F439                       BRNE    ??A_RxDoComms_1
+    635                  {
+    636                      if( SEQ_AddEvent( E_SendRequest) != UCC_OK )
+   \   00000026   E102                       LDI     R16,18
+   \   00000028   ........                   CALL    SEQ_AddEvent
+   \   0000002C   2300                       TST     R16
+   \   0000002E   F011                       BREQ    ??A_RxDoComms_1
+    637                      {
+    638                          vss_seq_error();
+   \   00000030   ........                   CALL    vss_seq_error
+    639                      }
+    640                  }
+    641              }
+    642          
+    643              // usually response required: E_SendRequest
+    644              // in any case, reset receive buffer & flags:
+    645              uc_comm_flag &= ~WAL_COMM_DERR;
+   \                     ??A_RxDoComms_1:
+   \   00000034   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000036   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000038   8100                       LD      R16,Z
+   \   0000003A   7F0D                       ANDI    R16,0xFD
+   \   0000003C   8300                       ST      Z,R16
+    646              uc_comm_flag &= ~WAL_COMM_DRDY;
+   \   0000003E   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000040   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000042   8100                       LD      R16,Z
+   \   00000044   7F0E                       ANDI    R16,0xFE
+   \   00000046   8300                       ST      Z,R16
+    647              uc_msgrxptr = 0;
+   \   00000048   E000                       LDI     R16,0
+   \   0000004A   9300....                   STS     uc_msgrxptr,R16
+    648              uc_rx_chksum = 0;
+   \   0000004E   E000                       LDI     R16,0
+   \   00000050   9300....                   STS     uc_rx_chksum,R16
+    649          }
+   \   00000054   9508                       RET
+    650          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    651          VS_VOID A_RxProcess (VS_VOID)
+   \                     A_RxProcess:
+    652          {
+    653          // structure uc_rxbuff( charin & status) loaded into uc_rx_chrecv & uc_comm_9set
+    654          
+    655            uc_rx_process = 0;				// reset rx processed flag (semaphore)
+   \   00000000   E000                       LDI     R16,0
+   \   00000002   9300....                   STS     uc_rx_process,R16
+    656          
+    657            // if error detected then reset any message (in) in-progress
+    658            if( (uc_comm_flag & WAL_COMM_DERR) == WAL_COMM_DERR)
+   \   00000006   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000008   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000000A   8100                       LD      R16,Z
+   \   0000000C   FF01                       SBRS    R16,1
+   \   0000000E   C011                       RJMP    ??A_RxProcess_0
+    659            {
+    660              // reset error, but clear any existing in-progress:
+    661              uc_comm_flag &= ~WAL_COMM_DERR;
+   \   00000010   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000012   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000014   8100                       LD      R16,Z
+   \   00000016   7F0D                       ANDI    R16,0xFD
+   \   00000018   8300                       ST      Z,R16
+    662              uc_comm_flag &= ~WAL_COMM_DRDY;
+   \   0000001A   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000001C   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000001E   8100                       LD      R16,Z
+   \   00000020   7F0E                       ANDI    R16,0xFE
+   \   00000022   8300                       ST      Z,R16
+    663              uc_msgrxptr = 0;
+   \   00000024   E000                       LDI     R16,0
+   \   00000026   9300....                   STS     uc_msgrxptr,R16
+    664              uc_rx_chksum = 0;
+   \   0000002A   E000                       LDI     R16,0
+   \   0000002C   9300....                   STS     uc_rx_chksum,R16
+    665          
+    666              // uc_rx_process = 0;	// reset rx processed flag (semaphore)
+    667              return;
+   \   00000030   9508                       RET
+    668            }
+    669          
+    670            // process according to hi or lo-speed comms:
+    671            // Hi-speed 9-bit comms
+    672            // Check if 9th bit set: NB UCSRB bit.1 has RXB8 if so = start of message
+    673            if( uc_comm_9set)
+   \                     ??A_RxProcess_0:
+   \   00000032   9100....                   LDS     R16,uc_comm_9set
+   \   00000036   2300                       TST     R16
+   \   00000038   F079                       BREQ    ??A_RxProcess_1
+    674            {
+    675              uca_msgrx[0] = uc_rx_chksum = uc_rx_chrecv;
+   \   0000003A   9100....                   LDS     R16,uc_rx_chrecv
+   \   0000003E   9300....                   STS     uc_rx_chksum,R16
+   \   00000042   9300....                   STS     uca_msgrx,R16
+    676              uc_msgrxptr = 1;
+   \   00000046   E001                       LDI     R16,1
+   \   00000048   9300....                   STS     uc_msgrxptr,R16
+    677              uc_comm_flag |= WAL_COMM_DRDY;
+   \   0000004C   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000004E   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000050   8100                       LD      R16,Z
+   \   00000052   6001                       ORI     R16,0x01
+   \   00000054   8300                       ST      Z,R16
+    678              return;
+   \   00000056   9508                       RET
+    679            }
+    680            
+    681            // check that address byte has been received:
+    682            if( (uc_comm_flag & WAL_COMM_DRDY) != WAL_COMM_DRDY)
+   \                     ??A_RxProcess_1:
+   \   00000058   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000005A   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000005C   8100                       LD      R16,Z
+   \   0000005E   FF00                       SBRS    R16,0
+   \   00000060   C099                       RJMP    ??A_RxProcess_2
+    683            {
+    684              // ignore: byte received but not valid 'start of message'.
+    685              return;
+    686            }
+    687            
+    688            // at this point buffer (uc_rxrdptr != uc_rxwrptr)
+    689            // may contain complete message received
+    690            if( uc_msgrxptr < 5)
+   \   00000062   9100....                   LDS     R16,uc_msgrxptr
+   \   00000066   3005                       CPI     R16,5
+   \   00000068   F008                       BRCS    $+2+2
+   \   0000006A   C082                       RJMP    ??A_RxProcess_3
+    691            {
+    692              uc_rx_chksum += uc_rx_chrecv;
+   \   0000006C   9100....                   LDS     R16,uc_rx_chrecv
+   \   00000070   ....                       LDI     R30,LOW(uc_rx_chksum)
+   \   00000072   ....                       LDI     R31,(uc_rx_chksum) >> 8
+   \   00000074   8110                       LD      R17,Z
+   \   00000076   0F10                       ADD     R17,R16
+   \   00000078   8310                       ST      Z,R17
+    693              uca_msgrx[uc_msgrxptr] = uc_rx_chrecv;
+   \   0000007A   9120....                   LDS     R18,uc_rx_chrecv
+   \   0000007E   9100....                   LDS     R16,uc_msgrxptr
+   \   00000082   E010                       LDI     R17,0
+   \   00000084   01F8                       MOVW    R31 : R30,R17 : R16
+   \   00000086   ....                       SUBI    R30,LOW((-(uca_msgrx) & 0xFFFF))
+   \   00000088   ....                       SBCI    R31,(-(uca_msgrx) & 0xFFFF) >> 8
+   \   0000008A   8320                       ST      Z,R18
+    694              uc_msgrxptr++;
+   \   0000008C   ....                       LDI     R30,LOW(uc_msgrxptr)
+   \   0000008E   ....                       LDI     R31,(uc_msgrxptr) >> 8
+   \   00000090   8100                       LD      R16,Z
+   \   00000092   9503                       INC     R16
+   \   00000094   8300                       ST      Z,R16
+    695          
+    696              // maybe use conditional flag to break while loop:
+    697              while( uc_rxrdptr != uc_rxwrptr )
+   \                     ??A_RxProcess_4:
+   \   00000096   9100....                   LDS     R16,uc_rxrdptr
+   \   0000009A   9110....                   LDS     R17,uc_rxwrptr
+   \   0000009E   1701                       CP      R16,R17
+   \   000000A0   F409                       BRNE    $+2+2
+   \   000000A2   C078                       RJMP    ??A_RxProcess_2
+    698              {
+    699                uc_rx_chrecv = uc_rxbuff[uc_rxrdptr].charin;
+   \   000000A4   9100....                   LDS     R16,uc_rxrdptr
+   \   000000A8   E010                       LDI     R17,0
+   \   000000AA   0F00                       LSL     R16
+   \   000000AC   1F11                       ROL     R17
+   \   000000AE   01F8                       MOVW    R31 : R30,R17 : R16
+   \   000000B0   ....                       SUBI    R30,LOW((-(uc_rxbuff) & 0xFFFF))
+   \   000000B2   ....                       SBCI    R31,(-(uc_rxbuff) & 0xFFFF) >> 8
+   \   000000B4   8100                       LD      R16,Z
+   \   000000B6   9300....                   STS     uc_rx_chrecv,R16
+    700                uc_comm_9set = (uc_rxbuff[uc_rxrdptr].status & 0x02) ? 1 : 0;
+   \   000000BA   ....                       LDI     R30,LOW(uc_rxbuff)
+   \   000000BC   ....                       LDI     R31,(uc_rxbuff) >> 8
+   \   000000BE   9100....                   LDS     R16,uc_rxrdptr
+   \   000000C2   E010                       LDI     R17,0
+   \   000000C4   0F00                       LSL     R16
+   \   000000C6   1F11                       ROL     R17
+   \   000000C8   0FE0                       ADD     R30,R16
+   \   000000CA   1FF1                       ADC     R31,R17
+   \   000000CC   8101                       LDD     R16,Z+1
+   \   000000CE   FF01                       SBRS    R16,1
+   \   000000D0   C002                       RJMP    ??A_RxProcess_5
+   \   000000D2   E001                       LDI     R16,1
+   \   000000D4   C001                       RJMP    ??A_RxProcess_6
+   \                     ??A_RxProcess_5:
+   \   000000D6   E000                       LDI     R16,0
+   \                     ??A_RxProcess_6:
+   \   000000D8   9300....                   STS     uc_comm_9set,R16
+    701                uc_rxrdptr++;
+   \   000000DC   ....                       LDI     R30,LOW(uc_rxrdptr)
+   \   000000DE   ....                       LDI     R31,(uc_rxrdptr) >> 8
+   \   000000E0   8100                       LD      R16,Z
+   \   000000E2   9503                       INC     R16
+   \   000000E4   8300                       ST      Z,R16
+    702                uc_rxrdptr &= (WAL_MAX_RXBUFF-1);
+   \   000000E6   ....                       LDI     R30,LOW(uc_rxrdptr)
+   \   000000E8   ....                       LDI     R31,(uc_rxrdptr) >> 8
+   \   000000EA   8100                       LD      R16,Z
+   \   000000EC   710F                       ANDI    R16,0x1F
+   \   000000EE   8300                       ST      Z,R16
+    703                if( uc_comm_9set)
+   \   000000F0   9100....                   LDS     R16,uc_comm_9set
+   \   000000F4   2300                       TST     R16
+   \   000000F6   F079                       BREQ    ??A_RxProcess_7
+    704                {
+    705                  uca_msgrx[0] = uc_rx_chksum = uc_rx_chrecv;
+   \   000000F8   9100....                   LDS     R16,uc_rx_chrecv
+   \   000000FC   9300....                   STS     uc_rx_chksum,R16
+   \   00000100   9300....                   STS     uca_msgrx,R16
+    706                  uc_msgrxptr = 1;
+   \   00000104   E001                       LDI     R16,1
+   \   00000106   9300....                   STS     uc_msgrxptr,R16
+    707                  uc_comm_flag |= WAL_COMM_DRDY;
+   \   0000010A   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000010C   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000010E   8100                       LD      R16,Z
+   \   00000110   6001                       ORI     R16,0x01
+   \   00000112   8300                       ST      Z,R16
+    708                  // break while loop
+    709                  break;
+   \   00000114   9508                       RET
+    710                }
+    711                else
+    712                {
+    713                  if( uc_msgrxptr < 5)
+   \                     ??A_RxProcess_7:
+   \   00000116   9100....                   LDS     R16,uc_msgrxptr
+   \   0000011A   3005                       CPI     R16,5
+   \   0000011C   F4B0                       BRCC    ??A_RxProcess_8
+    714                  {
+    715                    uc_rx_chksum += uc_rx_chrecv;
+   \   0000011E   9100....                   LDS     R16,uc_rx_chrecv
+   \   00000122   ....                       LDI     R30,LOW(uc_rx_chksum)
+   \   00000124   ....                       LDI     R31,(uc_rx_chksum) >> 8
+   \   00000126   8110                       LD      R17,Z
+   \   00000128   0F10                       ADD     R17,R16
+   \   0000012A   8310                       ST      Z,R17
+    716                    uca_msgrx[uc_msgrxptr] = uc_rx_chrecv;
+   \   0000012C   9120....                   LDS     R18,uc_rx_chrecv
+   \   00000130   9100....                   LDS     R16,uc_msgrxptr
+   \   00000134   E010                       LDI     R17,0
+   \   00000136   01F8                       MOVW    R31 : R30,R17 : R16
+   \   00000138   ....                       SUBI    R30,LOW((-(uca_msgrx) & 0xFFFF))
+   \   0000013A   ....                       SBCI    R31,(-(uca_msgrx) & 0xFFFF) >> 8
+   \   0000013C   8320                       ST      Z,R18
+    717                    uc_msgrxptr++;
+   \   0000013E   ....                       LDI     R30,LOW(uc_msgrxptr)
+   \   00000140   ....                       LDI     R31,(uc_msgrxptr) >> 8
+   \   00000142   8100                       LD      R16,Z
+   \   00000144   9503                       INC     R16
+   \   00000146   8300                       ST      Z,R16
+   \   00000148   CFA6                       RJMP    ??A_RxProcess_4
+    718                  }
+    719                  else
+    720                  {
+    721                    // break while loop
+    722                    uc_comm_flag &= ~WAL_COMM_DRDY;
+   \                     ??A_RxProcess_8:
+   \   0000014A   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000014C   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000014E   8100                       LD      R16,Z
+   \   00000150   7F0E                       ANDI    R16,0xFE
+   \   00000152   8300                       ST      Z,R16
+    723                    // if checksum matches then this is a valid message:
+    724                    if( uc_rx_chksum == uc_rx_chrecv)
+   \   00000154   9100....                   LDS     R16,uc_rx_chksum
+   \   00000158   9110....                   LDS     R17,uc_rx_chrecv
+   \   0000015C   1701                       CP      R16,R17
+   \   0000015E   F4D1                       BRNE    ??A_RxProcess_2
+    725                    {
+    726                      if( SEQ_AddEvent( E_RxMsg) != UCC_OK )
+   \   00000160   E100                       LDI     R16,16
+   \   00000162   ........                   CALL    SEQ_AddEvent
+   \   00000166   2300                       TST     R16
+   \   00000168   F0A9                       BREQ    ??A_RxProcess_2
+    727                      {
+    728                        vss_seq_error();
+   \   0000016A   ........                   CALL    vss_seq_error
+   \   0000016E   9508                       RET
+    729                      }
+    730                    }
+    731                    break;
+    732                  }
+    733                }
+    734              }		// while RX buffer loaded
+    735            }
+    736            else
+    737            {
+    738              // should have received last byte of message, so clear DRDY
+    739              uc_comm_flag &= ~WAL_COMM_DRDY;
+   \                     ??A_RxProcess_3:
+   \   00000170   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000172   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000174   8100                       LD      R16,Z
+   \   00000176   7F0E                       ANDI    R16,0xFE
+   \   00000178   8300                       ST      Z,R16
+    740              // if checksum matches then this is a valid message:
+    741              if( uc_rx_chksum == uc_rx_chrecv)
+   \   0000017A   9100....                   LDS     R16,uc_rx_chksum
+   \   0000017E   9110....                   LDS     R17,uc_rx_chrecv
+   \   00000182   1701                       CP      R16,R17
+   \   00000184   F439                       BRNE    ??A_RxProcess_2
+    742              {
+    743                if( SEQ_AddEvent( E_RxMsg) != UCC_OK )
+   \   00000186   E100                       LDI     R16,16
+   \   00000188   ........                   CALL    SEQ_AddEvent
+   \   0000018C   2300                       TST     R16
+   \   0000018E   F011                       BREQ    ??A_RxProcess_2
+    744                {
+    745                  vss_seq_error();
+   \   00000190   ........                   CALL    vss_seq_error
+   \                     ??A_RxProcess_2:
+   \   00000194   9508                       RET
+    746                }
+    747              }
+    748            }
+    749          
+    750            // uc_rx_process = 0;				// reset rx processed flag (semaphore)
+    751          }
+    752          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    753          VS_VOID A_TxChar (VS_VOID)
+   \                     A_TxChar:
+    754          {
+    755          // TxChar state (initial entry & TxMoreMsg)
+    756          
+    757            uc_tx_chout = uca_msgtx[uc_msgtxprt];
+   \   00000000   9100....                   LDS     R16,uc_msgtxprt
+   \   00000004   E010                       LDI     R17,0
+   \   00000006   01F8                       MOVW    R31 : R30,R17 : R16
+   \   00000008   ....                       SUBI    R30,LOW((-(uca_msgtx) & 0xFFFF))
+   \   0000000A   ....                       SBCI    R31,(-(uca_msgtx) & 0xFFFF) >> 8
+   \   0000000C   8100                       LD      R16,Z
+   \   0000000E   9300....                   STS     uc_tx_chout,R16
+    758          
+    759            if( uc_comm_hilo == 0)
+   \   00000012   9100....                   LDS     R16,uc_comm_hilo
+   \   00000016   2300                       TST     R16
+   \   00000018   F489                       BRNE    ??A_TxChar_0
+    760            {
+    761              if( uc_msgtxprt < 5)
+   \   0000001A   9100....                   LDS     R16,uc_msgtxprt
+   \   0000001E   3005                       CPI     R16,5
+   \   00000020   F4E8                       BRCC    ??A_TxChar_1
+    762              {
+    763                // checksum generation:
+    764                uca_msgtx[5] += uc_tx_chout;
+   \   00000022   9100....                   LDS     R16,uc_tx_chout
+   \   00000026   ....                       LDI     R30,LOW(uca_msgtx)
+   \   00000028   ....                       LDI     R31,(uca_msgtx) >> 8
+   \   0000002A   8115                       LDD     R17,Z+5
+   \   0000002C   0F10                       ADD     R17,R16
+   \   0000002E   8315                       STD     Z+5,R17
+    765                uc_msgtxprt++;
+   \   00000030   ....                       LDI     R30,LOW(uc_msgtxprt)
+   \   00000032   ....                       LDI     R31,(uc_msgtxprt) >> 8
+   \   00000034   8100                       LD      R16,Z
+   \   00000036   9503                       INC     R16
+   \   00000038   8300                       ST      Z,R16
+   \   0000003A   C010                       RJMP    ??A_TxChar_1
+    766              }
+    767            }
+    768            else
+    769            {
+    770              if( uc_msgtxprt < 4)
+   \                     ??A_TxChar_0:
+   \   0000003C   9100....                   LDS     R16,uc_msgtxprt
+   \   00000040   3004                       CPI     R16,4
+   \   00000042   F460                       BRCC    ??A_TxChar_1
+    771              {
+    772                // checksum generation:
+    773                uca_msgtx[4] ^= uc_tx_chout;
+   \   00000044   9100....                   LDS     R16,uc_tx_chout
+   \   00000048   ....                       LDI     R30,LOW(uca_msgtx)
+   \   0000004A   ....                       LDI     R31,(uca_msgtx) >> 8
+   \   0000004C   8114                       LDD     R17,Z+4
+   \   0000004E   2710                       EOR     R17,R16
+   \   00000050   8314                       STD     Z+4,R17
+    774                uc_msgtxprt++;
+   \   00000052   ....                       LDI     R30,LOW(uc_msgtxprt)
+   \   00000054   ....                       LDI     R31,(uc_msgtxprt) >> 8
+   \   00000056   8100                       LD      R16,Z
+   \   00000058   9503                       INC     R16
+   \   0000005A   8300                       ST      Z,R16
+    775              }
+    776            }
+    777          
+    778            uc_comm_flag &= ~WAL_COMM_MISM;
+   \                     ??A_TxChar_1:
+   \   0000005C   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000005E   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000060   8100                       LD      R16,Z
+   \   00000062   7D0F                       ANDI    R16,0xDF
+   \   00000064   8300                       ST      Z,R16
+    779          
+    780            UDR = uc_tx_chout;
+   \   00000066   9100....                   LDS     R16,uc_tx_chout
+   \   0000006A   B90C                       OUT     0x0C,R16
+    781            // reset 9th bit once character TXC
+    782          }
+   \   0000006C   9508                       RET
+    783          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    784          VS_VOID A_TxEnableOff (VS_VOID)
+   \                     A_TxEnableOff:
+    785          {
+    786            // end of Tx Message
+    787            PORTB = (PINB & ~0x10);		// Switch off line driver
+   \   00000000   B306                       IN      R16,0x16
+   \   00000002   7E0F                       ANDI    R16,0xEF
+   \   00000004   BB08                       OUT     0x18,R16
+    788            UCSRB |= (1<<RXCIE);    	        // enable RX interrupt
+   \   00000006   9A57                       SBI     0x0A,0x07
+    789          
+    790            uc_comm_flag &= ~WAL_COMM_SMSG;	// Flag data sent (msgtx complete)
+   \   00000008   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000000A   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000000C   8100                       LD      R16,Z
+   \   0000000E   7F07                       ANDI    R16,0xF7
+   \   00000010   8300                       ST      Z,R16
+    791            
+    792            // force re-do of RX char event if uc_rx_process set
+    793            if( uc_rx_process != 0)
+   \   00000012   9100....                   LDS     R16,uc_rx_process
+   \   00000016   2300                       TST     R16
+   \   00000018   F039                       BREQ    ??A_TxEnableOff_0
+    794            {
+    795              if( SEQ_AddEvent( E_RxChar) != UCC_OK )
+   \   0000001A   E00F                       LDI     R16,15
+   \   0000001C   ........                   CALL    SEQ_AddEvent
+   \   00000020   2300                       TST     R16
+   \   00000022   F011                       BREQ    ??A_TxEnableOff_0
+    796              {
+    797                vss_seq_error();
+   \   00000024   ........                   CALL    vss_seq_error
+    798              }
+    799            }
+    800          }
+   \                     ??A_TxEnableOff_0:
+   \   00000028   9508                       RET
+    801          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    802          VS_VOID A_TxEnableOn (VS_VOID)
+   \                     A_TxEnableOn:
+    803          {
+    804          
+    805              // uc_tx_chout = uca_msgtx[0];
+    806          
+    807              // disable rx interrupt & setup TX_En 
+    808              
+    809              UCSRB &= ~(1<<RXCIE);		// disable rx interrupt
+   \   00000000   9857                       CBI     0x0A,0x07
+    810              PORTB = (PINB | 0x10);  		// Switch line driver on
+   \   00000002   B306                       IN      R16,0x16
+   \   00000004   6100                       ORI     R16,0x10
+   \   00000006   BB08                       OUT     0x18,R16
+    811              // ? set address bit ?
+    812              uc_comm_flag |= WAL_COMM_SMSG;	// Transmission in progress
+   \   00000008   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000000A   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000000C   8100                       LD      R16,Z
+   \   0000000E   6008                       ORI     R16,0x08
+   \   00000010   8300                       ST      Z,R16
+    813          
+    814              // start of Tx Message
+    815              uc_msgtxprt = 0;
+   \   00000012   E000                       LDI     R16,0
+   \   00000014   9300....                   STS     uc_msgtxprt,R16
+    816          
+    817              if( uc_comm_hilo == 0)
+   \   00000018   9100....                   LDS     R16,uc_comm_hilo
+   \   0000001C   2300                       TST     R16
+   \   0000001E   F429                       BRNE    ??A_TxEnableOn_0
+    818              {
+    819                uca_msgtx[5]= 0;	// clear checksum
+   \   00000020   E000                       LDI     R16,0
+   \   00000022   9300....                   STS     (uca_msgtx + 5),R16
+    820                // if hi-speed then set 9bit (= start of message)
+    821                UCSRB |= (1<<TXB8);
+   \   00000026   9A50                       SBI     0x0A,0x00
+   \   00000028   9508                       RET
+    822              }
+    823              else
+    824              {
+    825                uca_msgtx[4]= 0;	// clear checksum
+   \                     ??A_TxEnableOn_0:
+   \   0000002A   E000                       LDI     R16,0
+   \   0000002C   9300....                   STS     (uca_msgtx + 4),R16
+    826              }
+    827          
+    828          }
+   \   00000030   9508                       RET
+    829          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    830          VS_VOID A_TxProcessMsg (VS_VOID)
+   \                     A_TxProcessMsg:
+    831          {
+    832          // response to E_TxComplete i.e. TXC event
+    833          
+    834          	// test if error condition exists, if so then return to wait state (retry send)
+    835          	if( (uc_comm_flag & WAL_COMM_MISM) == WAL_COMM_MISM)
+   \   00000000   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   00000002   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   00000004   8100                       LD      R16,Z
+   \   00000006   FF05                       SBRS    R16,5
+   \   00000008   C008                       RJMP    ??A_TxProcessMsg_0
+    836          	{
+    837          		// i.e. abort send message
+    838          		// but must also end transmission:
+    839          		// so either quit 'sending' state completely
+    840          		// (let master resend original message...)
+    841          		// using E_SendComplete
+    842          		
+    843          		// or remain in 'sending' state, & retry
+    844          		// using E_TxBusIdle ??
+    845          		
+    846          		if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+   \   0000000A   E101                       LDI     R16,17
+   \   0000000C   ........                   CALL    SEQ_AddEvent
+   \   00000010   2300                       TST     R16
+   \   00000012   F151                       BREQ    ??A_TxProcessMsg_1
+    847          		{
+    848          			vss_seq_error();
+   \   00000014   ........                   CALL    vss_seq_error
+   \   00000018   9508                       RET
+    849          		}
+    850          		return;
+    851          	}
+    852          
+    853          	// if last character of message tx'd then end Tx Msg using E_SendComplete
+    854          	// otherwise push next character of message to transmit
+    855          	// uc_tx_chout = uca_msgtx[uc_msgtxprt]
+    856          
+    857          	if( uc_comm_hilo == 0)
+   \                     ??A_TxProcessMsg_0:
+   \   0000001A   9100....                   LDS     R16,uc_comm_hilo
+   \   0000001E   2300                       TST     R16
+   \   00000020   F481                       BRNE    ??A_TxProcessMsg_2
+    858          	{
+    859          		if( uc_msgtxprt >= 5)
+   \   00000022   9100....                   LDS     R16,uc_msgtxprt
+   \   00000026   3005                       CPI     R16,5
+   \   00000028   F020                       BRCS    ??A_TxProcessMsg_3
+    860          		{
+    861          			SEQ_AddEvent(E_SendComplete);
+   \   0000002A   E101                       LDI     R16,17
+   \   0000002C   ........                   CALL    SEQ_AddEvent
+   \   00000030   9508                       RET
+    862          		}
+    863          		else
+    864          		{
+    865          			if( SEQ_AddEvent( E_TxMoreMsg) != UCC_OK )
+   \                     ??A_TxProcessMsg_3:
+   \   00000032   E108                       LDI     R16,24
+   \   00000034   ........                   CALL    SEQ_AddEvent
+   \   00000038   2300                       TST     R16
+   \   0000003A   F0B1                       BREQ    ??A_TxProcessMsg_1
+    866          			{
+    867          				vss_seq_error();
+   \   0000003C   ........                   CALL    vss_seq_error
+   \   00000040   9508                       RET
+    868          			}
+    869          		}
+    870          	}
+    871          	else
+    872          	{
+    873          		if( uc_msgtxprt >= 4)
+   \                     ??A_TxProcessMsg_2:
+   \   00000042   9100....                   LDS     R16,uc_msgtxprt
+   \   00000046   3004                       CPI     R16,4
+   \   00000048   F040                       BRCS    ??A_TxProcessMsg_4
+    874          		{
+    875          			if( SEQ_AddEvent( E_SendComplete) != UCC_OK )
+   \   0000004A   E101                       LDI     R16,17
+   \   0000004C   ........                   CALL    SEQ_AddEvent
+   \   00000050   2300                       TST     R16
+   \   00000052   F051                       BREQ    ??A_TxProcessMsg_1
+    876          			{
+    877          				vss_seq_error();
+   \   00000054   ........                   CALL    vss_seq_error
+   \   00000058   9508                       RET
+    878          			}
+    879          		}
+    880          		else
+    881          		{
+    882          			if( SEQ_AddEvent( E_TxMoreMsg) != UCC_OK )
+   \                     ??A_TxProcessMsg_4:
+   \   0000005A   E108                       LDI     R16,24
+   \   0000005C   ........                   CALL    SEQ_AddEvent
+   \   00000060   2300                       TST     R16
+   \   00000062   F011                       BREQ    ??A_TxProcessMsg_1
+    883          			{
+    884          				vss_seq_error();
+   \   00000064   ........                   CALL    vss_seq_error
+   \                     ??A_TxProcessMsg_1:
+   \   00000068   9508                       RET
+    885          			}
+    886          		}
+    887          	}
+    888          }
+    889          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    890          VS_VOID A_TxTestBusIdle (VS_VOID)
+   \                     A_TxTestBusIdle:
+    891          {
+    892          // Test if RS485 bus idle using 'uc_line_idle':
+    893          // NB. as uc_comm_idle may be written during RX interrupt disable
+    894          	__disable_interrupt();
+   \   00000000   94F8                       CLI
+    895          	if( uc_comm_idle >= 3)
+   \   00000002   9100....                   LDS     R16,uc_comm_idle
+   \   00000006   3003                       CPI     R16,3
+   \   00000008   F0C8                       BRCS    ??A_TxTestBusIdle_0
+    896          	{
+    897          		// E_TxBusIdle will cause State 'Transmit' to begin
+    898          		uc_comm_flag |= WAL_COMM_IDLE;
+   \   0000000A   ....                       LDI     R30,LOW(uc_comm_flag)
+   \   0000000C   ....                       LDI     R31,(uc_comm_flag) >> 8
+   \   0000000E   8100                       LD      R16,Z
+   \   00000010   6004                       ORI     R16,0x04
+   \   00000012   8300                       ST      Z,R16
+    899          
+    900          		if( uc_comm_hilo == 0)
+   \   00000014   9100....                   LDS     R16,uc_comm_hilo
+   \   00000018   2300                       TST     R16
+   \   0000001A   F441                       BRNE    ??A_TxTestBusIdle_1
+    901          		{
+    902          			// different transition required if hi-speed comms:
+    903          			if( SEQ_AddEvent( E_TxHiSpeed) != UCC_OK )
+   \   0000001C   E107                       LDI     R16,23
+   \   0000001E   ........                   CALL    SEQ_AddEvent
+   \   00000022   2300                       TST     R16
+   \   00000024   F081                       BREQ    ??A_TxTestBusIdle_2
+    904          			{
+    905          				vss_seq_error();
+   \   00000026   ........                   CALL    vss_seq_error
+   \   0000002A   C00D                       RJMP    ??A_TxTestBusIdle_2
+    906          			}
+    907          		}
+    908          		else
+    909          		{
+    910          			if( SEQ_AddEvent( E_TxBusIdle) != UCC_OK )
+   \                     ??A_TxTestBusIdle_1:
+   \   0000002C   E104                       LDI     R16,20
+   \   0000002E   ........                   CALL    SEQ_AddEvent
+   \   00000032   2300                       TST     R16
+   \   00000034   F041                       BREQ    ??A_TxTestBusIdle_2
+    911          			{
+    912          				vss_seq_error();
+   \   00000036   ........                   CALL    vss_seq_error
+   \   0000003A   C005                       RJMP    ??A_TxTestBusIdle_2
+    913          			}
+    914          		}
+    915          	}
+    916          	else
+    917          	{
+    918          		uc_comm_idle++;
+   \                     ??A_TxTestBusIdle_0:
+   \   0000003C   ....                       LDI     R30,LOW(uc_comm_idle)
+   \   0000003E   ....                       LDI     R31,(uc_comm_idle) >> 8
+   \   00000040   8100                       LD      R16,Z
+   \   00000042   9503                       INC     R16
+   \   00000044   8300                       ST      Z,R16
+    919          	}
+    920          	__enable_interrupt(); 
+   \                     ??A_TxTestBusIdle_2:
+   \   00000046   9478                       SEI
+    921          }
+   \   00000048   9508                       RET
+    922          
+
+   \                                 In segment CODE, align 2, keep-with-next
+    923          VS_VOID TM_Stall (VS_UINT event, VS_UINT ticks)
+   \                     TM_Stall:
+    924          {
+    925          // Seed E_AxisStall
+    926          // NB. this routine called with VS_UINT vsstick_stall as tick parameter
+    927          	wvt_stall.event = event;
+   \   00000000   ....                       LDI     R30,LOW(wvt_stall)
+   \   00000002   ....                       LDI     R31,(wvt_stall) >> 8
+   \   00000004   8300                       ST      Z,R16
+   \   00000006   8311                       STD     Z+1,R17
+    928          	wvt_stall.ticks = ticks;
+   \   00000008   ....                       LDI     R30,LOW(wvt_stall)
+   \   0000000A   ....                       LDI     R31,(wvt_stall) >> 8
+   \   0000000C   8322                       STD     Z+2,R18
+   \   0000000E   8333                       STD     Z+3,R19
+    929          	// V1.6 13JAN06: disable this method of stall detection
+    930          	wvt_stall.active = 0; // 1->0
+   \   00000010   E040                       LDI     R20,0
+   \   00000012   9340....                   STS     (wvt_stall + 4),R20
+    931          }
+   \   00000016   9508                       RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+    932          VS_VOID TM_Status (VS_UINT event, VS_UINT ticks)
+   \                     TM_Status:
+    933          {
+    934          // Seed E_Periodic
+    935          	wvt_period.event = event;
+   \   00000000   ....                       LDI     R30,LOW(wvt_period)
+   \   00000002   ....                       LDI     R31,(wvt_period) >> 8
+   \   00000004   8300                       ST      Z,R16
+   \   00000006   8311                       STD     Z+1,R17
+    936          	wvt_period.ticks = ticks;
+   \   00000008   ....                       LDI     R30,LOW(wvt_period)
+   \   0000000A   ....                       LDI     R31,(wvt_period) >> 8
+   \   0000000C   8322                       STD     Z+2,R18
+   \   0000000E   8333                       STD     Z+3,R19
+    937          	wvt_period.active = 1;
+   \   00000010   E041                       LDI     R20,1
+   \   00000012   9340....                   STS     (wvt_period + 4),R20
+    938          }
+   \   00000016   9508                       RET
+
+   \                                 In segment CODE, align 2, keep-with-next
+    939          VS_VOID TM_TimerTxWait (VS_UINT event, VS_UINT ticks)
+   \                     TM_TimerTxWait:
+    940          {
+    941          // Seed E_TimerTxWait
+    942          // NB. this routine called with VS_UINT vsstick_txwait as tick parameter
+    943          	wvt_txwait.event = event;
+   \   00000000   ....                       LDI     R30,LOW(wvt_txwait)
+   \   00000002   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   00000004   8300                       ST      Z,R16
+   \   00000006   8311                       STD     Z+1,R17
+    944          	wvt_txwait.ticks = ticks;
+   \   00000008   ....                       LDI     R30,LOW(wvt_txwait)
+   \   0000000A   ....                       LDI     R31,(wvt_txwait) >> 8
+   \   0000000C   8322                       STD     Z+2,R18
+   \   0000000E   8333                       STD     Z+3,R19
+    945          	wvt_txwait.active = 1;
+   \   00000010   E041                       LDI     R20,1
+   \   00000012   9340....                   STS     (wvt_txwait + 4),R20
+    946          }
+   \   00000016   9508                       RET
+
+   \                                 In segment ABSOLUTE, at 0x2a
+   \   union <unnamed> volatile __io _A_UCSRB
+   \                     _A_UCSRB:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x2c
+   \   union <unnamed> volatile __io _A_UDR
+   \                     _A_UDR:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x30
+   \   union <unnamed> volatile __io _A_PIND
+   \                     _A_PIND:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x36
+   \   union <unnamed> volatile __io _A_PINB
+   \                     _A_PINB:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x38
+   \   union <unnamed> volatile __io _A_PORTB
+   \                     _A_PORTB:
+   \   00000000                              DS 1
+
+   \                                 In segment ABSOLUTE, at 0x43
+   \   union <unnamed> volatile __io _A_OCR2
+   \                     _A_OCR2:
+   \   00000000                              DS 1
+    947          
+    948          // VS_VOID TM_Timer0 (VS_UINT event, VS_UINT ticks){  TIMER0_SW_start( event, ticks );}
+    949          
+    950          
+    951          
+
+   Maximum stack usage in bytes:
+
+     Function                CSTACK RSTACK
+     --------                ------ ------
+     A_AxisCalcProfile           0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_AxisPosUpdate             0      2
+       -> wal_pos_similar        0      2
+       -> wal_motor_stop         0      2
+       -> wal_position_store     0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> wal_motor_stop         0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_ForceStop                 0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_Initialise                0      2
+       -> InitData               0      2
+       -> LoadNVData             0      2
+       -> USART_Init_High        0      2
+       -> USART_Init_Low         0      2
+     A_MotorError                0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_MotorFwd                  0      2
+       -> wal_motor_stop         0      2
+       -> wal_motor_start        0      2
+     A_MotorIdle                 0      2
+     A_MotorMove                 0      2
+     A_MotorOn                   0      2
+       -> wal_motor_start        0      2
+     A_MotorReRef                0      2
+       -> A_MotorRev             0      2
+       -> A_MotorFwd             0      2
+     A_MotorRev                  0      2
+       -> wal_motor_start        0      2
+     A_MotorStop                 0      2
+       -> wal_motor_stop         0      2
+     A_MotorTest                 0      2
+       -> wal_motor_stop         0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_Periodic                  0      2
+       -> wal_eetbl_write        0      2
+       -> wal_eetbl_write        0      2
+       -> wal_eetbl_write        0      2
+     A_RxDoComms                 0      2
+       -> wal_do_command         0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_RxProcess                 0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_TxChar                    0      2
+     A_TxEnableOff               0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_TxEnableOn                0      2
+     A_TxProcessMsg              0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     A_TxTestBusIdle             0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+     TM_Stall                    0      2
+     TM_Status                   0      2
+     TM_TimerTxWait              0      2
+     wal_setup_vss_timer         0      2
+     wal_vss_timer_function      0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+       -> SEQ_AddEvent           0      2
+       -> vss_seq_error          0      2
+
+
+   Segment part sizes:
+
+     Function/Label         Bytes
+     --------------         -----
+     wvt_period                6
+     wvt_stall                 6
+     wvt_txwait                6
+     wal_setup_vss_timer     110
+     wal_vss_timer_function  206
+     A_AxisCalcProfile       210
+     A_AxisPosUpdate          84
+     A_ForceStop              16
+     A_Initialise             36
+     A_MotorError             16
+     A_MotorFwd               22
+     A_MotorIdle              64
+     A_MotorMove               8
+     A_MotorOn                32
+     A_MotorReRef             30
+     A_MotorRev               18
+     A_MotorStop              12
+     A_MotorTest             144
+     A_Periodic              232
+     A_RxDoComms              86
+     A_RxProcess             406
+     A_TxChar                110
+     A_TxEnableOff            42
+     A_TxEnableOn             50
+     A_TxProcessMsg          106
+     A_TxTestBusIdle          74
+     TM_Stall                 24
+     TM_Status                24
+     TM_TimerTxWait           24
+     _A_UCSRB                  1
+     _A_UDR                    1
+     _A_PIND                   1
+     _A_PINB                   1
+     _A_PORTB                  1
+     _A_OCR2                   1
+      Others                   6
+
+ 
+     6 bytes in segment ABSOLUTE
+ 2 186 bytes in segment CODE
+     6 bytes in segment INITTAB
+    18 bytes in segment NEAR_Z
+ 
+ 2 186 bytes of CODE memory (+ 6 bytes shared)
+    18 bytes of DATA memory (+ 6 bytes shared)
+
+Errors: none
+Warnings: 4

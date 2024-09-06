@@ -1,0 +1,889 @@
+##############################################################################
+#                                                                            #
+# IAR Atmel AVR C Compiler V3.10C/W32                  03/Oct/2012  17:29:55 #
+# Copyright 1996-2004 IAR Systems. All rights reserved.                      #
+#                                                                            #
+#    Source file  =  C:\hmhome\900212\src\usart2.c                           #
+#    Command line =  --cpu=m16 -ms -o C:\hmhome\900212\Debug\Obj\ -D         #
+#                    ENABLE_BIT_DEFINITIONS -lcN                             #
+#                    C:\hmhome\900212\Debug\List\ --initializers_in_flash    #
+#                    -z2 --no_cse --no_inline --no_code_motion               #
+#                    --no_cross_call --no_clustering --debug -e -I ..\SRC\   #
+#                    -I ..\VSAPI\ -I ..\VSSRC\ -I "C:\Program Files\IAR      #
+#                    Systems\Embedded Workbench 3.2\avr\INC\" -I             #
+#                    "C:\Program Files\IAR Systems\Embedded Workbench        #
+#                    3.2\avr\INC\CLIB\" --eeprom_size 512                    #
+#                    C:\hmhome\900212\src\usart2.c                           #
+#    List file    =  C:\hmhome\900212\Debug\List\usart2.lst                  #
+#    Object file  =  C:\hmhome\900212\Debug\Obj\usart2.r90                   #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+C:\hmhome\900212\src\usart2.c
+      1          // AVR306: Using the AVR UART in C
+      2          // Routines for interrupt controlled USART
+      3          
+      4          #include <iom16.h>			// Atmel definitions Mega16
+      5          #include <inavr.h>			// Atmel register definitions
+      6          #include "VSMain.h"			// Visual State definitions
+      7          
+      8          #include "defs.h"			// Application (GENERAL) defs
+      9          #include "globals.h"		// Application global data/variables
+     10          
+     11          #include "usart2.h"			// Function declarations for this file
+     12          
+     13          void vss_seq_error( void);
+     14          void wal_eetbl_write( unsigned char s_address, unsigned char s_value);
+     15          unsigned char wal_bsf_eeget( unsigned char s_address);
+     16          void wal_motor_start( void);
+     17          void wal_motor_stop( void);
+     18          unsigned char wal_pos_similar( void);
+     19          
+     20          void USART_Init_High( unsigned int baudrate )
+     21          {
+     22          // Initialize USART High speed comms 9 bit 2 stop
+     23          
+     24          	/* Set the baud rate */
+     25          	UBRRH = (unsigned char) (baudrate>>8);                    
+     26          	UBRRL = (unsigned char) baudrate;
+     27          	
+     28          	/* Enable UART RX interupt and enable RX and TX and 9 bit data */
+     29          	//UCSRB = ( ( 1 << RXCIE ) | ( 1 << RXEN ) | ( 1 << TXEN ) | ( 1 << UCSZ2 ) ); 
+     30          	UCSRB = 0xDC; 
+     31          
+     32          	// Hi-speed frame format: 9 data 2stop no parity
+     33          	// For devices with Extended IO 
+     34          	// UCSRC == 0x86 or 0x8E if 2 stop bits
+     35          	UCSRC = 0x8E;              
+     36          }
+     37          
+     38          void USART_Init_Low( unsigned int baudrate )
+     39          {
+     40          // Initialize USART low speed comms 8bit
+     41          
+     42          	/* Set the baud rate */
+     43          	UBRRH = (unsigned char) (baudrate>>8);                  
+     44          	UBRRL = (unsigned char) baudrate;
+     45          	
+     46          	/* Enable UART RX interupt and enable RX and TX and 9 bit data */
+     47          	UCSRB = ( ( 1 << RXCIE ) | ( 1 << RXEN ) | ( 1 << TXEN ) | (1 << TXCIE) ); 
+     48          
+     49          	// Lo-speed frame format: 8 data 1stop ( UCSRC defaults OK)
+     50          	// UCSRC = (1<<UCSZ1)|(1<<UCSZ0);
+     51          }
+     52          
+     53          void wal_start_tx( void)
+     54          {
+     55          // disable rx interrupt & setup TX_En 
+     56              
+     57              UCSRB &= ~(1<<RXCIE);			// disable rx interrupt
+     58              PORTB = (PINB | 0x10);  		// Switch line driver on
+     59          	// ? set address bit ?
+     60              uc_comm_flag |= WAL_COMM_SMSG;	// Transmission in progress
+     61          
+     62          	// if hi-speed then set 9bit (= start of message)
+     63          	if( uc_comm_hilo == 0)
+     64          	{
+     65              	UCSRB |= (1<<TXB8);
+     66          	}
+     67          }
+     68              
+     69          
+     70          void wal_end_tx(void)
+     71          {
+     72            PORTB = (PINB & ~0x10);			// Switch off line driver
+     73            UCSRB |= (1<<RXCIE);    		// enable RX interrupt
+     74            
+     75            uc_comm_flag &= ~WAL_COMM_SMSG;	// Flag data sent (msgtx complete)
+     76          }
+     77          
+     78          
+     79          void wal_send485_char( void)
+     80          {
+     81            UDR = uc_tx_chout;
+     82            UCSRB &= ~(1<<TXB8);	// reset 9th bit
+     83          }
+     84          
+     85          
+     86          void wal_tx_nrq(void )
+     87          {
+     88          // Fixed attention request message format CMD:21, Data[4]:14
+     89            uca_msgtx[0] = 0;
+     90            uca_msgtx[1] = uc_comm_adid;
+     91            uca_msgtx[2] = 21;
+     92            uca_msgtx[3] = 0;
+     93            uca_msgtx[4] = 14;
+     94          }
+     95          
+     96          
+     97          unsigned char wal_picnet_checkdata( void)
+     98          {
+     99            if( (uca_msgrx[2] != 0x26) || ( uca_msgrx[3] != 0x26))
+    100            {
+    101              uca_msgtx[1] = '*';
+    102              uca_msgtx[2] = 'I';
+    103              return 1;
+    104            }
+    105            return 0;
+    106          }
+    107          
+    108          
+    109          
+    110          void wal_picnet_motor( void)
+    111          {
+    112          uca_msgtx[0] = (uc_comm_adid + 0x30);	// from me...
+    113          uca_msgtx[1] = (uca_msgrx[1] & 0xDF);   // echo,but CAPS masking 0x20
+    114          uca_msgtx[2] = uca_msgrx[2];    		// if in doubt echo data..
+    115          uca_msgtx[3] = uca_msgrx[3];    		// ..
+    116          
+    117          // response == ID, *, I, <x> if invalid
+    118          // NB. confirm RXDHI == uca_msgtx[3]
+    119          
+    120          	switch( uca_msgrx[1])
+    121          	{
+    122          	case 'A':
+    123          		// assign address: NB. only reply if trigger in
+    124          		if( val_ip_trg == 0)
+    125          		{
+    126          			if( uca_msgrx[3] == 0x1f)
+    127          			{
+    128          				uc_comm_adid = uca_msgrx[2] & 0x0F;
+    129          				wal_eetbl_write( WAL_EE_COMMID, uc_comm_adid);
+    130          				uca_msgtx[0] = (uc_comm_adid + 0x30);	// from me...
+    131          			}
+    132          			else
+    133          			{
+    134          				uca_msgtx[1] = '*';
+    135          				uca_msgtx[2] = 'I';
+    136          			}
+    137          		}
+    138          		else
+    139          		{
+    140          			// ignore, no reply
+    141          			uc_comm_noecho = 1;
+    142          		}
+    143          		break;
+    144          	case 'B':
+    145          		// backward move (datahi-lo = 0x26)
+    146          		if( wal_picnet_checkdata() == 0)
+    147          		{
+    148          			// set motor
+    149          			uc_axis_dir = 0;
+    150          			uc_axis_pwm = WAL_PWM_TEST;
+    151          			wal_motor_start();
+    152          		}
+    153          		break;
+    154          	case 'D':
+    155          		// define trigger in-out
+    156          		// NB. has to force pattern as per porta into RXDLO
+    157          		// assign address: NB. only reply if trigger in
+    158          		if( val_ip_trg == 0)
+    159          		{
+    160          			if( uca_msgrx[3] == 0x1f)
+    161          			{
+    162          				if( uca_msgrx[2] == 1)
+    163          				{
+    164          					// set trigger out (active low)
+    165          					WAL_OP_TRO = 0;
+    166          				}
+    167          				else
+    168          				{
+    169          					WAL_OP_TRO = 1;
+    170          				}
+    171          			}
+    172          			else
+    173          			{
+    174          				uca_msgtx[1] = '*';
+    175          				uca_msgtx[2] = 'I';
+    176          			}
+    177          		}
+    178          		else
+    179          		{
+    180          			// ignore, no reply
+    181          			uc_comm_noecho = 1;
+    182          		}
+    183          		break;
+    184          	case 'F':
+    185          		// forward move (datahi-lo = 0x26)
+    186          		if( wal_picnet_checkdata() == 0)
+    187          		{
+    188          			// set motor
+    189          			uc_axis_dir = 1;
+    190          			uc_axis_pwm = WAL_PWM_TEST;
+    191          			wal_motor_start();
+    192          		}
+    193          		break;
+    194          	case 'G':
+    195          		// goto position
+    196          		// respond with '*','U' if error condition:
+    197          		// NB. error condition should include limit or home switch
+    198          		if( wal_bsf_eeget( WAL_EE_ERROR) != 0)
+    199          		{
+    200          			uca_msgtx[1] = '*';
+    201          			uca_msgtx[2] = 'U';
+    202          			uca_msgtx[3] = wal_bsf_eeget( WAL_EE_ERROR);
+    203          		}
+    204          		else
+    205          		{
+    206          			// return '*','Q' if within +/- 3 units
+    207          			// NB. convert from comms units (1/10th mm)	Lo-value + Hi-value
+    208          			// to 'GEARR' units pulses WAL_GEAR_RATIO
+    209          			// comms (Hi+Lo) * WAL_GEAR_RATIO == SET POINT
+    210          			// difference == COUNTER (Hi+Lo) - SET POINT (Hi+Lo)
+    211          			ui_axis_tmm = (uca_msgtx[3] << 8) + uca_msgtx[2];
+    212          			ui_axis_set = ui_axis_tmm * 3;	// << 1 + 1
+    213          			// set point (unsigned) if > 420mm then ignore (*U) 
+    214          			if( ui_axis_set > WAL_MAX_SET_VALUE)
+    215          			{
+    216          				uca_msgtx[1] = '*';
+    217          				uca_msgtx[2] = 'U';
+    218          				uca_msgtx[3] = 0xFE;
+    219          			}
+    220          			else
+    221          			{
+    222          				if( ui_axis_pos > ui_axis_set)
+    223          				{
+    224          					ui_axis_diff = ui_axis_pos - ui_axis_set;
+    225          					// +'ve difference if < 4 then ignore
+    226          					// also *U if difference too large (or causing -'ve value)
+    227          					if( ui_axis_diff < 4)
+    228          					{
+    229          						// ignore small difference
+    230          						uca_msgtx[1] = '*';
+    231          						uca_msgtx[2] = 'Q';
+    232          					}
+    233          					else
+    234          					{
+    235          						// move forward (use sequence E_AxisMove)
+    236          						// reply with difference in data lo-hi
+    237          
+    238          						if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+    239          						{
+    240          							vss_seq_error();
+    241          						}
+    242          
+    243          						// uc_axis_dir = 1;
+    244          						// uc_axis_pwm = WAL_PWM_STEPA;	// begin ramp up
+    245          						// wal_motor_start();
+    246          						uca_msgtx[2] = (unsigned char) (ui_axis_diff & 0x00FF);
+    247          						uca_msgtx[3] = (unsigned char) (ui_axis_diff >> 8);
+    248          					}
+    249          				}
+    250          				else
+    251          				{
+    252          					ui_axis_diff = ui_axis_set - ui_axis_pos;
+    253          					// also *U if difference too large (or causing -'ve value)
+    254          					if( ui_axis_diff < 4)
+    255          					{
+    256          						// negative difference so move in reverse
+    257          						// decrease 'set point' for uni-directional motion,
+    258          						// and set unidirection flag:
+    259          
+    260          						if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+    261          						{
+    262          							vss_seq_error();
+    263          						}
+    264          
+    265          						// uc_axis_dir = 0;
+    266          						// uc_axis_pwm = WAL_PWM_STEPA;	// begin ramp up
+    267          						// wal_motor_start();
+    268          						uca_msgtx[2] = (unsigned char) (ui_axis_diff & 0x00FF);
+    269          						uca_msgtx[3] = (unsigned char) (ui_axis_diff >> 8);
+    270          					}
+    271          					else
+    272          					{
+    273          						// ignore small difference
+    274          						uca_msgtx[1] = '*';
+    275          						uca_msgtx[2] = 'Q';
+    276          					}
+    277          				}
+    278          			}
+    279          		}
+    280          		break;
+    281          	case 'P':
+    282          		// position: reply 'C'+ count if moving; 'P' + position if stationery
+    283          		// NB. check order of data-hi, data-lo
+    284          		if( uc_axis_vss == 0)
+    285          		{
+    286          			// idle, reply 'P' (set point ui_axis_set)
+    287          			uca_msgtx[1] = 'P';
+    288          			uca_msgtx[2] = (unsigned char) (ui_axis_set & 0x00FF);
+    289          			uca_msgtx[3] = (unsigned char) (ui_axis_set >> 8);
+    290          		}
+    291          		else
+    292          		{
+    293          			// axis active, reply 'C' (current position ui_axis_pos)
+    294          			uca_msgtx[1] = 'C';
+    295          			uca_msgtx[2] = (unsigned char) (ui_axis_pos & 0x00FF);
+    296          			uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
+    297          		}
+    298          		break;
+    299          	case 'S':
+    300          		// stop
+    301          		wal_motor_stop();
+    302          		break;
+    303          	case 'V':
+    304          		// version (datahi-lo = 0x26)
+    305          		if( wal_picnet_checkdata() == 0)
+    306          		{
+    307          			// respond with version	WAL_PIC_VERSION
+    308          			uca_msgtx[1] = 'I';
+    309          			uca_msgtx[2] = 'V';
+    310          			uca_msgtx[3] = WAL_PIC_VERSION;
+    311          		}
+    312          		break;
+    313          	default:
+    314          		// send '*','I' response + 'command' in data[3]
+    315          		uca_msgtx[1] = '*';
+    316          		uca_msgtx[2] = 'I';
+    317          		uca_msgtx[3] = uca_msgrx[1];
+    318          	}
+    319          
+    320          }
+    321          
+    322          void wal_do_command( void)
+    323          {
+    324          //rx3rx4 = (unsigned int) ((rx[3] << 8) + rx[4]);
+    325          
+    326          uca_msgtx[0] = uca_msgrx[1];    	// back to originator (0)
+    327          uca_msgtx[1] = uc_comm_adid; 		// from me...
+    328          uca_msgtx[2] = uca_msgrx[2];    	// cmd always echo'd
+    329          uca_msgtx[3] = uca_msgrx[3];    	// if in doubt echo data..
+    330          uca_msgtx[4] = uca_msgrx[4];    	// ..
+    331          
+    332          switch( uca_msgrx[2])
+    333              {
+    334          		
+    335              case 0:    // get mode
+    336                  uca_msgtx[4] = 0x04;
+    337                  break;
+    338          				
+    339              case 1: 
+    340              	// set variable (directly)
+    341                  switch( uca_msgrx[3])
+    342                  {
+    343                  case 0:
+    344                          // direct set of PORTA
+    345                          PORTA = uca_msgrx[4];
+    346                          break;
+    347                  case 1:
+    348                          // direct set of PORTB
+    349                          PORTB = uca_msgrx[4];
+    350                          break;
+    351                  case 2:
+    352                          // direct set of PORTC
+    353                          PORTC = uca_msgrx[4];
+    354                          break;
+    355                  case 3:
+    356                          // direct set of PORTD
+    357                          PORTD = uca_msgrx[4];
+    358                          break;
+    359                  case 12:
+    360                      // manipulate MCUCSR
+    361                      MCUCSR = uca_msgrx[4];
+    362                      break;
+    363                  }
+    364                  break;
+    365          				
+    366              case 2: 
+    367              	// or register
+    368                  switch( uca_msgrx[3])
+    369                  {
+    370                  case 0:
+    371                          // direct OR of PORTA
+    372                          PORTA = PINA | uca_msgrx[4];
+    373                          break;
+    374                  case 1:
+    375                          // direct OR of PORTB
+    376                          PORTB = PINB | uca_msgrx[4];
+    377                          break;
+    378                  case 2:
+    379                          // direct OR of PORTC
+    380                          PORTC = PINC | uca_msgrx[4];
+    381                          break;
+    382                  case 3:
+    383                          // direct OR of PORTD
+    384                          PORTD = PIND | uca_msgrx[4];
+    385                          break;
+    386                  case 12:
+    387                      // manipulate MCUCSR
+    388                      MCUCSR |= uca_msgrx[4];
+    389                      break;
+    390                  }
+    391          		break;
+    392          		
+    393              case 3: 
+    394              	// and register
+    395                  switch( uca_msgrx[3])
+    396                  {
+    397                  case 0:
+    398                          // direct AND of PORTA
+    399                          PORTA = PINA & uca_msgrx[4];
+    400                          break;
+    401                  case 1:
+    402                          // direct AND of PORTB
+    403                          PORTB = PINB & uca_msgrx[4];
+    404                          break;
+    405                  case 2:
+    406                          // direct AND of PORTC
+    407                          PORTC = PINC & uca_msgrx[4];
+    408                          break;
+    409                  case 3:
+    410                          // direct AND of PORTD
+    411                          PORTD = PIND & uca_msgrx[4];
+    412                          break;
+    413                  case 12:
+    414                      // manipulate MCUCSR
+    415                      MCUCSR &= uca_msgrx[4];
+    416                      break;
+    417                  }
+    418                  break;
+    419          				
+    420              case 5: // get register..
+    421                  // 01NOV00 the only register directly accessed:
+    422                  // should be $A3 (detector ref value)
+    423                  switch( uca_msgrx[3])
+    424                  {
+    425                  case 0:
+    426                      // direct read of PORTA
+    427                      uca_msgtx[4] = PINA;
+    428                      break;
+    429                  case 1:
+    430                      // direct read of PORTB
+    431                      uca_msgtx[4] = PINB;
+    432                      break;
+    433                  case 2:
+    434                      // direct read of PORTC
+    435                      uca_msgtx[4] = PINC;
+    436                      break;
+    437                  case 3:
+    438                      // direct read of PORTD
+    439                      uca_msgtx[4] = PIND;
+    440                      break;
+    441                  case 12:
+    442                      // manipulate MCUCSR
+    443                      uca_msgrx[4] = MCUCSR;
+    444                      break;
+    445                  case 0x80:
+    446                      //read from eeprom address rx4
+    447          			__disable_interrupt();
+    448                      uca_msgtx[3] = wal_bsf_eeget(uca_msgrx[4]);
+    449          			__enable_interrupt();
+    450                      break;
+    451                  } 
+    452                  break;
+    453          				
+    454              case 12:
+    455                  // por_reset = MCUCSR;
+    456                  uca_msgtx[3] = WDTCR;
+    457                  uca_msgtx[4] = por_reset;         // capture POR
+    458                  break;
+    459          				
+    460              case 13:
+    461                  // error information ?
+    462                  switch( uca_msgrx[3])
+    463                  {
+    464                  case 0:
+    465                    uca_msgtx[3] = uc_axis_err;
+    466                    uca_msgtx[4] = por_reset;       // capture POR
+    467                    break;
+    468                  case 1: // give relevant 'ERR' data history a->b->c
+    469                    switch( uca_msgrx[4])
+    470                    {
+    471                    case 1: // erra
+    472                      uca_msgtx[3] = 0;
+    473                      uca_msgtx[4] = uc_atbl_err;
+    474                      break;
+    475                    case 2: // errb
+    476                      uca_msgtx[3] = 0;
+    477                      uca_msgtx[4] = uc_btbl_err;
+    478                      break;
+    479                    case 3: // errc
+    480                      uca_msgtx[3] = 0;
+    481                      uca_msgtx[4] = uc_ctbl_err;
+    482                      break;
+    483                    }
+    484                    break;
+    485                  case 2: // give relevant 'POR' data assoc. with error
+    486                    switch( uca_msgrx[4])
+    487                    {
+    488                    case 1: // erra
+    489                      uca_msgtx[3] = uc_atbl_phi;
+    490                      uca_msgtx[4] = uc_atbl_plo;
+    491                      break;
+    492                    case 2: // errb
+    493                      uca_msgtx[3] = uc_btbl_phi;
+    494                      uca_msgtx[4] = uc_btbl_plo;
+    495                      break;
+    496                    case 3: // errc
+    497                      uca_msgtx[3] = uc_ctbl_phi;
+    498                      uca_msgtx[4] = uc_ctbl_plo;
+    499                      break;
+    500                    }
+    501                    break;
+    502                  case 3: // current 'POR' counter: uc_por_hi,uc_por_lo
+    503                    uca_msgtx[3] = uc_por_hi;
+    504                    uca_msgtx[4] = uc_por_lo;
+    505                    break;
+    506                  }
+    507                  break;
+    508          				
+    509              case 14: // Status request:
+    510                  uca_msgtx[3] = uc_axis_err;
+    511                  // uc_motoron
+    512                  uca_msgtx[4] = uc_axis_vss;
+    513                  uca_msgtx[4] |= uc_motoron ? 0x80 : 0;
+    514                  uca_msgtx[4] |= (WAL_IN_HOM == 1) ? 0x40 : 0;
+    515                  uca_msgtx[4] |= (WAL_IN_LIM == 1) ? 0x20 : 0;
+    516                  break; 
+    517          				
+    518              case 15: // VERSION No REQUEST 
+    519                  uca_msgtx[3] = def_major_ver;            // get_ee[x]...
+    520                  uca_msgtx[4] = def_minor_ver;
+    521                  break; 
+    522          				
+    523              case 20:
+    524                  // clear errors:
+    525                  break;
+    526          				
+    527              case 68:
+    528                  // joggle_on
+    529                  uc_joggle_pause = uca_msgtx[3];
+    530                  uc_joggle_dist = uca_msgtx[4];
+    531                  uc_joggle_on = 1;
+    532                  break;
+    533          				
+    534              case 69:
+    535                  // joggle_off
+    536                  uc_joggle_on = 0;
+    537                  break;
+    538          				
+    539              case 88:
+    540                  // Get Max. allowable tacho limit: ui_axis_maxallow
+    541                  uca_msgtx[3] = (unsigned char) (ui_axis_maxallow >> 8);
+    542                  uca_msgtx[4] = (unsigned char) (ui_axis_maxallow & 0x00FF);
+    543                  break;
+    544          				
+    545              case 89:
+    546                  // Set Max. allowable tacho limit: ui_axis_maxallow WAL_EE_MAXTHI, WAL_EE_MAXTLO
+    547                  ui_axis_maxallow = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
+    548                  uc_axis_chi = uca_msgrx[3];
+    549                  uc_axis_clo = uca_msgrx[4];
+    550                  wal_eetbl_write( WAL_EE_MAXTHI, uc_axis_chi);
+    551                  wal_eetbl_write( WAL_EE_MAXTLO, uc_axis_clo);
+    552                  break;
+    553          				
+    554              case 90: // stop
+    555                  // E_AxisStop()
+    556                  // joggle_off
+    557           /*       uc_joggle_on = 0;
+    558                  wal_motor_stop();
+    559                  uc_done_move = 1;*/
+    560                  
+    561                  // clear 'uni-directional flag' (set later if required)
+    562                   uc_unitravel = 0;
+    563                  uc_joggle_on = 0;
+    564                  uc_done_move = 1;
+    565           	if(uc_motoron)
+    566                  {
+    567                    // if we're currently moving stop
+    568                    uc_axis_vss = 0;
+    569                    A_MotorStop();
+    570                    if( SEQ_AddEvent( E_AxisSetPoint) != UCC_OK )
+    571                    {
+    572                          vss_seq_error();
+    573                    }
+    574                  }
+    575          	break;	
+    576              case 91: // re-reference AddEvent
+    577                  // V1.3 27JUN05: allow 'home' sequence if home switch active:
+    578                  // if( val_ip_hom == 0){}
+    579                  // joggle_off
+    580                  uc_joggle_on = 0;
+    581                  
+    582                  uc_axis_vss = 4;
+    583                  
+    584                  if( SEQ_AddEvent( E_AxisInvalid) != UCC_OK )
+    585                  {
+    586                          vss_seq_error();
+    587                  }
+    588                  break;
+    589          				
+    590              case 92: // forwards or backward depending upon rx[3],rx[4]
+    591                  if( val_ip_lim == 0) 
+    592                  {
+    593                    uc_axis_dir = (uca_msgtx[3] == 1) ? 1: 0;
+    594                    if( uca_msgtx[4] == 0)
+    595                        uc_axis_pwm = WAL_PWM_TEST;
+    596                    else
+    597                        uc_axis_pwm = uca_msgtx[4];
+    598                    wal_motor_start();
+    599                  }
+    600                  break;
+    601          				
+    602              case 93: // position
+    603                  // position: reply 'C'+ count if moving; 'P' + position if stationery
+    604                  // command must match in high speed comms (NB. data hi-lo swapped )
+    605                  // therefore no differentiation of ui_axis_set or ui_axis_pos
+    606                  // if( uc_axis_vss == 0) 
+    607                  // need to convert ui_axis_pos -> 0.1mm units using conversion *5 /4
+    608                  // ui_axis_postx = ui_axis_pos * 5/4 (ui_axis_conv, ui_axis_tacho)
+    609                  
+    610                  // ui_axis_tacho = ui_axis_pos >> 1;      // divide by 2
+    611                  // store 'carry' flag
+    612                  // uc_carrybit = WAL_CARRY_BIT ? 3: 0;
+    613                  // ui_axis_mult = ui_axis_tacho * 5;     // mult. by 5
+    614                  // if( uc_carrybit)
+    615                  // {
+    616                  //  ui_axis_mult += 3;
+    617                  // }
+    618                  // ui_axis_conv = ui_axis_mult >> 1;
+    619                  // uca_msgtx[3] = (unsigned char) (ui_axis_conv >> 8);
+    620                  // uca_msgtx[4] = (unsigned char) (ui_axis_conv & 0x00FF);
+    621                  
+    622                  // V1.8 27JAN06: give set point if moving...
+    623                  if( uc_motoron)
+    624                  {
+    625                    uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
+    626                    uca_msgtx[4] = (unsigned char) (ui_axis_pos & 0x00FF);
+    627                  }
+    628                  else
+    629                  {
+    630                  
+    631                    // V1.3 work in tacho units only
+    632                    uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
+    633                    uca_msgtx[4] = (unsigned char) (ui_axis_pos & 0x00FF);
+    634                    
+    635                    // V1.7 16JAN06: if uni-directional movement in progress
+    636                    // report 'set-point' to prevent 'goto'
+    637                    if( uc_unitravel)
+    638                    {
+    639                      uca_msgtx[3] = (unsigned char) (ui_axis_uni >> 8);
+    640                      uca_msgtx[4] = (unsigned char) (ui_axis_uni & 0x00FF);
+    641                    }
+    642                  }
+    643                  
+    644                  break;
+    645          				
+    646              case 94: // goto
+    647                  // i.e. set position, ui_axis_set = rx[3][4]
+    648                  // value set in 0.1mm units: conversion to tachos (0.125mm) = 4/5
+    649                  // method *2; +3; divide by 5; *2 = 0.125 (i.e. tacho units)
+    650                  // use WAL_MAX_SET_HIBYTE to protect max. parameter
+    651                  
+    652                  // V1.3 27JUN05: ignore 'goto' if axis error flag set: (must reref)
+    653                  // uc_axis_err = 0;
+    654                  // joggle_off
+    655                  uc_joggle_on = 0;
+    656          
+    657                  // V1.8 27JAN06: ignore 'goto' if moving...
+    658                  if( (uca_msgrx[3] <= WAL_MAX_SET_HIBYTE) && (uc_axis_err == 0)/* && (uc_motoron == 0)*/)
+    659                  {
+    660                    // i.e. position < MAX
+    661                    if( (uca_msgrx[3] == 0) && (uca_msgrx[4] < WAL_MIN_SET_LOBYTE) )
+    662                    {
+    663                      // i.e. position < 0.5mm therefore invalid
+    664                    }
+    665                    else
+    666                    {
+    667                      // V1.3 work in tacho units only
+    668                      ui_axis_setrx = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
+    669                      if( ui_axis_setrx < ui_axis_maxallow)
+    670                      {
+    671                        ui_axis_set = ui_axis_setrx;
+    672                      }
+    673                      
+    674                      // new (valid) set point
+    675                      // ui_axis_setrx = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
+    676                      // need to convert to tacho units :: 4/5
+    677                      // ui_axis_tacho = ui_axis_setrx << 1;
+    678                      // ui_axis_tacho += 3;
+    679                      // ui_axis_mult = ui_axis_tacho / 5;     // divide by 5
+    680                      // ui_axis_conv = ui_axis_mult << 1;
+    681                      // ui_axis_set = ui_axis_conv;
+    682                      
+    683                      // E_AxisMove (MoveToPosition); Entry = A_AxisCalcProfile, A_MotorMove
+    684                      // if( ui_axis_set != ui_axis_pos)
+    685                      
+    686                      
+    687                      if( !wal_pos_similar())
+    688                      {
+    689                        if( SEQ_AddEvent( E_AxisMove) != UCC_OK )
+    690                        {
+    691                          vss_seq_error();
+    692                        }
+    693                      }     // set != pos
+    694                    }       // else  set pt > LOBYTE
+    695                  }         // rx[3] < HIBYTE
+    696                  break;
+    697          				
+    698              case 95: // address
+    699          				uc_readdr_timer = 255;
+    700          				
+    701                  if( val_ip_sw1 == 1)
+    702                  {
+    703                      uc_comm_adid = uca_msgrx[4] & 0x3F;
+    704                      wal_eetbl_write( WAL_EE_COMMID, uc_comm_adid);
+    705                      uca_msgtx[1] = uc_comm_adid;
+    706                      uc_axis_err = 5;
+    707                      // wal_eetbl_write( WAL_EE_ERROR, uc_axis_err);
+    708                      // store in table..
+    709                      // wal_record_axis_err();
+    710                  }
+    711                  else
+    712                  {
+    713                      // ignore, no reply
+    714                      uc_comm_noecho = 1;
+    715                  }
+    716                  break;
+    717          				
+    718              case 96: // trigger (respond input) + button status
+    719                  break;
+    720          				
+    721              case 97: // trigger (set output)
+    722                  break;
+    723          				
+    724              case 98: // status (moving, error) - Change to:
+    725          		         // Clear & reset error history
+    726          				uc_axis_err = 0;
+    727          				
+    728          				wal_clear_axis_err();
+    729                  break;
+    730          				
+    731              case 99: // speed
+    732                  uc_axis_pwm = uca_msgrx[4];
+    733                  break;
+    734          				
+    735              case 100:
+    736                  // write to eeprom:
+    737                  __disable_interrupt();
+    738                  wal_eetbl_write( uca_msgrx[3], uca_msgrx[4]);
+    739                  __enable_interrupt();
+    740                  break;
+    741          				
+    742              case 110:
+    743                  // read 'cpu serial number'
+    744                  uca_msgtx[3] = wal_bsf_eeget(WAL_EE_CPUSERHI);
+    745                  uca_msgtx[4] = wal_bsf_eeget(WAL_EE_CPUSERLO);
+    746                  break;
+    747          				
+    748              case 111:
+    749                  // write 'cpu serial number'
+    750                  wal_eetbl_write( WAL_EE_CPUSERHI, uca_msgrx[3]);
+    751                  wal_eetbl_write( WAL_EE_CPUSERLO, uca_msgrx[4]);
+    752                  break;
+    753          				
+    754              case 112:
+    755                  // read axis calibration value
+    756                  uca_msgtx[3] = wal_bsf_eeget(WAL_EE_CALIBHI);
+    757                  uca_msgtx[4] = wal_bsf_eeget(WAL_EE_CALIBLO);
+    758                  break;
+    759          				
+    760              case 113:
+    761                  // write axis calibration value
+    762                  wal_eetbl_write( WAL_EE_CALIBHI, uca_msgrx[3]);
+    763                  wal_eetbl_write( WAL_EE_CALIBLO, uca_msgrx[4]);
+    764                  break;
+    765          				
+    766              default:
+    767                  uca_msgtx[3] = uca_msgtx[4] = 0;
+    768              }  
+    769          } 
+    770          
+    771          
+    772          
+    773          
+    774          
+
+   Maximum stack usage in bytes:
+
+     Function                  CSTACK RSTACK
+     --------                  ------ ------
+     USART_Init_High               0      2
+     USART_Init_Low                0      2
+     wal_do_command                0      2
+       -> wal_bsf_eeget            0      2
+       -> wal_eetbl_write          0      2
+       -> wal_eetbl_write          0      2
+       -> A_MotorStop              0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> wal_motor_start          0      2
+       -> wal_pos_similar          0      2
+       -> SEQ_AddEvent             0      2
+       -> vss_seq_error            0      2
+       -> wal_eetbl_write          0      2
+       -> wal_clear_axis_err       0      2
+       -> wal_eetbl_write          0      2
+       -> wal_bsf_eeget            0      2
+       -> wal_bsf_eeget            0      2
+       -> wal_eetbl_write          0      2
+       -> wal_eetbl_write          0      2
+       -> wal_bsf_eeget            0      2
+       -> wal_bsf_eeget            0      2
+       -> wal_eetbl_write          0      2
+       -> wal_eetbl_write          0      2
+     wal_end_tx                    0      2
+     wal_picnet_checkdata          0      2
+     wal_picnet_motor              2      4
+       -> wal_eetbl_write          2      2
+       -> wal_picnet_checkdata     2      2
+       -> wal_motor_start          2      2
+       -> wal_picnet_checkdata     2      2
+       -> wal_motor_start          2      2
+       -> wal_bsf_eeget            2      2
+       -> wal_bsf_eeget            2      2
+       -> SEQ_AddEvent             2      2
+       -> vss_seq_error            2      2
+       -> SEQ_AddEvent             2      2
+       -> vss_seq_error            2      2
+       -> wal_motor_stop           2      2
+       -> wal_picnet_checkdata     2      2
+     wal_send485_char              0      2
+     wal_start_tx                  0      2
+     wal_tx_nrq                    0      2
+
+
+   Segment part sizes:
+
+     Function/Label                 Bytes
+     --------------                 -----
+     USART_Init_High                  20
+     USART_Init_Low                   16
+     wal_start_tx                     30
+     wal_end_tx                       20
+     wal_send485_char                 10
+     wal_tx_nrq                       34
+     wal_picnet_checkdata             36
+     wal_picnet_motor                716
+     wal_do_command                 1378
+     ?<Jumptable for wal_do_command>_0
+                                      92
+     _A_UBRRL                          1
+     _A_UCSRB                          1
+     _A_UDR                            1
+     _A_PIND                           1
+     _A_PORTD                          1
+     _A_PINC                           1
+     _A_PORTC                          1
+     _A_PINB                           1
+     _A_PORTB                          1
+     _A_PINA                           1
+     _A_PORTA                          1
+     _A_UBRRH                          1
+     _A_WDTCR                          1
+     _A_MCUCSR                         1
+
+ 
+    14 bytes in segment ABSOLUTE
+ 2 260 bytes in segment CODE
+    92 bytes in segment SWITCH
+ 
+ 2 352 bytes of CODE memory
+     0 bytes of DATA memory (+ 14 bytes shared)
+
+Errors: none
+Warnings: 4

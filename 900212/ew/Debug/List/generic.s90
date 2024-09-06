@@ -1,0 +1,149 @@
+//////////////////////////////////////////////////////////////////////////////
+//                                                                           /
+// IAR Atmel AVR C Compiler V3.10C/W32                 31/Jan/2006  09:32:57 /
+// Copyright 1996-2004 IAR Systems. All rights reserved.                     /
+//                                                                           /
+//    Source file  =  M:\VisualState\ProjectM16Motor\ew\src\generic.c        /
+//    Command line =  --cpu=m16 -ms -o M:\VisualState\ProjectM16Motor\ew\Deb /
+//                    ug\Obj\ -lC M:\VisualState\ProjectM16Motor\ew\Debug\Li /
+//                    st\ -lB M:\VisualState\ProjectM16Motor\ew\Debug\List\  /
+//                    -z2 --no_cse --no_inline --no_code_motion              /
+//                    --no_cross_call --no_clustering --debug                /
+//                    -DENABLE_BIT_DEFINITIONS -e -I                         /
+//                    M:\VisualState\ProjectM16Motor\ew\src\ -I              /
+//                    M:\VisualState\ProjectM16Motor\ew\vssrc\ -I            /
+//                    M:\VisualState\ProjectM16Motor\ew\vsapi\ -I            /
+//                    "C:\Program Files\IAR Systems\Embedded Workbench       /
+//                    3.2\avr\INC\" -I "C:\Program Files\IAR                 /
+//                    Systems\Embedded Workbench 3.2\avr\INC\CLIB\"          /
+//                    --eeprom_size 512 M:\VisualState\ProjectM16Motor\ew\sr /
+//                    c\generic.c                                            /
+//    List file    =  M:\VisualState\ProjectM16Motor\ew\Debug\List\generic.s /
+//                    90                                                     /
+//                                                                           /
+//                                                                           /
+//////////////////////////////////////////////////////////////////////////////
+
+        NAME generic
+
+        RSEG CSTACK:DATA:NOROOT(0)
+        RSEG RSTACK:DATA:NOROOT(0)
+
+        PUBWEAK _A_EEAR
+        PUBWEAK _A_EECR
+        PUBWEAK _A_EEDR
+        PUBWEAK __?EEARH
+        PUBWEAK __?EEARL
+        PUBWEAK __?EECR
+        PUBWEAK __?EEDR
+        PUBLIC wal_bsf_eeget
+        PUBLIC wal_program_ee
+
+// M:\VisualState\ProjectM16Motor\ew\src\generic.c
+//    1 /*
+//    2 *
+//    3 * The following function routines are 'common' to various application
+//    4 * i.e. not application specific
+//    5 *
+//    6 */
+//    7 
+//    8 #include <iom16.h>		 	// Atmel up definitions
+//    9 #include <inavr.h>			// AVR intrinsic functions
+//   10 #include "VSMain.h"			// VisualState definitions (further includes)
+//   11 
+//   12 
+//   13 // NB. pre-defined macros 'inavr.h'
+//   14 // #define __EEPUT(ADR,VAL)  {while (EECR & 0x02); EEAR = (ADR); EEDR = (VAL); EECR = 0x04; EECR = 0x02;}
+//   15 // #define __EEGET(VAR, ADR) {while (EECR & 0x02); EEAR = (ADR); EECR = 0x01; (VAR) = EEDR;}
+//   16 
+//   17 // NB. these functions only access the lowest 256 bytes of EEPROM
+//   18 
+//   19 // NB. wal_program_ee superceeded by wal_eetbl_write(...)
+
+        RSEG CODE:CODE:NOROOT(1)
+//   20 void wal_program_ee( char s_address, char s_value)
+wal_program_ee:
+??wal_program_ee_0:
+//   21 {
+//   22 	while (EECR & 0x02); 
+	SBIC	0x1C,0x01
+	RJMP	??wal_program_ee_0
+//   23 	EEARH = 0;
+	LDI	R18,0
+	OUT	0x1F,R18
+//   24 	EEARL = s_address; 
+	OUT	0x1E,R16
+//   25 	EEDR = s_value;
+	OUT	0x1D,R17
+//   26 	EECR = 0x04; 
+	LDI	R18,4
+	OUT	0x1C,R18
+//   27 	EECR = 0x02;
+	LDI	R18,2
+	OUT	0x1C,R18
+//   28 }
+	RET
+//   29 
+
+        RSEG CODE:CODE:NOROOT(1)
+//   30 unsigned char wal_bsf_eeget( unsigned char s_address)
+wal_bsf_eeget:
+//   31 {
+	MOV	R17,R16
+//   32 while (EECR & 0x02);    // 1<<EEWE
+??wal_bsf_eeget_0:
+	SBIC	0x1C,0x01
+	RJMP	??wal_bsf_eeget_0
+//   33                         // NB: EEARH always 0 !
+//   34 EEARH = 0;
+	LDI	R16,0
+	OUT	0x1F,R16
+//   35 EEARL = (s_address); 
+	OUT	0x1E,R17
+//   36 EECR = 0x01;            // 1<<EERE
+	LDI	R16,1
+	OUT	0x1C,R16
+//   37                         // ? dummy op required ?
+//   38 return EEDR;
+	IN	R16,0x1D
+	RET
+//   39 }
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03cH
+// union <unnamed> volatile __io _A_EECR
+_A_EECR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03dH
+// union <unnamed> volatile __io _A_EEDR
+_A_EEDR:
+        DS 1
+
+        ASEGN ABSOLUTE:DATA:NOROOT,03eH
+// union <unnamed> volatile __io _A_EEAR
+_A_EEAR:
+        DS 2
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01cH
+__?EECR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01dH
+__?EEDR:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01eH
+__?EEARL:
+
+        ASEGN ABSOLUTE:DATA:NOROOT,01fH
+__?EEARH:
+
+        END
+//   40 
+// 
+//  4 bytes in segment ABSOLUTE
+// 42 bytes in segment CODE
+// 
+// 42 bytes of CODE memory
+//  0 bytes of DATA memory (+ 4 bytes shared)
+//
+//Errors: none
+//Warnings: none
