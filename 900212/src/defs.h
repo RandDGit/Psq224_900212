@@ -9,7 +9,7 @@
  *                        PSQ #219 on re-addr do-not move axis
  */
 #define def_major_ver    3
-#define def_minor_ver    4  /* Change release output to match ! */
+#define def_minor_ver    5  /* Change release output to match ! */
 
 // V2.4 04AUG06: change default 'address-> 39'
 // Notify 'top' (status indication?) if BORF detected
