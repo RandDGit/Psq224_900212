@@ -66,6 +66,13 @@
 #define WAL_DBNC_IN_LIM	10
 #define WAL_DBNC_IN_SW1	60
 
+//CXP 100924
+//V3.4 and back will support old motor NIDEC
+//V3.5 and forward will support new motor EISSES
+// where old is 288 tachos per rev and new is 310 tachos per rev
+#define OLD2NEW(tac) (unsigned int)((float)tac * (float)1.076)   
+#define NEW2OLD(tac) (unsigned int)((float)tac / (float)1.076)
+
 // Valeo Motor Pitch = 1 pulse = 0.125mm limit travel to 2022mm (0x4EFF) i.e. 16176 0x3F30 ("?+")
 // also manually determine MAX hi-byte for comms parsing, & MIN lo-byte 0.5mm
 #define WAL_MAX_SET_VALUE   20220

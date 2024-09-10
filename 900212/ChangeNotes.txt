@@ -1,4 +1,16 @@
+Date: 10 Sept 2024
+SW ver: 3.5
 
+Changes:
+
+* The RS485 receive data of axis position, max tachos and calibration are multiplied with the new motor tacho pulse factor of 1.076, i.e 310pulses/288pulses.
+* The RS485 transmit data of axis position, max tachos and calibration is divided with the new motor tacho pulse factor of 1.076.
+
+Files:
+        modified:   ChangeNotes.txt
+	modified:   defs.h
+        modified:   usart2.c
+-----------------------------------------------------------------------------------------------------------------------------------
 Date: 09 Sept 2024
 SW ver: 3.5
 
@@ -8,5 +20,4 @@ Changes:
 
 Files:
         modified:   ChangeNotes.txt
------------------------------------------------------------------------------------------------------------------------------------
 

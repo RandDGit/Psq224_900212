@@ -538,15 +538,18 @@ switch( uca_msgrx[2])
 				
     case 88:
         // Get Max. allowable tacho limit: ui_axis_maxallow
-        uca_msgtx[3] = (unsigned char) (ui_axis_maxallow >> 8);
-        uca_msgtx[4] = (unsigned char) (ui_axis_maxallow & 0x00FF);
+        //CXP 100924
+        uca_msgtx[3] = (unsigned char) (NEW2OLD(ui_axis_maxallow) >> 8);
+        uca_msgtx[4] = (unsigned char) (NEW2OLD(ui_axis_maxallow) & 0x00FF);
         break;
 				
     case 89:
         // Set Max. allowable tacho limit: ui_axis_maxallow WAL_EE_MAXTHI, WAL_EE_MAXTLO
+        //CXP 100924
         ui_axis_maxallow = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
-        uc_axis_chi = uca_msgrx[3];
-        uc_axis_clo = uca_msgrx[4];
+        ui_axis_maxallow = OLD2NEW(ui_axis_maxallow);
+        uc_axis_chi = OLD2NEW(uca_msgrx[3]);
+        uc_axis_clo = OLD2NEW(uca_msgrx[4]);
         wal_eetbl_write( WAL_EE_MAXTHI, uc_axis_chi);
         wal_eetbl_write( WAL_EE_MAXTLO, uc_axis_clo);
         break;
@@ -618,27 +621,27 @@ switch( uca_msgrx[2])
         // uca_msgtx[4] = (unsigned char) (ui_axis_conv & 0x00FF);
         
         // V1.8 27JAN06: give set point if moving...
-        if( uc_motoron)
+        //CXP 100924
+         if( uc_motoron)
         {
-          uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
-          uca_msgtx[4] = (unsigned char) (ui_axis_pos & 0x00FF);
+          uca_msgtx[3] = (unsigned char) (NEW2OLD(ui_axis_pos) >> 8);
+          uca_msgtx[4] = (unsigned char) (NEW2OLD(ui_axis_pos) & 0x00FF);
         }
         else
         {
         
           // V1.3 work in tacho units only
-          uca_msgtx[3] = (unsigned char) (ui_axis_pos >> 8);
-          uca_msgtx[4] = (unsigned char) (ui_axis_pos & 0x00FF);
+          uca_msgtx[3] = (unsigned char) (NEW2OLD(ui_axis_pos) >> 8);
+          uca_msgtx[4] = (unsigned char) (NEW2OLD(ui_axis_pos) & 0x00FF);
           
           // V1.7 16JAN06: if uni-directional movement in progress
           // report 'set-point' to prevent 'goto'
           if( uc_unitravel)
           {
-            uca_msgtx[3] = (unsigned char) (ui_axis_uni >> 8);
-            uca_msgtx[4] = (unsigned char) (ui_axis_uni & 0x00FF);
+            uca_msgtx[3] = (unsigned char) (NEW2OLD(ui_axis_uni) >> 8);
+            uca_msgtx[4] = (unsigned char) (NEW2OLD(ui_axis_uni) & 0x00FF);
           }
-        }
-        
+        }       
         break;
 				
     case 94: // goto
@@ -674,6 +677,10 @@ switch( uca_msgrx[2])
           {
             // V1.3 work in tacho units only
             ui_axis_setrx = (unsigned int) (uca_msgrx[3] << 8) + uca_msgrx[4];
+            
+            //CXP 100924
+            ui_axis_setrx = OLD2NEW(ui_axis_setrx);
+            
             if( ui_axis_setrx < ui_axis_maxallow)
             {
               ui_axis_set = ui_axis_setrx;
@@ -761,14 +768,16 @@ switch( uca_msgrx[2])
 				
     case 112:
         // read axis calibration value
-        uca_msgtx[3] = wal_bsf_eeget(WAL_EE_CALIBHI);
-        uca_msgtx[4] = wal_bsf_eeget(WAL_EE_CALIBLO);
+        //CXP 100924
+        uca_msgtx[3] = NEW2OLD(wal_bsf_eeget(WAL_EE_CALIBHI));
+        uca_msgtx[4] = NEW2OLD(wal_bsf_eeget(WAL_EE_CALIBLO));
         break;
 				
     case 113:
         // write axis calibration value
-        wal_eetbl_write( WAL_EE_CALIBHI, uca_msgrx[3]);
-        wal_eetbl_write( WAL_EE_CALIBLO, uca_msgrx[4]);
+        //CXP 100924
+        wal_eetbl_write( WAL_EE_CALIBHI, OLD2NEW(uca_msgrx[3]));
+        wal_eetbl_write( WAL_EE_CALIBLO, OLD2NEW(uca_msgrx[4]));
         break;
 				
     default:
